@@ -3,6 +3,12 @@
     [string]$StateFile
 )
 
+# 🚨 [경로 계산 방식 개선] param 블록 바로 밑에 안전하게 배치!
+# 스크립트의 현재 위치와 최상위 duct-tape 루트 경로를 유연하게 동적 매핑합니다.
+$ScriptDir = $PSScriptRoot
+$DeployRoot = Split-Path -Path $ScriptDir -Parent
+# $ConfigDir  = Join-Path -Path $DeployRoot -ChildPath "Config"
+
 # 1. 상태 파일 읽어오기
 $state = Get-Content -Path $StateFile -Raw | ConvertFrom-Json
 
@@ -34,7 +40,6 @@ if ($state.OfficeState -eq "설치 필요") {
     Write-Host "`n -> 진행 중: Office LTSC 2024를 설치하고 있습니다." -ForegroundColor Cyan
     Write-Host " (화면이 멈춘 것처럼 보여도 백그라운드에서 열심히 작업 중이니 잠시만 기다려주세요!)" -ForegroundColor Gray
     
-    $DeployRoot = Split-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path) -Parent
     $SetupExe = Join-Path -Path $DeployRoot -ChildPath "Office\setup.exe"
     $InstallXml = Join-Path -Path $DeployRoot -ChildPath "Office\install.xml"
 
