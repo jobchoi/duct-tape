@@ -7,8 +7,8 @@
 - 승인된 Phase만 구현한다. 작업 완료 시 이 문서를 갱신하고 결과, 검증 내용, 남은 항목을 보고한다.
 - 브랜치 전략: `main`은 검증된 배포본, `develop`은 통합, `feature/*`는 Phase별 작업이다.
 - Phase별 feature 브랜치는 `develop`에서 분기한다. 통합 및 배포는 검증과 리뷰를 거친다.
-- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-3-central-monitoring`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
-- 현재 단계: **Phase 3 구현·자동 검증 완료, 현장 인수 및 다음 단계 승인 대기**. Phase 2 커밋 a8ed71a를 develop에 병합. Windows 현장 검증은 계속 대기.
+- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-4-gas-mirroring`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
+- 현재 단계: **Phase 3 커밋·원격 동기화 완료, Phase 4 설계 승인 대기**. 현재 Phase 4 준비 브랜치. Windows 현장 검증은 계속 대기.
 
 ## 반드시 보존할 동작
 
@@ -78,25 +78,28 @@
 - [x] 정상·잘못된 보고, 중복 보고, 서버 장애, 20~50대 동시 보고 및 대시보드 출력 검증.
 - [x] 운영/Wiki 문서 및 진행 상태 갱신.
 - [ ] Windows PowerShell 5.1·기관 HTTPS/UNC 및 실제 브라우저·설치 매체 인수 검증.
-- [ ] Phase 3 커밋·통합·기관망 배포 및 Phase 4 진입 승인.
+- [x] Phase 3 커밋·원격 push·develop 통합 및 원격 동기화.
+- [ ] 기관망 배포 및 Windows 현장 인수 승인/검증.
 
 예상 영향 파일: `Server/server.py`, 서버 의존성·설정 예제 및 UI 파일, `Scripts/ReportStatus.ps1`, 공통/호출 모듈, `.gitignore`, 관련 문서. SQLite DB와 인증정보는 추적 제외.
 
-## Phase 4 — GAS 및 Google Sheets 미러링
+## Phase 4 — GAS 단방향 웹훅 릴레이 (설계 승인 대기)
 
-예정 브랜치: `feature/phase-4-gas-mirroring`
+브랜치: `feature/phase-4-gas-mirroring`
 
-- [ ] Phase 진입 승인 및 실제 파일 목록 확정.
-- [ ] 양방향 요구 범위 확정: 현재 구체화된 흐름은 서버 → GAS → 시트이다. 시트 → 서버의 대상 필드, 충돌 정책, 동기화 주기는 구현 전 확인한다.
-- [ ] Python 서버에서 GAS Web App URL로 HTTPS POST하는 백그라운드 전송 구성.
-- [ ] 웹훅 인증, 타임아웃, 재시도, 중복 방지 및 실패 기록 설계·구현.
-- [ ] `GoogleAppsScript/Code.gs`: 기기 식별 기준으로 시트 행 생성/갱신, 자산 정보 및 진척도 기록.
-- [ ] 확정된 역방향 동기화 범위 구현 및 충돌 처리 검증.
-- [ ] Web App URL·인증정보 외부 설정 및 모바일/외부 조회 권한 안내.
-- [ ] 정상 전송, 중복, 장애 후 재시도, 동시 갱신 및 양방향 충돌 검증.
-- [ ] 배포 가이드, 검증 결과, 미해결 제한사항과 최종 진행 상태 갱신.
+- [x] Phase 3 커밋/push 및 develop 동기화 후 준비 브랜치 생성.
+- [x] 이번 범위를 FastAPI BackgroundTasks → GAS → Sheets 단방향으로 확정. 역방향은 별도 승인 대상.
+- [x] [설계안](docs/PHASE4_DESIGN.md)에 영향 파일·학교/학년 계약·고정 열 매핑·검증 계획 기록.
+- [ ] 사용자 구현 승인.
+- [ ] 학교별 보고 인증·school_code/grade 스키마·기존 SQLite 마이그레이션 구현.
+- [ ] BackgroundTasks, SQLite outbox, HTTPS POST 및 제한 재시도·응답 검증 구현.
+- [ ] GoogleAppsScript/Code.gs: 서명 검증·학교별 목적지·A:T 고정 RAW 쓰기·잠금·중복/역순 처리 구현.
+- [ ] 클라이언트 메타데이터·대시보드 필터·비밀값 없는 설정 예제·운영 문서 작성.
+- [ ] 서버/PowerShell/GAS 모의 테스트 및 20~50대 동시 이벤트 검증.
+- [ ] 실제 GAS 테스트 배포·시트 쓰기 승인 및 인수 검증.
+- [ ] 완료 결과 보고 및 커밋·통합 승인.
 
-예상 영향 파일: `GoogleAppsScript/Code.gs`, `Server/` 연동 모듈 및 설정 예제, 관련 문서.
+이번 턴은 계획 문서만 수정한다. 상세 영향 파일은 docs/PHASE4_DESIGN.md를 따른다.
 
 ## 작업 기록
 
@@ -150,4 +153,13 @@
 
 서버 TestClient는 샌드박스 이벤트 루프 제한 때문에 승인된 샌드박스 밖에서 검증했고, HTTP 통합 테스트의 임시 loopback 서버는 검증 후 종료했다. 운영 서버·원격 Git·Wiki는 게시하지 않았다. 테스트 의존성의 httpx/BlockingPortal 사용 중단 예고 경고 2건은 테스트 통과와 별도로 남아 있다.
 
-Phase 3 작업은 현재 작업 트리에 유지한다. 수동 승인 원칙에 따라 Phase 3 통합/배포와 Phase 4는 별도 승인 후 진행한다. Phase 4 예정 파일은 Server의 GAS 전송 모듈, GoogleAppsScript/Code.gs, 설정 예제와 운영 문서이며 역방향 동기화 필드·충돌 정책을 승인 전에 확정한다.
+Phase 3는 후속 사용자 승인으로 c70d778에 커밋하고 feature 및 develop 원격 동기화를 완료했다. 운영 배포는 수행하지 않았다. Phase 4는 이번 사용자 지시에 따라 단방향 릴레이로 제한하며 구현 승인을 기다린다.
+
+## Phase 4 준비 기록
+
+- [x] 사용자 지정 메시지로 Phase 3 커밋 `c70d778` 생성.
+- [x] origin/feature/phase-3-central-monitoring push 및 upstream 설정.
+- [x] develop fast-forward 병합, origin/develop push 완료.
+- [x] develop에서 feature/phase-4-gas-mirroring 생성·체크아웃.
+- [x] docs/PHASE4_DESIGN.md 설계안 작성. 구현 코드·실제 GAS 배포·시트 쓰기는 미수행.
+- [ ] 설계 및 구현 파일 목록에 대한 사용자 승인.
