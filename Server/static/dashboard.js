@@ -8,7 +8,7 @@ function render() {
   const filtered = devices.filter(d => (!school || d.school_code === school) &&
     (!grade || (grade === 'shared' ? d.grade == null : String(d.grade) === grade)) &&
     `${d.hostname} ${d.serial} ${d.model}`.toLowerCase().includes(query));
-  el('summary').textContent = `전체 ${devices.length}대 · 선택 ${filtered.length}대 · 배포 완료 ${filtered.filter(d => d.stage === '06' && d.status === 'completed').length}대 · 실패 ${filtered.filter(d => d.status === 'failed').length}대`;
+  el('summary').textContent = `전체 ${devices.length}대 · 선택 ${filtered.length}대 · 배포 완료 ${filtered.filter(d => d.stage === '06' 배포 완료 ${filtered.filter(d => d.stage === '06' && d.status === 'completed').length}대배포 완료 ${filtered.filter(d => d.stage === '06' && d.status === 'completed').length}대 d.status === 'completed').length}대 · 진행 중 ${filtered.filter(d => d.status === 'running').length}대 · 실패 ${filtered.filter(d => d.status === 'failed').length}대`;
   el('devices').replaceChildren();
   for (const d of filtered) {
     const row = document.createElement('tr');
