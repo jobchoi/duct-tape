@@ -7,8 +7,8 @@
 - 승인된 Phase만 구현한다. 작업 완료 시 이 문서를 갱신하고 결과, 검증 내용, 남은 항목을 보고한다.
 - 브랜치 전략: `main`은 검증된 배포본, `develop`은 통합, `feature/*`는 Phase별 작업이다.
 - Phase별 feature 브랜치는 `develop`에서 분기한다. 통합 및 배포는 검증과 리뷰를 거친다.
-- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-1-governance-security`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
-- 현재 단계: **Phase 1 완료, Phase 2 승인 대기**. 문서·보호 규칙 정적 검증 완료. Windows 설치 검증은 미실행.
+- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-2-powershell-refactor`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
+- 현재 단계: **Phase 2 구현 및 자동 검증 완료, Windows 현장 인수 검증 대기**. Phase 3 미착수.
 
 ## 반드시 보존할 동작
 
@@ -49,17 +49,18 @@
 
 예정 브랜치: `feature/phase-2-powershell-refactor`
 
-- [ ] Phase 진입 승인 및 브랜치 생성.
-- [ ] `Main.bat`, `Modules/01`~`06`의 호출 순서, 인코딩, 종료 코드, 상태 파일 계약 조사.
-- [ ] `Scripts/Common.ps1`: 경로 계산, 인코딩 처리, 로깅, 상태 JSON I/O 공통화 및 dot-sourcing 적용.
-- [ ] 현재 `%TEMP%\Tapbook_State.json` 계약과 목표 상태 파일 명칭을 정리하고 호출부와 일관되게 유지.
-- [ ] `Modules/04_InstallOffice.ps1`, `05_CheckHancom.ps1`, `06_InstallHancom.ps1` 경량화 및 설치 옵션 보존.
-- [ ] `Modules/01`~`03` 중복 코드 정리. `03_RemoveOffice.ps1`에 남은 `$MyInvocation` 기반 경로 계산 제거.
-- [ ] Phase 1의 키 검증 설계 적용 및 키가 없는 경우 변경 작업 전 안전 종료.
-- [ ] setup.ini LevelOption=1 처리, VC++/제거 종료 코드, MSI 로그 키 비노출 검증 보완.
-- [ ] 백업 스크립트의 유지·보관 방침 결정 및 필요 시 `Main.bat` 호출부 조정.
+- [x] Phase 진입 승인 및 브랜치 생성.
+- [x] `Main.bat`, `Modules/01`~`06`의 호출 순서, 인코딩, 종료 코드, 상태 파일 계약 조사.
+- [x] `Scripts/Common.ps1`: 경로 계산, 인코딩 처리, 로깅, 상태 JSON I/O 공통화 및 dot-sourcing 적용.
+- [x] 현재 `%TEMP%\Tapbook_State.json` 계약과 목표 상태 파일 명칭을 정리하고 호출부와 일관되게 유지.
+- [x] `Modules/04_InstallOffice.ps1`, `05_CheckHancom.ps1`, `06_InstallHancom.ps1` 경량화 및 설치 옵션 보존.
+- [x] `Modules/01`~`03` 중복 코드 정리. `03_RemoveOffice.ps1`에 남은 `$MyInvocation` 기반 경로 계산 제거.
+- [x] Phase 1의 키 검증 설계 적용 및 키가 없는 경우 변경 작업 전 안전 종료.
+- [x] setup.ini LevelOption=1 처리, VC++/제거 종료 코드, MSI 로그 키 비노출 검증 보완.
+- [x] 백업 스크립트의 유지·보관 방침 결정 및 필요 시 `Main.bat` 호출부 조정.
 - [ ] Windows에서 로컬/UNC 경로, 키 누락, 상태 I/O, 설치 실패·성공과 로딩 표시 검증. 실제 설치가 필요한 검증은 테스트 기기에서 수행하고 미실행 항목을 구분.
-- [ ] 문서 및 진행 상태 갱신, Phase 3 승인 요청.
+- [x] docs/wiki/Home.md, Modules-Specification.md, Deployment-Guide.md 작성 및 문서·진행 상태 갱신.
+- [ ] Phase 3 진입 승인.
 
 예상 영향 파일: `Scripts/Common.ps1`, `Modules/01`~`06`, 필요 시 `Main.bat` 및 백업 스크립트, 관련 문서.
 
@@ -113,4 +114,21 @@
 - [ ] 기관 담당자의 기존 키 의심 값 유효성 및 교체 필요성 확인. Git 과거 이력은 별도 승인 없이 변경하지 않음.
 - [ ] Windows/UNC/실제 설치 검증은 Phase 2 테스트 기기에서 수행.
 
-Phase 2 승인 요청 범위: Phase 1 변경을 검토·커밋하고 develop에 통합한 뒤 `feature/phase-2-powershell-refactor` 생성. `Scripts/Common.ps1` 신설, `Modules/01`~`06` 공통화, `Main.bat` 사전 검증·종료 처리, 백업 스크립트 정리, 관련 문서 갱신. 경로·키·상태 I/O 및 오류 흐름을 검증하며 기존 설치 옵션과 로딩 표시를 보존한다. Windows 기기를 사용할 수 없으면 실제 설치 검증은 미실행으로 보고한다.
+승인된 Phase 2 범위: Phase 1 변경을 검토·커밋하고 develop에 통합한 뒤 `feature/phase-2-powershell-refactor` 생성. `Scripts/Common.ps1` 신설, `Modules/01`~`06` 공통화, `Main.bat` 사전 검증·종료 처리, 백업 스크립트 정리, 관련 문서 갱신. 경로·키·상태 I/O 및 오류 흐름을 검증하며 기존 설치 옵션과 로딩 표시를 보존한다. Windows 기기를 사용할 수 없으면 실제 설치 검증은 미실행으로 보고한다.
+
+## Phase 2 결과 (2026-09-21)
+
+- [x] Phase 1 커밋 `42617e4`, develop에 --no-ff 병합 후 Phase 2 feature 브랜치 생성.
+- [x] 공통 루트·UTF-8 상태 I/O·로그·Unblock-File, 사전 키 검증, 01~06 공통화 완료.
+- [x] ODT /configure 및 로딩 표시, Hwp.exe 13.* 판별, 한컴 MSI 옵션·프로세스 종료·VC++ 선행 설치 보존.
+- [x] INI LevelOption=1은 배포 전에 설정하고 클라이언트는 검증만 수행. 잘못된 설정은 구버전 제거 전에 중단.
+- [x] 제거/VC++/설치 종료 코드 검증, 3010 재부팅 플래그, 키 비노출 고정 오류 및 로컬 로그 적용. 상세 MSI 로그 옵션 제거.
+- [x] 백업 스크립트는 06으로 위임. Main은 모든 단계의 실패를 확인하고 exit /b 1로 종료.
+- [x] Wiki 파일 3개를 같은 이름으로 복사 가능한 링크 구조로 작성. 원격 게시는 수행하지 않음.
+- [x] tests/Test-Common.ps1: PowerShell 7.4.6/Linux에서 구문·루트·키·UTF-8 상태·손상 JSON·INI·종료 코드·재부팅 테스트 통과.
+- [x] 06 모듈 자식 프로세스 테스트: 키 누락 조기 종료, 가짜 설치기로 종료→VC++→MSI 순서와 필수 인수, 3010 상태 저장, 잘못된 INI에서 변경 호출 0회 확인.
+- [ ] Windows PowerShell 5.1, 실제 로컬/UNC/USB, 05 파일 버전 판별, ODT/MSI/VC++ 실제 설치 및 GUI 미노출 인수 검증. 실행 환경·매체 부재로 미실행.
+
+추가 파일: Scripts/Test-DeploymentPrerequisites.ps1, tests/Test-Common.ps1, .gitattributes(Windows 배치/PowerShell 줄바꿈). 실제 설치는 실행하지 않았으며 Phase 2 변경은 검토 가능한 작업 트리에 남겨 둔다.
+
+- [x] 최종 정적 검증: UTF-8 BOM/줄바꿈, 문서·Wiki 링크, Main 사전 검사 및 7개 실패 분기, 공통 모듈 참조, Git 병합 계보, `git diff --check` 통과.
