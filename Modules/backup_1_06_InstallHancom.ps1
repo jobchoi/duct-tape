@@ -12,7 +12,7 @@ if ($state.HancomState -eq "설치 필요") {
 
     # [2] Install.exe를 통해 제품키를 포함한 무인 설치 실행
     # /s: 자동설치, /v"/qn": 내부 MSI에 자동 설치 옵션 전달
-    # $SerialKey = "DVH6H-64YTR-E9WPT-7Q3DY"
+    # $SerialKey = "<REMOVED: use Config/HancomKey.txt>"
     $SerialKey = "---"
     $argsList = '/s /v"/qn SERIALNUMBER=' + $SerialKey + ' /norestart"'
     
