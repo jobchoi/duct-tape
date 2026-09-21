@@ -4,6 +4,7 @@ $ConfigDir = Join-Path $DeployRoot 'Config'
 $HancomDir = Join-Path $DeployRoot 'Hancom'
 $OfficeDir = Join-Path $DeployRoot 'Office'
 $ErrorActionPreference = 'Stop'
+$script:LastInstallerExitCode = $null
 
 function Read-DeploymentState {
     param([Parameter(Mandatory=$true)][string]$Path)
@@ -75,6 +76,7 @@ function Assert-HancomSilentConfiguration {
 function Invoke-DeploymentProcess {
     param([string]$FilePath, [string]$Arguments, [int[]]$SuccessCodes = @(0, 3010))
     $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+    $script:LastInstallerExitCode = [int]$process.ExitCode
     Write-DeploymentLog ('PROCESS_EXIT: {0}' -f $process.ExitCode)
     if ($process.ExitCode -notin $SuccessCodes) { throw 'INSTALL_PROCESS_FAILED' }
     return [int]$process.ExitCode
@@ -92,4 +94,16 @@ function Write-DeploymentFailure {
         'UNINSTALL_COMMAND_INVALID','STATE_INVALID')
     if ($Code -notin $known) { $Code = 'OPERATION_FAILED' }
     Write-DeploymentLog "$Module : $Code" 'ERROR'
+    Send-DeploymentEvent -StateFile $StateFile -Stage $Module -Status failed -ErrorCode $Code
+}
+
+function Send-DeploymentEvent {
+    param([string]$StateFile, [string]$Stage, [string]$Status, [string]$ErrorCode = '')
+    try {
+        $reporter = Join-Path $DeployRoot 'Scripts/ReportStatus.ps1'
+        if (Test-Path -LiteralPath $reporter -PathType Leaf) {
+            & $reporter -StateFile $StateFile -Stage $Stage -Status $Status -ErrorCode $ErrorCode `
+                -InstallerExitCode $script:LastInstallerExitCode
+        }
+    } catch { Write-Warning 'REPORT_UNAVAILABLE: 설치를 계속합니다.' }
 }

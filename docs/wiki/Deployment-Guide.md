@@ -49,4 +49,8 @@ Phase 1 이전의 공유 Logs/InstallLog.txt와 HancomMSIInstall.log는 더 이�
 powershell -NoProfile -File .\tests\Test-Common.ps1
 ```
 
-개발 환경의 PowerShell 7.4.6/Linux에서 검증했습니다. Windows PowerShell 5.1, 실제 UNC·USB·한글/공백 경로, Hwp 버전 판별, 실제 ODT/MSI/VC++ 설치·구버전 제거 및 GUI 미노출은 Windows 테스트 기기의 인수 검증이 남아 있습니다. 설치되지 않은 서버·Wiki 연동 기능을 검증 완료로 취급하지 않습니다.
+개발 환경의 PowerShell 7.4.6/Linux에서 검증했습니다. Windows PowerShell 5.1, 실제 UNC·USB·한글/공백 경로, Hwp 버전 판별, 실제 ODT/MSI/VC++ 설치·구버전 제거 및 GUI 미노출은 Windows 테스트 기기의 인수 검증이 남아 있습니다. Phase 3 서버 자동 검증과 Windows 현장 검증은 구분하며 Wiki 원격 게시도 수행하지 않았습니다.
+
+## Phase 3 중앙 보고
+
+Config/Monitoring.json.example을 준비한 뒤 [[Central-Monitoring]]에 따라 서버 주소와 보고용 토큰을 설정합니다. 중앙 관제를 사용하지 않을 때는 설정을 만들지 않거나 Enabled=false로 둡니다. 관제 장애가 설치를 중단하지 않습니다.

@@ -1,0 +1,8 @@
+{
+  "Enabled": false,
+  "ServerUrl": "https://deployment.school.example",
+  "ReportToken": "REPLACE_WITH_REPORT_TOKEN_AT_LEAST_32_CHARS",
+  "AllowHttp": false,
+  "TimeoutSeconds": 3,
+  "MaxAttempts": 2
+}

@@ -35,6 +35,7 @@ pause
 exit /b 0
 
 :KEY_MISSING
+powershell -NoProfile -ExecutionPolicy Bypass -File "%DEPLOY_ROOT%\Scripts\ReportStatus.ps1" -StateFile "%STATE_FILE%" -Stage Preflight -Status failed -ErrorCode KEY_MISSING
 echo [오류] Config\HancomKey.txt가 없습니다. 예제를 복사하고 실제 키를 입력하세요.
 goto FAILED
 :FAILED

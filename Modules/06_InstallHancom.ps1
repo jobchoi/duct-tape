@@ -1,6 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
 try {
+    Send-DeploymentEvent -StateFile $StateFile -Stage '06' -Status running
     $key = Get-HancomKey
     $state = Read-DeploymentState $StateFile
     if ($state.HancomState -notin @('정상', '설치 필요')) { throw 'STATE_INVALID' }
@@ -48,6 +49,7 @@ try {
         Write-DeploymentLog '06: 한컴 설치 완료'
     } else { Write-DeploymentLog '06: 한컴 설치 건너뜀' }
 
+    Send-DeploymentEvent -StateFile $StateFile -Stage '06' -Status completed
     exit 0
 } catch {
     Write-DeploymentFailure '06' $_.Exception.Message

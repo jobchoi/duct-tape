@@ -47,3 +47,7 @@ Phase 1에서 추적 중인 `Modules/backup_1_06_InstallHancom.ps1` 주석의 �
 - MSI 상세 로그와 공유 완료 로그 생성을 중단했습니다. 현재 진단 위치는 `%TEMP%\duct-tape\Deployment.log`입니다. 기존 로그는 별도 취급합니다.
 - Unblock-File 일부 실패는 경고를 출력합니다. 모든 정책 경고가 해제됨을 보장하지 않습니다.
 - 현재 실행 방법과 오류 코드는 [배포 가이드](wiki/Deployment-Guide.md), 검증된 범위는 PROJECT_PLAN.md에 기록합니다.
+
+## Phase 3 보고 장애
+
+REPORT_UNAVAILABLE은 설치 오류가 아니라 중앙 보고 실패입니다. 서버 주소·Enabled·보고 토큰·HTTPS 인증서·방화벽을 확인합니다. API 401은 토큰 불일치, 422는 스키마·기기 시각, 503은 DB 접근·잠금 상태를 확인합니다. 대시보드 조회에는 별도 조회 토큰이 필요합니다. 자세한 계약은 [중앙 관제 가이드](wiki/Central-Monitoring.md)를 참조하세요.

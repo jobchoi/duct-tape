@@ -1,6 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
 try {
+    Send-DeploymentEvent -StateFile $StateFile -Stage '04' -Status running
     $null = Get-HancomKey
     $state = Read-DeploymentState $StateFile
     if ($state.OfficeState -notin @('정상', '설치 필요')) { throw 'STATE_INVALID' }
@@ -24,6 +25,7 @@ try {
         Write-DeploymentLog '04: Office 설치 완료. 정품 인증은 별도로 확인하세요.'
     } else { Write-DeploymentLog '04: Office 설치 건너뜀' }
 
+    Send-DeploymentEvent -StateFile $StateFile -Stage '04' -Status completed
     exit 0
 } catch {
     Write-DeploymentFailure '04' $_.Exception.Message

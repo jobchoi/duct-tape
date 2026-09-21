@@ -29,3 +29,16 @@ Office/
 *.tmp
 
 /Logs/
+
+# Central monitoring runtime and Python environments
+/Server/data/
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+!requirements.txt
+!requirements-dev.txt

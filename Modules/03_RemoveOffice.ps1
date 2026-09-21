@@ -1,6 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
 try {
+    Send-DeploymentEvent -StateFile $StateFile -Stage '03' -Status running
     $null = Get-HancomKey
     $state = Read-DeploymentState $StateFile
     if ($state.OfficeState -notin @('정상', '설치 필요')) { throw 'STATE_INVALID' }
@@ -16,6 +17,7 @@ try {
         Write-DeploymentLog '03: Office 제거 완료'
     } else { Write-DeploymentLog '03: Office 제거 건너뜀' }
 
+    Send-DeploymentEvent -StateFile $StateFile -Stage '03' -Status completed
     exit 0
 } catch {
     Write-DeploymentFailure '03' $_.Exception.Message

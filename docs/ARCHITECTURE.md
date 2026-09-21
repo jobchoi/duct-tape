@@ -27,8 +27,10 @@ flowchart TD
 
 공통 로그는 기기 TEMP/duct-tape/Deployment.log에 기록합니다. MSI 상세 로그는 생성하지 않고 고정 메시지·종료 코드만 남깁니다. OS 정책·패키지 자체 로그 및 관리자 수준 프로세스 관찰로부터 키 은닉을 보장하지 않습니다. 상세 함수 계약은 [모듈 명세](wiki/Modules-Specification.md)를 참조하세요.
 
-## 향후 Phase 3~4
+## Phase 3 구현 및 향후 Phase 4
 
-클라이언트 ReportStatus → POST /api/report → FastAPI/SQLite → GET / 대시보드, 이후 백그라운드 HTTPS POST → GAS → Sheets로 확장합니다. MAC·오류코드·최종 보고 시각과 인증·중복 보고 계약은 Phase 3에서 정의합니다. 시트 역방향 동기화 필드·충돌 정책은 Phase 4 진입 전에 확정합니다.
+클라이언트 ReportStatus → POST /api/report → FastAPI/SQLite → GET / 대시보드, 이후 백그라운드 HTTPS POST → GAS → Sheets로 확장합니다. MAC·오류코드·최종 보고 시각과 인증·중복 보고 계약은 [중앙 관제 가이드](wiki/Central-Monitoring.md)에 정의했습니다. 시트 역방향 동기화 필드·충돌 정책은 Phase 4 진입 전에 확정합니다.
 
 관제에 키·설치 인수·원문 MSI 로그를 전달하지 않습니다. HTTP 매체는 로컬에 준비하며 HTTP URL을 DeployRoot로 사용하지 않습니다.
+
+Phase 3: 01~06 → Common.Send-DeploymentEvent → ReportStatus.ps1 → FastAPI POST /api/report → SQLite 기기별 최신 행 → GET /api/devices → 대시보드입니다. 조회/보고 토큰은 분리하며 오류 보고에는 고정 오류 코드와 설치 종료 코드만 전달합니다. GAS 전송은 아직 미구현입니다.

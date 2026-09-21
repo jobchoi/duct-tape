@@ -7,8 +7,8 @@
 - 승인된 Phase만 구현한다. 작업 완료 시 이 문서를 갱신하고 결과, 검증 내용, 남은 항목을 보고한다.
 - 브랜치 전략: `main`은 검증된 배포본, `develop`은 통합, `feature/*`는 Phase별 작업이다.
 - Phase별 feature 브랜치는 `develop`에서 분기한다. 통합 및 배포는 검증과 리뷰를 거친다.
-- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-2-powershell-refactor`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
-- 현재 단계: **Phase 2 구현 및 자동 검증 완료, Windows 현장 인수 검증 대기**. Phase 3 미착수.
+- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-3-central-monitoring`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
+- 현재 단계: **Phase 3 구현·자동 검증 완료, 현장 인수 및 다음 단계 승인 대기**. Phase 2 커밋 a8ed71a를 develop에 병합. Windows 현장 검증은 계속 대기.
 
 ## 반드시 보존할 동작
 
@@ -60,23 +60,25 @@
 - [x] 백업 스크립트의 유지·보관 방침 결정 및 필요 시 `Main.bat` 호출부 조정.
 - [ ] Windows에서 로컬/UNC 경로, 키 누락, 상태 I/O, 설치 실패·성공과 로딩 표시 검증. 실제 설치가 필요한 검증은 테스트 기기에서 수행하고 미실행 항목을 구분.
 - [x] docs/wiki/Home.md, Modules-Specification.md, Deployment-Guide.md 작성 및 문서·진행 상태 갱신.
-- [ ] Phase 3 진입 승인.
+- [x] Phase 3 진입 승인.
 
 예상 영향 파일: `Scripts/Common.ps1`, `Modules/01`~`06`, 필요 시 `Main.bat` 및 백업 스크립트, 관련 문서.
 
 ## Phase 3 — FastAPI 중앙 관제 및 대시보드
 
-예정 브랜치: `feature/phase-3-monitoring-hub`
+예정 브랜치: `feature/phase-3-central-monitoring`
 
-- [ ] Phase 진입 승인 및 실제 파일 목록 확정.
-- [ ] 보고 스키마 정의: Hostname, Serial, Model, MAC, Office/Hancom 상태, 에러코드, 보고 시각 및 기기 식별 기준.
-- [ ] `Server/server.py`: `POST /api/report`, 입력 검증, SQLite 저장 및 반복 보고 갱신 처리.
-- [ ] `GET /`: 기기별 진행·완료·오류·최종 보고 시각을 표시하는 자동 갱신 테이블 대시보드.
-- [ ] `Scripts/ReportStatus.ps1`: `Invoke-RestMethod` 보고, 타임아웃 및 제한된 재시도. 관제 장애가 설치를 중단시키지 않도록 처리.
-- [ ] 클라이언트 진행/완료/실패 시 보고 연결, 서버 주소 및 접근 인증 설정 분리.
-- [ ] 의존성, 실행 방법, 방화벽/내부망 배치 및 데이터 보관 방침 문서화.
-- [ ] 정상·잘못된 보고, 중복 보고, 서버 장애, 20~50대 동시 보고 및 대시보드 출력 검증.
-- [ ] 문서 및 진행 상태 갱신, Phase 4 승인 요청.
+- [x] Phase 진입 승인 및 실제 파일 목록 확정.
+- [x] 보고 스키마 정의: Hostname, Serial, Model, MAC, Office/Hancom 상태, 에러코드, 보고 시각 및 기기 식별 기준.
+- [x] `Server/server.py`: `POST /api/report`, 입력 검증, SQLite 저장 및 반복 보고 갱신 처리.
+- [x] `GET /`: 기기별 진행·완료·오류·최종 보고 시각을 표시하는 자동 갱신 테이블 대시보드.
+- [x] `Scripts/ReportStatus.ps1`: `Invoke-RestMethod` 보고, 타임아웃 및 제한된 재시도. 관제 장애가 설치를 중단시키지 않도록 처리.
+- [x] 클라이언트 진행/완료/실패 시 보고 연결, 서버 주소 및 접근 인증 설정 분리.
+- [x] 의존성, 실행 방법, 방화벽/내부망 배치 및 데이터 보관 방침 문서화.
+- [x] 정상·잘못된 보고, 중복 보고, 서버 장애, 20~50대 동시 보고 및 대시보드 출력 검증.
+- [x] 운영/Wiki 문서 및 진행 상태 갱신.
+- [ ] Windows PowerShell 5.1·기관 HTTPS/UNC 및 실제 브라우저·설치 매체 인수 검증.
+- [ ] Phase 3 커밋·통합·기관망 배포 및 Phase 4 진입 승인.
 
 예상 영향 파일: `Server/server.py`, 서버 의존성·설정 예제 및 UI 파일, `Scripts/ReportStatus.ps1`, 공통/호출 모듈, `.gitignore`, 관련 문서. SQLite DB와 인증정보는 추적 제외.
 
@@ -129,6 +131,23 @@
 - [x] 06 모듈 자식 프로세스 테스트: 키 누락 조기 종료, 가짜 설치기로 종료→VC++→MSI 순서와 필수 인수, 3010 상태 저장, 잘못된 INI에서 변경 호출 0회 확인.
 - [ ] Windows PowerShell 5.1, 실제 로컬/UNC/USB, 05 파일 버전 판별, ODT/MSI/VC++ 실제 설치 및 GUI 미노출 인수 검증. 실행 환경·매체 부재로 미실행.
 
-추가 파일: Scripts/Test-DeploymentPrerequisites.ps1, tests/Test-Common.ps1, .gitattributes(Windows 배치/PowerShell 줄바꿈). 실제 설치는 실행하지 않았으며 Phase 2 변경은 검토 가능한 작업 트리에 남겨 둔다.
+추가 파일: Scripts/Test-DeploymentPrerequisites.ps1, tests/Test-Common.ps1, .gitattributes(Windows 배치/PowerShell 줄바꿈). 실제 설치는 실행하지 않았다. Phase 2 변경은 이후 사용자 승인에 따라 a8ed71a로 커밋하고 develop에 병합했다.
 
 - [x] 최종 정적 검증: UTF-8 BOM/줄바꿈, 문서·Wiki 링크, Main 사전 검사 및 7개 실패 분기, 공통 모듈 참조, Git 병합 계보, `git diff --check` 통과.
+
+## Phase 3 결과 (2026-09-21)
+
+- [x] 사용자 지시대로 Phase 2 커밋 `a8ed71a`, develop 병합 `36a97de`, `feature/phase-3-central-monitoring` 생성.
+- [x] POST /api/report, SQLite 최신 기기 상태, GET /api/devices, 5초 갱신 대시보드 구현.
+- [x] 보고/조회 토큰 분리, 알 수 없는 보고 필드 거부, 원문 입력을 노출하지 않는 오류 응답, 중복·역순 보고 방지.
+- [x] ReportStatus.ps1 허용 필드·UTF-8 전송, 제한 재시도·타임아웃, 비활성 기본 설정, 01~06 시작/완료/실패 및 사전 키 누락 연결.
+- [x] 서버 인증·스키마·중복/역순·재시작 영속성·저장소 장애·50대 동시 요청: Python 3.13 / FastAPI 0.141.1에서 pytest 15개 통과.
+- [x] PowerShell 7.4.6 → 임시 loopback Uvicorn/FastAPI → SQLite → 조회 API 실제 HTTP 통합 테스트 1개 통과. 기기 정보만 가짜 값으로 대체하고 실제 설치는 실행하지 않음.
+- [x] Test-Common.ps1 기존 설치 회귀 테스트와 Test-ReportStatus.ps1 보고 허용 필드·한글·재시도·서버 장애 테스트 통과.
+- [x] 대시보드 JS 구문 및 모의 DOM 테스트: 텍스트 출력, 검색, 완료 집계, 통신 장애, 인증 실패, 연결 해제 통과.
+- [x] Config/Monitoring.json.example, 서버 의존성 파일, 운영·Wiki 문서 및 DB/인증정보 제외 규칙 작성.
+- [ ] 실제 브라우저 화면, Windows PowerShell 5.1/학교망 HTTPS·UNC·실제 설치 인수 검증 미실행.
+
+서버 TestClient는 샌드박스 이벤트 루프 제한 때문에 승인된 샌드박스 밖에서 검증했고, HTTP 통합 테스트의 임시 loopback 서버는 검증 후 종료했다. 운영 서버·원격 Git·Wiki는 게시하지 않았다. 테스트 의존성의 httpx/BlockingPortal 사용 중단 예고 경고 2건은 테스트 통과와 별도로 남아 있다.
+
+Phase 3 작업은 현재 작업 트리에 유지한다. 수동 승인 원칙에 따라 Phase 3 통합/배포와 Phase 4는 별도 승인 후 진행한다. Phase 4 예정 파일은 Server의 GAS 전송 모듈, GoogleAppsScript/Code.gs, 설정 예제와 운영 문서이며 역방향 동기화 필드·충돌 정책을 승인 전에 확정한다.

@@ -54,4 +54,8 @@ PowerShell 소스는 Windows PowerShell의 한글 해석을 위해 UTF-8 BOM으�
 
 ## 상태 및 실패 기록
 
-01이 생성하는 필드: ComputerName, SerialNumber, Model, Manufacturer, OfficeState, HancomState, Timestamp, RebootRequired. Timestamp는 수집 시각입니다. 후속 모듈은 알 수 없는 필드를 보존합니다. 오류는 로컬 로그와 프로세스 종료 코드로 보고하며 실패 상태·MAC·관제 오류 스키마는 Phase 3에서 정의합니다.
+01이 생성하는 필드: ComputerName, SerialNumber, Model, Manufacturer, OfficeState, HancomState, Timestamp, RebootRequired. Timestamp는 수집 시각입니다. 후속 모듈은 알 수 없는 필드를 보존합니다. 오류는 로컬 로그와 프로세스 종료 코드로 보고하며 Phase 3에서 MAC 수집과 중앙 보고를 추가했습니다. [[Central-Monitoring]]에 전송 스키마가 있습니다.
+
+## Phase 3 보고 연결
+
+Common의 Send-DeploymentEvent는 ReportStatus.ps1을 호출하며 모든 보고 오류를 설치 흐름에서 격리합니다. 01~06의 시작·완료 및 Write-DeploymentFailure에서 호출합니다. Invoke-DeploymentProcess는 마지막 설치 종료 코드를 보고용으로 보존합니다. 01은 MAC을 상태에 추가하며 기존 미지 필드 보존 계약을 유지합니다. ReportStatus.ps1은 설정을 확인하고 허용 필드만 POST하며 설정이 없거나 비활성화이면 전송하지 않습니다. Main의 키 파일 누락 분기도 실패 보고 후 기존 종료 코드 1을 유지합니다.

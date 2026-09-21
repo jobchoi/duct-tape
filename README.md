@@ -1,6 +1,6 @@
 # duct-tape
 
-학교 Windows 기기 20~50대의 Office LTSC 2024·한컴오피스 2024 배포 자동화입니다. Main.bat과 PowerShell 01~06 모듈을 Scripts/Common.ps1 기반으로 공통화했습니다. FastAPI 관제와 Google Sheets 미러링은 Phase 3~4 예정입니다.
+학교 Windows 기기 20~50대의 Office LTSC 2024·한컴오피스 2024 배포 자동화입니다. Main.bat과 PowerShell 01~06 모듈을 Scripts/Common.ps1 기반으로 공통화했습니다. FastAPI/SQLite 중앙 관제와 자동 상태 보고를 구현했습니다. Google Sheets 미러링은 Phase 4 예정입니다.
 
 ## 요구사항과 빠른 시작
 
@@ -19,7 +19,7 @@
 
 백업 코드 주석의 키 의심 값은 Phase 1에서 제거했지만 Git 과거 이력은 그대로입니다. 기관 담당자의 유효성·교체 필요성 확인이 남아 있습니다. MSI 상세 로그 생성을 중단했으며 설치 인수와 키를 공통 로그에 기록하지 않습니다. OS 정책·패키지 자체 로그는 별도 확인합니다.
 
-main은 배포본, develop은 통합, feature/*는 Phase별 작업입니다. Phase 1은 develop에 병합했고 현재 작업은 feature/phase-2-powershell-refactor입니다. 다음 Phase는 승인 후 시작합니다.
+main은 배포본, develop은 통합, feature/*는 Phase별 작업입니다. Phase 2까지 develop에 병합했고 현재 작업은 feature/phase-3-central-monitoring입니다. 다음 Phase는 승인 후 시작합니다.
 
 ## 문서 및 검증
 
@@ -28,4 +28,8 @@ main은 배포본, develop은 통합, feature/*는 Phase별 작업입니다. Pha
 - [Wiki 홈](docs/wiki/Home.md) · [모듈 상세 명세](docs/wiki/Modules-Specification.md) · [배포 가이드](docs/wiki/Deployment-Guide.md)
 - 테스트: `powershell -NoProfile -File tests/Test-Common.ps1` (설치 실행 없이 검증)
 
-Wiki 문서 세 파일을 Wiki 저장소 루트에 그대로 복사할 수 있습니다. 원격 Wiki 게시 작업은 수행하지 않았습니다.
+Wiki Markdown 파일을 Wiki 저장소 루트에 그대로 복사할 수 있습니다. 원격 Wiki 게시 작업은 수행하지 않았습니다.
+
+## 중앙 관제 (Phase 3)
+
+[중앙 관제 운영 가이드](docs/wiki/Central-Monitoring.md)에 서버 실행, 두 인증 토큰, 클라이언트 Monitoring.json 설정, DB 보관·네트워크 배치 방법을 정리했습니다. 기본적으로 보고는 비활성화되어 있으며 활성화해도 서버 장애가 설치를 중단하지 않습니다. 보고 API와 5초 갱신 대시보드를 제공합니다. 서버 배포와 Phase 4 진입은 수동 승인 후 진행합니다.

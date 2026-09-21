@@ -1,6 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
 try {
+    Send-DeploymentEvent -StateFile $StateFile -Stage '05' -Status running
     $state = Read-DeploymentState $StateFile
     $path = 'C:\Program Files (x86)\Hnc\HOffice2024\Bin\Hwp.exe'
     $is2024 = $false
@@ -12,6 +13,7 @@ try {
     Write-DeploymentState $StateFile $state
     Write-DeploymentLog ('05: 한컴 {0}' -f $state.HancomState)
 
+    Send-DeploymentEvent -StateFile $StateFile -Stage '05' -Status completed
     exit 0
 } catch {
     Write-DeploymentFailure '05' $_.Exception.Message

@@ -1,6 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
 try {
+    Send-DeploymentEvent -StateFile $StateFile -Stage '02' -Status running
     $state = Read-DeploymentState $StateFile
     $paths = @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
         'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')
@@ -10,6 +11,7 @@ try {
     Write-DeploymentState $StateFile $state
     Write-DeploymentLog ('02: Office {0}' -f $state.OfficeState)
 
+    Send-DeploymentEvent -StateFile $StateFile -Stage '02' -Status completed
     exit 0
 } catch {
     Write-DeploymentFailure '02' $_.Exception.Message
