@@ -35,6 +35,23 @@ try {
     $body = $script:LastBody | ConvertFrom-Json
     if ($body.office -ne '설치 중' -or $body.serial -ne '학교기기' -or $body.mac -ne '00:11:22:33:44:55') { throw 'Mapping failed' }
     if ($script:LastBody -match 'PIDKEY|DO_NOT_SEND|ReportToken') { throw 'Secret included' }
+    $config.SchoolCode='E01'; $config.Grade=6
+    $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
+    if (-not (Send-StatusReport @args)) { throw 'School report failed' }
+    $body = $script:LastBody | ConvertFrom-Json
+    if ($body.school_code -ne 'E01' -or $body.grade -ne 6) { throw 'School metadata failed' }
+    $config.Grade=$null
+    $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
+    if (-not (Send-StatusReport @args)) { throw 'Shared grade failed' }
+    if ($null -ne ($script:LastBody | ConvertFrom-Json).grade) { throw 'Shared grade not null' }
+    foreach ($invalid in @('2', $true, 0, 7)) {
+        $config.Grade=$invalid
+        $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
+        $script:Calls=0
+        if ((Send-StatusReport @args) -or $script:Calls -ne 0) { throw 'Invalid grade sent' }
+    }
+    $config.Grade=2
+    $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
     $script:Calls=0; $script:Failures=1; $script:RequestIds=@()
     if (-not (Send-StatusReport @args) -or $script:Calls -ne 2) { throw 'Retry failed' }
     if ($script:RequestIds[0] -ne $script:RequestIds[1]) { throw 'Retry identity changed' }

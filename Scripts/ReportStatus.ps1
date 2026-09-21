@@ -64,6 +64,17 @@ function Send-StatusReport {
             installer_exit_code = $InstallerExitCode; reboot_required = ($state.RebootRequired -eq $true)
             observed_at = [DateTime]::UtcNow.ToString('o')
         }
+        if ($null -ne $config.SchoolCode -and [string]$config.SchoolCode -ne '') {
+            if ([string]$config.SchoolCode -cnotmatch '^[A-Z0-9_-]{1,32}$') { throw 'REPORT_CONFIG' }
+            $grade = $null
+            if ($null -ne $config.Grade) {
+                if (($config.Grade -isnot [int] -and $config.Grade -isnot [long]) -or
+                    $config.Grade -lt 1 -or $config.Grade -gt 6) { throw 'REPORT_CONFIG' }
+                $grade = [int]$config.Grade
+            }
+            $payload.school_code = [string]$config.SchoolCode
+            $payload.grade = $grade
+        } elseif ($null -ne $config.Grade) { throw 'REPORT_CONFIG' }
         $body = [Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Depth 3 -Compress))
         for ($attempt = 1; $attempt -le $attempts; $attempt++) {
             try {

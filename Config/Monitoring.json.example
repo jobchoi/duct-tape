@@ -1,5 +1,7 @@
 {
   "Enabled": false,
+  "SchoolCode": "SCHOOL_E01",
+  "Grade": null,
   "ServerUrl": "https://deployment.school.example",
   "ReportToken": "REPLACE_WITH_REPORT_TOKEN_AT_LEAST_32_CHARS",
   "AllowHttp": false,

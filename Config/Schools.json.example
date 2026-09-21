@@ -1,0 +1,16 @@
+{
+  "SCHOOL_E01": {
+    "school_type": "elementary",
+    "report_token_env": "DUCT_SCHOOL_E01_TOKEN",
+    "gas_url": "https://script.google.com/macros/s/REPLACE_DEPLOYMENT_ID/exec",
+    "key_id": "school-e01-v1",
+    "secret_env": "DUCT_GAS_E01_SECRET"
+  },
+  "SCHOOL_M01": {
+    "school_type": "middle",
+    "report_token_env": "DUCT_SCHOOL_M01_TOKEN",
+    "gas_url": "https://script.google.com/macros/s/REPLACE_DEPLOYMENT_ID/exec",
+    "key_id": "school-m01-v1",
+    "secret_env": "DUCT_GAS_M01_SECRET"
+  }
+}

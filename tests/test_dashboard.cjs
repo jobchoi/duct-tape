@@ -10,8 +10,8 @@ class Element {
   replaceChildren() { this.children = []; }
   addEventListener(event, handler) { this.listeners[event] = handler; }
 }
-const elements = Object.fromEntries(['search','summary','devices','connection','token','login','logout'].map(id => [id,new Element()]));
-const payload = {hostname:'<img src=x onerror=alert(1)>',serial:'학교-1',model:'tablet',mac:'00:11:22:33:44:55',office:'정상',hancom:'정상',stage:'06',status:'completed',reboot_required:true,received_at:new Date().toISOString()};
+const elements = Object.fromEntries(['search','summary','devices','connection','token','login','logout','school','grade'].map(id => [id,new Element()]));
+const payload = {school_code:'E01',grade:3,hostname:'<img src=x onerror=alert(1)>',serial:'학교-1',model:'tablet',mac:'00:11:22:33:44:55',office:'정상',hancom:'정상',stage:'06',status:'completed',reboot_required:true,received_at:new Date().toISOString()};
 let nextPoll, mode = 'ok';
 const context = vm.createContext({document:{getElementById:id=>elements[id],createElement:()=>new Element()},
   AbortSignal, setTimeout: fn => { nextPoll=fn; return 1; }, clearTimeout:()=>{},
@@ -30,6 +30,10 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.match(elements.summary.textContent,/배포 완료 1대/);
   elements.search.value='not-found'; elements.search.listeners.input(); assert.equal(elements.devices.children.length,0);
   elements.search.value='학교'; elements.search.listeners.input(); assert.equal(elements.devices.children.length,1);
+  elements.school.value='M01'; elements.school.listeners.input(); assert.equal(elements.devices.children.length,0);
+  elements.school.value='E01'; elements.grade.value='2'; elements.grade.listeners.change(); assert.equal(elements.devices.children.length,0);
+  elements.grade.value='3'; elements.grade.listeners.change(); assert.equal(elements.devices.children.length,1);
+  assert.match(elements.devices.children[0].children[1].textContent,/E01.*3학년/);
   mode='offline'; await nextPoll(); assert.match(elements.connection.textContent,/갱신 실패/); assert.equal(elements.devices.children.length,1);
   mode='unauthorized'; await nextPoll(); assert.equal(elements.devices.children.length,0); assert.match(elements.connection.textContent,/토큰/);
   elements.logout.listeners.click(); assert.equal(elements.devices.children.length,0);
