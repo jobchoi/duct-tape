@@ -45,6 +45,21 @@ class GasRelay:
     def __init__(self, schools, transport=None):
         self.schools, self.transport = schools, transport
 
+    @staticmethod
+    def bounded_response(client, method, url, **kwargs):
+        # Cap bytes while streaming, before buffering an untrusted response.
+        with client.stream(method, url, **kwargs) as response:
+            body = bytearray()
+            for chunk in response.iter_bytes(chunk_size=4096):
+                body.extend(chunk)
+                if len(body) > 16384:
+                    raise RelayError('response_invalid')
+            headers = dict(response.headers)
+            # iter_bytes already decompresses the payload. Do not decode it twice.
+            headers.pop('content-encoding', None)
+            headers.pop('content-length', None)
+            return httpx.Response(response.status_code, headers=headers, content=bytes(body))
+
     def send(self, payload):
         school = self.schools.get(payload['school_code'], {})
         endpoint, key_id = school.get('gas_url'), school.get('key_id')
@@ -61,7 +76,7 @@ class GasRelay:
         try:
             with httpx.Client(timeout=httpx.Timeout(5, connect=3), follow_redirects=False,
                               trust_env=False, transport=self.transport) as client:
-                response = client.post(endpoint, json=envelope)
+                response = self.bounded_response(client, 'POST', endpoint, json=envelope)
                 # GAS ContentService uses a one-time Google URL. Never forward POST body.
                 if response.status_code in (301, 302, 303):
                     location = response.headers.get('location', '')
@@ -70,7 +85,7 @@ class GasRelay:
                             or target.port not in (None, 443) or target.username or target.password
                             or target.fragment or target.path != '/macros/echo'):
                         raise RelayError('redirect_invalid')
-                    response = client.get(location)
+                    response = self.bounded_response(client, 'GET', location)
                 if response.status_code == 429 or response.status_code >= 500:
                     raise RelayError('http_unavailable', True)
                 if response.status_code != 200:

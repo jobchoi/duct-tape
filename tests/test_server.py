@@ -14,7 +14,7 @@ R = {'Authorization': f'Bearer {READ}'}
 
 
 def sample(**changes):
-    data = dict(device_id=str(uuid4()), report_id=str(uuid4()), hostname='교실-PC01', serial='ASSET-01',
+    data = dict(grade=1, device_id=str(uuid4()), report_id=str(uuid4()), hostname='교실-PC01', serial='ASSET-01',
                 model='School tablet', mac='00:11:22:33:44:55', office='설치 필요', hancom='확인 전',
                 stage='04', status='running', observed_at=datetime.now(timezone.utc).isoformat())
     return data | changes

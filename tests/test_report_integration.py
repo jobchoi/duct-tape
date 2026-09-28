@@ -42,7 +42,7 @@ def test_powershell_to_fastapi(tmp_path):
                 pytest.fail('Loopback server not ready')
             config = tmp_path / 'config.json'
             state = tmp_path / 'state.json'
-            config.write_text(json.dumps({'Enabled': True, 'ServerUrl': origin, 'AllowHttp': True,
+            config.write_text(json.dumps({'Enabled': True, 'Grade': 1, 'ServerUrl': origin, 'AllowHttp': True,
                                            'ReportToken': writer, 'TimeoutSeconds': 2, 'MaxAttempts': 1}))
             state.write_text(json.dumps({'OfficeState': '정상', 'HancomState': '정상', 'SerialNumber': '학교-통합검증',
                                          'Model': 'Test tablet', 'PIDKEY': 'MUST_NOT_LEAVE_DEVICE'}, ensure_ascii=False))

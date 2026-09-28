@@ -73,3 +73,11 @@ powershell -NoProfile -File tests/Test-ReportStatus.ps1
 구현 참고: [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/), [FastAPI TestClient](https://fastapi.tiangolo.com/reference/testclient/), [Python sqlite3](https://docs.python.org/3/library/sqlite3.html).
 
 추가 검증: `node tests/test_dashboard.cjs`로 모의 DOM 동작을 확인합니다. `DUCT_TEST_PWSH`에 PowerShell 실행 경로를 지정하고 `python -m pytest tests/test_report_integration.py -q`를 실행하면 가짜 기기 정보로 임시 loopback 서버까지 실제 HTTP 전송을 검증합니다. 이 테스트는 소켓 생성 권한이 필요하며 완료 후 서버를 종료합니다. Node/브라우저는 서버 실행 의존성이 아니라 UI 검증 도구입니다.
+
+## 2026-09-28 Phase 4 계약 보완
+
+- Grade는 모든 새 보고의 필수 정수이다. 누락/null/문자열/Boolean/실수는 거부한다. 초등 1~6, 중·고 1~3을 허용한다. 학교 미지정 로컬 보고는 1~6으로 제한하고 GAS 전송은 하지 않는다.
+- 클라이언트 Monitoring.json에도 정수 Grade를 지정해야 한다. 기존 grade 없는 저장 데이터는 유지하지만 신규 구형 요청은 422로 거부된다. 보고 실패가 설치를 중단하지 않는 계약은 유지한다.
+- 큐는 앱 내부 SQLite 쓰기를 직렬화하고, 만료된 작업 점유자는 재점유 없이 발송할 수 없다. 프로세스 간 작업 점유는 기존 SQLite lease로 보호한다.
+- GAS 응답은 스트리밍 중 16KiB를 초과하면 중단한다. GAS 수신부는 실제 달력 날짜와 필수 grade를 검증한다.
+- GAS 검증 명령: `node tests/test_gas_receiver.cjs` (모의 Sheets/LockService, 실제 시트 쓰기 없음).

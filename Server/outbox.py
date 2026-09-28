@@ -60,6 +60,8 @@ class Outbox:
             raise ValueError('Retention must be between 1 and 3650 days.')
         self.database, self.relay, self.retention_days, self.sleep = database, relay, retention_days, sleep
         self.slots = threading.BoundedSemaphore(2)
+        # Serialize in-process writers; SQLite leases still arbitrate other processes.
+        self.write_lock = threading.RLock()
         self.last_error = ''
 
     def connect(self):
@@ -69,7 +71,7 @@ class Outbox:
 
     def claim(self):
         now, owner = time.time(), str(uuid4())
-        with closing(self.connect()) as db, db:
+        with self.write_lock, closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             db.execute("UPDATE outbox SET state=CASE WHEN attempts>=3 THEN 'failed' ELSE 'pending' END, owner=NULL, last_error='lease_expired' WHERE state='sending' AND lease_until<=?", (now,))
             db.execute("DELETE FROM outbox WHERE state='sent' AND sent_at<?", (now-self.retention_days*86400,))
@@ -86,9 +88,9 @@ class Outbox:
     def process(self, row):
         identity = (row['school_code'], row['report_id'], row['owner'])
         for attempt in range(row['attempts']+1, 4):
-            with closing(self.connect()) as db, db:
-                owned = db.execute("UPDATE outbox SET attempts=?, lease_until=? WHERE school_code=? AND report_id=? AND owner=? AND state='sending'",
-                                   (attempt, time.time()+180, *identity)).rowcount
+            with self.write_lock, closing(self.connect()) as db, db:
+                owned = db.execute("UPDATE outbox SET attempts=?, lease_until=? WHERE school_code=? AND report_id=? AND owner=? AND state='sending' AND lease_until>?",
+                                   (attempt, time.time()+180, *identity, time.time())).rowcount
             if not owned:
                 return
             error, retryable = '', False
@@ -100,7 +102,7 @@ class Outbox:
                 error = 'relay_internal'
             retry = bool(error and retryable and attempt < 3)
             delay = 2 ** (attempt-1) + random.uniform(0, 0.25) if retry else 0
-            with closing(self.connect()) as db, db:
+            with self.write_lock, closing(self.connect()) as db, db:
                 db.execute('''UPDATE outbox SET state=?, last_error=?, next_attempt_at=?, sent_at=?,
                               lease_until=?, owner=? WHERE school_code=? AND report_id=? AND owner=?''',
                            ('sending' if retry else ('failed' if error else 'sent'), error, time.time()+delay,
@@ -127,7 +129,7 @@ class Outbox:
             self.slots.release()
 
     def replay_failed(self):
-        with closing(self.connect()) as db, db:
+        with self.write_lock, closing(self.connect()) as db, db:
             db.execute("UPDATE outbox SET state='pending', attempts=0, next_attempt_at=0, owner=NULL, lease_until=0 WHERE state='failed'")
 
     def summary(self):

@@ -26,7 +26,7 @@ function Invoke-RestMethod {
 try {
     $configPath = Join-Path $temporary 'Monitoring.json'
     $statePath = Join-Path $temporary 'State.json'
-    $config = @{Enabled=$true;ServerUrl='https://school.example';ReportToken=('TEST-' + ('X' * 40));TimeoutSeconds=2;MaxAttempts=2;AllowHttp=$false}
+    $config = @{Enabled=$true;Grade=1;ServerUrl='https://school.example';ReportToken=('TEST-' + ('X' * 40));TimeoutSeconds=2;MaxAttempts=2;AllowHttp=$false}
     $state = @{OfficeState='설치 필요';HancomState='정상';SerialNumber='학교기기';Model='테스트';PIDKEY='DO_NOT_SEND';RebootRequired=$false}
     $state | ConvertTo-Json | Set-Content $statePath -Encoding UTF8
     $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
@@ -40,11 +40,7 @@ try {
     if (-not (Send-StatusReport @args)) { throw 'School report failed' }
     $body = $script:LastBody | ConvertFrom-Json
     if ($body.school_code -ne 'E01' -or $body.grade -ne 6) { throw 'School metadata failed' }
-    $config.Grade=$null
-    $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
-    if (-not (Send-StatusReport @args)) { throw 'Shared grade failed' }
-    if ($null -ne ($script:LastBody | ConvertFrom-Json).grade) { throw 'Shared grade not null' }
-    foreach ($invalid in @('2', $true, 0, 7)) {
+    foreach ($invalid in @($null, '2', $true, 0, 7)) {
         $config.Grade=$invalid
         $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
         $script:Calls=0
