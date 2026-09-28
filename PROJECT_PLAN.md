@@ -197,3 +197,10 @@ Phase 3는 후속 사용자 승인으로 c70d778에 커밋하고 feature 및 dev
 - [x] 사용자가 검증 결과를 확인하고 feature/phase-4-gas-mirroring의 변경 파일 스테이징·로컬 커밋 승인.
 - [ ] Push·병합·실제 GAS 배포·시트 쓰기는 별도 승인. 이번 작업에서 push하지 않음.
 - [ ] 다음 단계: 테스트용 GAS/시트 설정안과 Windows 단일 기기 연동 절차 준비 후 승인 요청.
+
+## GAS 설정 안내 및 현장 체크리스트 작성
+
+- [x] 사용자 승인 범위의 docs/wiki/GAS-Mirroring.md 작성 및 Wiki Home 링크 추가.
+- [x] Devices A:T 헤더, RELAY_KEYS/SCHOOLS 속성, 서버 환경변수 대응표 기록. 실제 키·토큰 값 미기재.
+- [x] 가짜 이벤트 정상·위조·중복·역순·학교/학년·RAW 검증 및 Windows 보고 전용·서버 장애·복구 절차 작성.
+- [ ] 실제 GAS 배포·시트 쓰기·Windows 현장 시험은 별도 승인 후 수행. 이번 작업은 문서만 변경하며 커밋·push 미수행.
