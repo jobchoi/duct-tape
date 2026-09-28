@@ -7,8 +7,8 @@
 - 승인된 Phase만 구현한다. 작업 완료 시 이 문서를 갱신하고 결과, 검증 내용, 남은 항목을 보고한다.
 - 브랜치 전략: `main`은 검증된 배포본, `develop`은 통합, `feature/*`는 Phase별 작업이다.
 - Phase별 feature 브랜치는 `develop`에서 분기한다. 통합 및 배포는 검증과 리뷰를 거친다.
-- 현재 확인: `main`, `develop` 존재, 현재 브랜치 `feature/phase-4-gas-mirroring`. 기존 코드는 `Main.bat`, `Modules/01`~`06`에 있다.
-- 현재 단계: **Phase 3 커밋·원격 동기화 완료, Phase 4 설계 승인 대기**. 현재 Phase 4 준비 브랜치. Windows 현장 검증은 계속 대기.
+- 현재 확인(2026-09-28): 현재 브랜치 `develop`, HEAD `f7d0307`. 점검 시작 시 작업 트리는 깨끗하며 Phase 4 코어 파일도 이미 추적 중이다.
+- 현재 단계: **Step 1-1 추적 해제·대시보드 구문 수정 완료, 커밋 승인 대기**. 아래 과거 Phase 체크리스트는 현 HEAD의 구현·검증 상태를 대신하지 않는다.
 
 ## 반드시 보존할 동작
 
@@ -163,3 +163,16 @@ Phase 3는 후속 사용자 승인으로 c70d778에 커밋하고 feature 및 dev
 - [x] develop에서 feature/phase-4-gas-mirroring 생성·체크아웃.
 - [x] docs/PHASE4_DESIGN.md 설계안 작성. 구현 코드·실제 GAS 배포·시트 쓰기는 미수행.
 - [ ] 설계 및 구현 파일 목록에 대한 사용자 승인.
+
+## 2026-09-28 Step 1 로컬 형상 점검
+
+- [x] 승인 범위: 작업 트리 점검, .gitignore 보완, 본 문서 갱신만 수행. 브랜치 변경·스테이징·커밋·push·코어 수정 미수행.
+- [x] 점검 시작 시 develop / f7d0307, 미커밋 변경 없음. outbox.py, gas_relay.py, replay_outbox.py, Code.gs 등은 이미 추적 중이며 이번에 생성한 파일이 아니다.
+- [x] 기존 .env·SQLite 제외 유지. *.env, Config/schools.json, seed_dummy.py, .clasprc.json, .clasp.json 제외 규칙 추가.
+- [x] Schools.json.example의 인증 필드는 report_token_env/secret_env 환경변수 참조로 확인. 실제 설정·토큰 값은 출력하지 않음.
+- [x] 서버 Bearer 인증·학교 토큰 매핑, UUID 및 AwareDatetime, strict grade 범위 코드 확인. 설정 경로는 DUCT_SCHOOLS_PATH로 지정하는 구조.
+- [ ] grade는 현재 null도 허용한다. 사용자 지시의 필수 정수 1~6과 차이가 있어 후속 승인 시 계약 확정 필요. 중·고등은 서버에서 1~3 제한.
+- [x] Step 1-1: dashboard.js:11 중복 삽입을 사용자 지정 집계 한 줄로 수정. node --check 통과.
+- [x] Step 1-1: 승인된 git rm --cached -- seed_dummy.py 수행. 로컬 파일 존재·인덱스 제외·ignore 적용 확인. 과거 Git 이력은 변경하지 않음.
+- [ ] 기존 Phase 4 구현의 정합성·테스트 재검증 및 완료 체크리스트 정리는 후속 승인 대상으로 유지.
+- [ ] 커밋 후보: .gitignore, PROJECT_PLAN.md, Server/static/dashboard.js 및 seed_dummy.py 추적 해제. 최종 diff 검토 후 명시적 커밋 승인 필요. push는 수행하지 않음.

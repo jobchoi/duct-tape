@@ -44,3 +44,10 @@ __pycache__/
 !requirements-dev.txt
 
 !/GoogleAppsScript/appsscript.json
+
+# Local credentials and diagnostic fixtures (never publish)
+*.env
+/Config/schools.json
+/seed_dummy.py
+.clasprc.json
+.clasp.json
