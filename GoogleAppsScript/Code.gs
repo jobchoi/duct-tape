@@ -19,7 +19,7 @@ function equal_(a, b) {
 }
 function timestamp_(s) {
   // Canonical microsecond UTC text allows sub-millisecond ordering (Date loses precision).
-  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+00:00$/.test(s) && Number.isFinite(Date.parse(s));
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+00:00$/.test(s) && Number.isFinite(Date.parse(s)) && new Date(s).toISOString() === s.slice(0,23)+'Z';
 }
 function validate_(p) {
   if (!p || typeof p !== 'object' || Array.isArray(p)) fail_('schema_invalid');
@@ -27,7 +27,7 @@ function validate_(p) {
   if (Object.keys(p).length !== expected.length || expected.some(x => !Object.prototype.hasOwnProperty.call(p,x))) fail_('schema_invalid');
   if (p.schema_version !== 1 || typeof p.school_code !== 'string' || !/^[A-Z0-9_-]{1,32}$/.test(p.school_code) ||
       !['elementary','middle','high'].includes(p.school_type) ||
-      (p.grade !== null && (!Number.isInteger(p.grade) || p.grade < 1 || p.grade > (p.school_type === 'elementary' ? 6 : 3)))) fail_('schema_invalid');
+      (!Number.isInteger(p.grade) || p.grade < 1 || p.grade > (p.school_type === 'elementary' ? 6 : 3))) fail_('schema_invalid');
   for (const field of ['hostname','serial','model']) {
     if (typeof p[field] !== 'string' || p[field].length > 160 || (field === 'hostname' && !p[field].trim())) fail_('schema_invalid');
   }

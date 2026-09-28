@@ -7,8 +7,8 @@
 - 승인된 Phase만 구현한다. 작업 완료 시 이 문서를 갱신하고 결과, 검증 내용, 남은 항목을 보고한다.
 - 브랜치 전략: `main`은 검증된 배포본, `develop`은 통합, `feature/*`는 Phase별 작업이다.
 - Phase별 feature 브랜치는 `develop`에서 분기한다. 통합 및 배포는 검증과 리뷰를 거친다.
-- 현재 확인(2026-09-28): 현재 브랜치 `develop`, HEAD `f7d0307`. 점검 시작 시 작업 트리는 깨끗하며 Phase 4 코어 파일도 이미 추적 중이다.
-- 현재 단계: **Step 1-1 추적 해제·대시보드 구문 수정 완료, 커밋 승인 대기**. 아래 과거 Phase 체크리스트는 현 HEAD의 구현·검증 상태를 대신하지 않는다.
+- 현재 확인(2026-09-28): 점검 당시 브랜치 `develop`, HEAD `f7d0307`. 점검 시작 시 작업 트리는 깨끗하며 Phase 4 코어 파일도 이미 추적 중이다.
+- 현재 단계: **Phase 4 코어 검토·커밋 승인 완료, 실제 GAS/Windows 인수 준비 대기**. 아래 과거 Phase 체크리스트는 현 HEAD의 구현·검증 상태를 대신하지 않는다.
 
 ## 반드시 보존할 동작
 
@@ -83,14 +83,14 @@
 
 예상 영향 파일: `Server/server.py`, 서버 의존성·설정 예제 및 UI 파일, `Scripts/ReportStatus.ps1`, 공통/호출 모듈, `.gitignore`, 관련 문서. SQLite DB와 인증정보는 추적 제외.
 
-## Phase 4 — GAS 단방향 웹훅 릴레이 (설계 승인 대기)
+## Phase 4 — GAS 단방향 웹훅 릴레이 (코어 검증·보완 승인됨)
 
 브랜치: `feature/phase-4-gas-mirroring`
 
 - [x] Phase 3 커밋/push 및 develop 동기화 후 준비 브랜치 생성.
 - [x] 이번 범위를 FastAPI BackgroundTasks → GAS → Sheets 단방향으로 확정. 역방향은 별도 승인 대상.
 - [x] [설계안](docs/PHASE4_DESIGN.md)에 영향 파일·학교/학년 계약·고정 열 매핑·검증 계획 기록.
-- [ ] 사용자 구현 승인.
+- [x] 사용자 코어 검증·보완 승인 (2026-09-28).
 - [ ] 학교별 보고 인증·school_code/grade 스키마·기존 SQLite 마이그레이션 구현.
 - [ ] BackgroundTasks, SQLite outbox, HTTPS POST 및 제한 재시도·응답 검증 구현.
 - [ ] GoogleAppsScript/Code.gs: 서명 검증·학교별 목적지·A:T 고정 RAW 쓰기·잠금·중복/역순 처리 구현.
@@ -171,8 +171,29 @@ Phase 3는 후속 사용자 승인으로 c70d778에 커밋하고 feature 및 dev
 - [x] 기존 .env·SQLite 제외 유지. *.env, Config/schools.json, seed_dummy.py, .clasprc.json, .clasp.json 제외 규칙 추가.
 - [x] Schools.json.example의 인증 필드는 report_token_env/secret_env 환경변수 참조로 확인. 실제 설정·토큰 값은 출력하지 않음.
 - [x] 서버 Bearer 인증·학교 토큰 매핑, UUID 및 AwareDatetime, strict grade 범위 코드 확인. 설정 경로는 DUCT_SCHOOLS_PATH로 지정하는 구조.
-- [ ] grade는 현재 null도 허용한다. 사용자 지시의 필수 정수 1~6과 차이가 있어 후속 승인 시 계약 확정 필요. 중·고등은 서버에서 1~3 제한.
+- [x] 후속 승인으로 grade 필수 strict 정수 계약을 확정·적용. 초등 1~6, 중·고등 1~3.
 - [x] Step 1-1: dashboard.js:11 중복 삽입을 사용자 지정 집계 한 줄로 수정. node --check 통과.
 - [x] Step 1-1: 승인된 git rm --cached -- seed_dummy.py 수행. 로컬 파일 존재·인덱스 제외·ignore 적용 확인. 과거 Git 이력은 변경하지 않음.
 - [ ] 기존 Phase 4 구현의 정합성·테스트 재검증 및 완료 체크리스트 정리는 후속 승인 대상으로 유지.
 - [ ] 커밋 후보: .gitignore, PROJECT_PLAN.md, Server/static/dashboard.js 및 seed_dummy.py 추적 해제. 최종 diff 검토 후 명시적 커밋 승인 필요. push는 수행하지 않음.
+
+## 2026-09-28 Phase 4 코어 검증·보완
+
+- [x] Step 1-1 커밋 6118222 이후 develop에서 feature/phase-4-gas-mirroring 생성 및 체크아웃.
+- [x] 사용자 승인: 기존 코어 검증·부분 보완, 필수 strict grade(초등 1~6 / 중·고 1~3). 커밋·push는 별도 승인.
+- [x] 서버·GAS·PowerShell 클라이언트의 null/누락 grade 허용 제거 및 설정 예제 변경. 학교 미지정 로컬 보고도 grade 필수(1~6), GAS 전송은 하지 않음. 기존 저장 행은 유지.
+- [x] 큐 만료 소유자 발송 차단, 앱 내부 SQLite 쓰기 직렬화. 기존 프로세스 간 SQLite lease 및 원자적 상태/outbox 저장 유지.
+- [x] GAS 응답을 스트리밍 중 16KiB로 제한하고 압축 응답 이중 해제 방지. HMAC·허용 목적지·리다이렉트·응답 검증 유지.
+- [x] GAS 날짜 정규화 오류 거부 및 모의 수신 테스트 추가. 서명·학교 범위·잠금·RAW A:T·중복/역순 검증 통과.
+- [x] PowerShell 7.4.6 설치 모의 회귀 및 보고 테스트, 임시 loopback HTTP 통합 1개, 대시보드 모의 DOM 테스트 통과.
+- [x] 서버·큐·릴레이 전체 40개 통과(114.74초), 추가 압축 응답 테스트 통과. 초기 동시 요청 실패는 쓰기 직렬화 후 해소. 50대 학교 이벤트 52.37초, 다중 worker 20.56초로 실제 현장 성능 보장은 별도 검증 필요. 테스트 의존성 사용 중단 예고 경고 1건.
+- [ ] Windows PowerShell 5.1·학교망 HTTPS·실제 GAS/Sheets 인수 검증 미실행.
+- [ ] 결과 검토 후 커밋·push 승인. 실제 비밀 설정·seed_dummy.py는 변경하거나 스테이징하지 않음.
+
+- [x] 최종 git diff --check 통과. 현재 feature/phase-4-gas-mirroring, 커밋·push·스테이징 미수행.
+
+## Phase 4 코어 커밋 승인
+
+- [x] 사용자가 검증 결과를 확인하고 feature/phase-4-gas-mirroring의 변경 파일 스테이징·로컬 커밋 승인.
+- [ ] Push·병합·실제 GAS 배포·시트 쓰기는 별도 승인. 이번 작업에서 push하지 않음.
+- [ ] 다음 단계: 테스트용 GAS/시트 설정안과 Windows 단일 기기 연동 절차 준비 후 승인 요청.

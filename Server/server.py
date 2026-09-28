@@ -28,7 +28,7 @@ InstallState = Literal['확인 전', '설치 필요', '설치 중', '정상', '�
 class Report(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     school_code: Annotated[str, Field(pattern=r'^[A-Z0-9_-]{1,32}$')] | None = None
-    grade: Annotated[int, Field(strict=True, ge=1, le=6)] | None = None
+    grade: Annotated[int, Field(strict=True, ge=1, le=6)]
     device_id: UUID
     report_id: UUID
     hostname: Text
@@ -133,9 +133,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
     def receive(report: Report, background_tasks: BackgroundTasks, school=Depends(require_writer)):
         if report.school_code != school:
             raise HTTPException(403, 'School scope mismatch')
-        if (school is None and report.grade is not None) or (
-                school is not None and report.grade is not None
-                and report.grade > (6 if registry[school]['school_type'] == 'elementary' else 3)):
+        if school is not None and report.grade > (6 if registry[school]['school_type'] == 'elementary' else 3):
             raise HTTPException(422, 'Invalid grade for school')
         payload = report.model_dump(mode='json')
         observed = report.observed_at.isoformat(timespec='microseconds')
@@ -143,7 +141,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         payload['observed_at'] = observed
         if school is not None:
             payload.update(school_type=registry[school]['school_type'], schema_version=1, received_at=received)
-        with closing(connect()) as db, db:
+        with queue.write_lock, closing(connect()) as db, db:
             # Queue event and latest state commit atomically, before network work starts.
             fresh = enqueue(db, payload) if school is not None else True
             updated = False

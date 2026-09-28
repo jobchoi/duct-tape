@@ -53,13 +53,13 @@ def test_school_auth_grades_legacy_and_scoped_devices(tmp_path):
         assert c.post('/api/report', json=p, headers=SW).status_code == 200
         assert c.post('/api/report', json=p, headers=W).status_code == 403
         assert c.post('/api/report', json=p, headers=MW).status_code == 403
-        for grade in (0, 7, '2', True, 1.5):
+        for grade in (None, 0, 7, '2', True, 1.5):
             assert c.post('/api/report', json=p | {'grade': grade}, headers=SW).status_code == 422
         assert c.post('/api/report', json=p | {'school_code': 'M01', 'grade': 6}, headers=MW).status_code == 422
-        assert c.post('/api/report', json=p | {'school_code': 'M01', 'grade': None}, headers=MW).status_code == 200
+        assert c.post('/api/report', json=p | {'school_code': 'M01', 'grade': 3}, headers=MW).status_code == 200
         legacy = {k: v for k, v in p.items() if k not in ('school_code', 'grade')}
-        assert c.post('/api/report', json=legacy, headers=W).status_code == 200
-        assert c.post('/api/report', json=legacy | {'grade': 1}, headers=W).status_code == 422
+        assert c.post('/api/report', json=legacy, headers=W).status_code == 422
+        assert c.post('/api/report', json=legacy | {'grade': 1}, headers=W).status_code == 200
         assert len(c.get('/api/devices', headers=R).json()['devices']) == 3
         assert len(relay.calls) == 2
         assert c.get('/api/outbox').status_code == 401
@@ -71,7 +71,7 @@ def test_failure_isolation_and_duplicate_identity(tmp_path):
     app = create_app(tmp_path/'db', WRITE, READ, SCHOOLS, relay)
     app.state.outbox.sleep = lambda _: None
     with TestClient(app) as c:
-        p = sample(school_code='E01', grade=None)
+        p = sample(school_code='E01', grade=1)
         assert c.post('/api/report', json=p, headers=SW).json()['updated']
         assert len(relay.calls) == 3
         assert not c.post('/api/report', json=p | {'status': 'failed', 'observed_at': (datetime.now(timezone.utc)+timedelta(seconds=1)).isoformat()}, headers=SW).json()['updated']
@@ -155,7 +155,7 @@ def test_50_school_events_concurrent(tmp_path):
     with TestClient(create_app(tmp_path/'db', WRITE, READ, SCHOOLS, relay)) as c:
         with ThreadPoolExecutor(max_workers=20) as pool:
             results = list(pool.map(lambda _: c.post('/api/report', json=sample(school_code='E01', grade=1), headers=SW), range(50)))
-        assert all(r.status_code == 200 for r in results)
+        assert all(r.status_code == 200 for r in results), [r.status_code for r in results]
         c.app.state.outbox.drain()
         assert len(relay.calls) == len({p['report_id'] for p in relay.calls}) == 50
         assert len(c.get('/api/devices', headers=R).json()['devices']) == 50
@@ -238,3 +238,50 @@ def test_sent_retention_never_discards_failed(tmp_path):
     queue.drain()
     assert sum(r['count'] for r in queue.summary()['groups']) == 2
     assert any(r['state'] == 'failed' for r in queue.summary()['groups'])
+
+
+def test_expired_owner_cannot_renew_without_claim(tmp_path):
+    queue = seeded(tmp_path)
+    row = queue.claim()
+    with sqlite3.connect(queue.database) as db:
+        db.execute('UPDATE outbox SET lease_until=0')
+    queue.process(row)
+    assert queue.relay.calls == []
+    queue.drain()
+    assert len(queue.relay.calls) == 1
+
+
+@pytest.mark.parametrize('school_type,maximum', [('elementary', 6), ('middle', 3), ('high', 3)])
+def test_required_grade_boundaries(tmp_path, school_type, maximum):
+    registry = {'E01': dict(SCHOOLS['E01'], school_type=school_type)}
+    with TestClient(create_app(tmp_path/'db', WRITE, READ, registry, Recorder())) as c:
+        for grade in (1, maximum):
+            assert c.post('/api/report', json=sample(school_code='E01', grade=grade), headers=SW).status_code == 200
+        for grade in (None, True, '1', 1.0, 0, maximum+1):
+            assert c.post('/api/report', json=sample(school_code='E01', grade=grade), headers=SW).status_code == 422
+        payload = sample(school_code='E01')
+        del payload['grade']
+        assert c.post('/api/report', json=payload, headers=SW).status_code == 422
+
+
+def test_oversized_response_stops_stream(monkeypatch):
+    monkeypatch.setenv('TEST_RELAY_SECRET', 'test-only-' + 'x'*40)
+    chunks = []
+    class LargeBody(httpx.SyncByteStream):
+        def __iter__(self):
+            for i in range(100):
+                chunks.append(i)
+                yield b'x'*4096
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, stream=LargeBody()))
+    with pytest.raises(RelayError, match='response_invalid'):
+        GasRelay(SCHOOLS, transport).send(event())
+    assert len(chunks) == 5
+
+
+def test_compressed_success_response(monkeypatch):
+    import gzip
+    monkeypatch.setenv('TEST_RELAY_SECRET', 'test-only-' + 'x'*40)
+    payload = event()
+    body = gzip.compress(json.dumps({'ok': True, 'report_id': payload['report_id'], 'result': 'updated'}).encode())
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, headers={'content-encoding': 'gzip'}, content=body))
+    GasRelay(SCHOOLS, transport).send(payload)
