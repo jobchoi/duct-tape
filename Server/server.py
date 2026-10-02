@@ -11,14 +11,19 @@ import sqlite3
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, UploadFile,File
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
+from fastapi.staticfiles import StaticFiles
+import shutil 
+
+
 from Server.gas_relay import GasRelay, load_schools
 from Server.outbox import Outbox, enqueue, initialize
+
 
 ROOT = Path(__file__).resolve().parent
 Text = Annotated[str, Field(min_length=1, max_length=160)]
@@ -91,6 +96,26 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
 
     app = FastAPI(title='duct-tape monitoring', lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.outbox = queue
+
+    # 프로젝트 내 downloads 폴더를 http://서버주소:8000/files/... 로 접근 가능하게 오픈
+    os.makedirs("downloads", exist_ok=True)
+    os.makedirs("uploads", exist_ok=True)
+
+    app.mount("/files", StaticFiles(directory="downloads"), name="files")
+    
+# --------------- 업로드 추가------------
+    @app.post("/api/upload")
+    async def upload_file(file: UploadFile = File(...)):
+        file_location = f"uploads/{file.filename}"
+        with open(file_location, "wb+") as file_object:
+            shutil.copyfileobj(file.file, file_object)
+        return {"info":f"파일 '{file.filename}'저장 성공","path":file_location}
+# --------------- 업로드 추가------------
+    
+    
+    
+
+
     bearer = HTTPBearer(auto_error=False)
 
     def authenticate(credentials, expected):
