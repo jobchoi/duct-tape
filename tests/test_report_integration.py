@@ -33,7 +33,7 @@ def test_powershell_to_fastapi(tmp_path):
                 if server.poll() is not None:
                     pytest.fail('Loopback server exited')
                 try:
-                    if client.get(origin).status_code == 200:
+                    if client.get(origin + '/client').status_code == 200:
                         break
                 except httpx.TransportError:
                     pass

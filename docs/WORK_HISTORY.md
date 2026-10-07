@@ -17,3 +17,15 @@
 - 사용 절차: [클라이언트 간편 실행](CLIENT_QUICK_START.md).
 - 실제 설정·라이선스 키·설치 매체는 커밋하지 않는다. 원격 push와 main 반영은 수행하지 않는다.
 - 검증: 임시 PowerShell 7.4.6/Linux 런타임에서 `Test-ClientSetup.ps1`, `Test-ReportStatus.ps1`, `Test-Common.ps1` 모두 통과. `git diff --check` 통과. 실제 Windows 5.1 UAC·메뉴·설치 인수 검증은 별도 확인이 필요하다.
+
+## 2026-10-07 웹 작업 요청과 Windows 에이전트
+
+- 브랜치: `feature/client-agent-jobs` → `develop` (`--no-ff` 병합).
+- 기존 보고를 MVC 구조의 Model/Controller로 분리하고 관리자 `/admin`, 클라이언트 `/client` View를 추가했다. 루트는 클라이언트 화면으로 이동한다.
+- PC별 인증, 관리자 전용 1회 등록 코드, SQLite 영속 작업 큐와 고정 작업(보고 테스트/배포)을 구현했다. 중복 클릭·동시 claim·다른 PC 접근을 차단하고 중단된 설치는 자동 재실행하지 않는다.
+- 최초 등록 도구와 SYSTEM 예약 작업 에이전트를 추가했다. Main의 `--unattended` 실행을 지원하며 기존 수동 실행을 유지한다.
+- 기존 파일 업로드는 관리자 인증·서버 생성 파일명·크기 제한을 적용해 실행 스크립트 덮어쓰기를 차단했다.
+- 로컬 `.env`에 관리자 인증 값을 추가하고 현재 서버를 갱신했다. 실제 키·설정·바로가기·매체는 커밋에서 제외한다.
+- 테스트: 기존 보고/GAS Python 테스트 41개와 신규 API/화면 테스트 11개, 실제 PowerShell→HTTP 통합 테스트 1개 통과. PowerShell 작업 선택/명령 거부/구문 테스트 및 기존 Common 테스트 통과. 실제 서버의 `/admin`, `/client`, JS 및 인증 조회 API HTTP 200 확인.
+- 실제 Windows 5.1 UAC, SYSTEM 예약 작업·Tailscale 통신, 폴더 권한/매체 복사 및 실제 설치는 Windows 인수 검증이 필요하다.
+- 사용·구조·중단 복구 절차: [웹 버튼과 에이전트](CLIENT_AGENT.md). 원격 push와 main 반영은 수행하지 않는다.

@@ -37,3 +37,7 @@ Wiki Markdown 파일을 Wiki 저장소 루트에 그대로 복사할 수 있습�
 ## 클라이언트 간편 실행
 
 Windows 클라이언트에서는 `Client.bat`을 더블클릭해 보고 설정, 연결 테스트, 배포 실행을 선택할 수 있습니다. 담당자가 설정과 매체를 미리 준비하면 각 PC에서 배포 메뉴만 선택하면 됩니다. [사용 방법](docs/CLIENT_QUICK_START.md) · [작업 이력](docs/WORK_HISTORY.md).
+
+## 웹 버튼으로 작업 요청
+
+최초 `InstallAgent.bat`으로 에이전트를 등록하면 `/client`에서 보고 테스트·배포를 요청할 수 있습니다. `/admin`은 상태 조회와 에이전트 등록·작업 관리 화면입니다. [에이전트 운영 방법](docs/CLIENT_AGENT.md)을 참고하세요.

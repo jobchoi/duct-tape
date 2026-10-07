@@ -41,7 +41,7 @@ Linux에서는 `.venv/bin/python`과 셸 환경변수를 사용합니다. 두 �
 
 - `POST /api/report`: 보고 토큰의 Bearer 인증. 검증 후 기기별 최신 상태를 SQLite에 upsert합니다.
 - `GET /api/devices`: 조회 토큰의 Bearer 인증. 최신 기기 목록과 서버 수신 시각을 반환합니다.
-- `GET /`: 공개 대시보드 틀만 반환합니다. 자산 데이터는 조회 토큰 입력 후 표시합니다.
+- `GET /admin`: 관리자 대시보드 틀을 반환합니다. `GET /`는 클라이언트 화면 `/client`로 이동합니다. 자산 데이터는 조회 토큰 입력 후 표시합니다.
 
 보고 필드: device_id/report_id(UUID), hostname, serial, model, mac, office, hancom, stage(Preflight 또는 01~06), status(running/completed/failed), error_code, installer_exit_code, reboot_required, observed_at(시간대 포함 UTC).
 
