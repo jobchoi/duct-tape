@@ -33,3 +33,7 @@ Wiki Markdown 파일을 Wiki 저장소 루트에 그대로 복사할 수 있습�
 ## 중앙 관제 (Phase 3)
 
 [중앙 관제 운영 가이드](docs/wiki/Central-Monitoring.md)에 서버 실행, 두 인증 토큰, 클라이언트 Monitoring.json 설정, DB 보관·네트워크 배치 방법을 정리했습니다. 기본적으로 보고는 비활성화되어 있으며 활성화해도 서버 장애가 설치를 중단하지 않습니다. 보고 API와 5초 갱신 대시보드를 제공합니다. 서버 배포와 Phase 4 진입은 수동 승인 후 진행합니다.
+
+## 클라이언트 간편 실행
+
+Windows 클라이언트에서는 `Client.bat`을 더블클릭해 보고 설정, 연결 테스트, 배포 실행을 선택할 수 있습니다. 담당자가 설정과 매체를 미리 준비하면 각 PC에서 배포 메뉴만 선택하면 됩니다. [사용 방법](docs/CLIENT_QUICK_START.md) · [작업 이력](docs/WORK_HISTORY.md).
