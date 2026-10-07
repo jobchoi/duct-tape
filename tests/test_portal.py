@@ -1,143 +1,144 @@
-"""Browser controller behavior in an isolated JS engine with a minimal DOM."""
+"""Basic setup UI: real connected PCs, approval, and one setup action."""
 from pathlib import Path
 import json
 import quickjs
-import pytest
 
-SOURCE = Path(__file__).resolve().parents[1]/'Server/views/portal.js'
+SOURCE=Path(__file__).resolve().parents[1]/'Server/views/portal.js'
 
 
-def browser(role='client', session=False, dashboard=False):
-    ctx = quickjs.Context()
+def browser(role='admin', session=True, key=''):
+    ctx=quickjs.Context()
     ctx.eval('''
     class Element {
-      constructor() { this.value=''; this.textContent=''; this.disabled=false; this.children=[]; this.listeners={}; }
-      addEventListener(name, fn) { this.listeners[name]=fn; }
-      append(item) { this.children.push(item); }
-      replaceChildren() { this.children=[]; }
-      focus() { this.focused=true; }
-      set innerHTML(value) { throw Error('HTML injection'); }
+      constructor() {this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.children=[];this.listeners={};}
+      append(item) {this.children.push(item);}
+      replaceChildren() {this.children=[];}
+      addEventListener(name,fn) {this.listeners[name]=fn;}
+      set innerHTML(_) {throw Error('Unsafe HTML');}
     }
-    const elements = {};
-    for (const id of ['access','access-token','disconnect','start','jobs','notice','enroll','enrollment','device','action','request','resolve','resolve-id','revoke','search','summary','devices','connection','school','grade']) elements[id] = new Element();
-    const events = {};
-    class CustomEvent { constructor(name, options) { this.type=name; this.detail=options.detail; } }
-    const document = {body: {dataset: {role: ROLE}}, getElementById: id => elements[id], createElement: () => new Element(), addEventListener: (name, fn) => { events[name]=fn; }, dispatchEvent: event => { if (events[event.type]) events[event.type](event); }};
-    const location = {hash:'',pathname:'/client'};
-    const history = {replaceState() {}};
-    class URLSearchParams { get() { return null; } }
-    const AbortSignal = {timeout: () => ({})};
-    let nextPoll, allowed=true, calls=[], mode='ok', sessionValid=SESSION;
-    const crypto = {randomUUID: () => '11111111-2222-3333-4444-555555555555'};
-    function confirm() { return allowed; }
-    function setTimeout(fn) { nextPoll=fn; return 1; }
-    function clearTimeout() {}
-    async function fetch(path, options) {
-      calls.push({path, ...options});
-      if (path === '/api/admin/session') {
-        if (options.method === 'POST') sessionValid=mode==='ok';
-        if (options.method === 'DELETE') sessionValid=false;
-        return {ok:sessionValid || options.method==='DELETE', status:401, json:async()=>({authenticated:sessionValid})};
+    const elements={};
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state']) elements[id]=new Element();
+    const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
+    const location={hash:KEY ? '#key='+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
+    const history={replaceState(){location.hash='';}};
+    const sessionStorage={values:{},getItem(name){return this.values[name] || null;},setItem(name,value){this.values[name]=value;},removeItem(name){delete this.values[name];}};
+    class URLSearchParams {constructor(value){this.value=value;} get(){return this.value.startsWith('key=')?this.value.slice(4):null;}}
+    const AbortSignal={timeout:()=>({})};
+    const crypto={randomUUID:()=> '11111111-2222-3333-4444-555555555555'};
+    let calls=[],nextPoll,sessionValid=SESSION,allowed=true,mode='ok';
+    let agentData=[{device_id:'device-1',hostname:'<img onerror=evil()>',approved:1,last_seen:Date.now()/1000}];
+    let reportData=[{device_id:'dummy-1',hostname:'DUMMY-PC',office:'정상',hancom:'정상'}];
+    let jobData=[];
+    function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function confirm(){return allowed;}
+    async function fetch(path,options){
+      calls.push({path,...options});
+      if(path==='/api/admin/session'){
+        if(options.method==='POST') sessionValid=mode==='ok';
+        if(options.method==='DELETE') sessionValid=false;
+        return {ok:sessionValid || options.method==='DELETE',status:401,json:async()=>({authenticated:sessionValid})};
       }
-      const data = path.endsWith('/agents') ? {agents:[{device_id:'device-1',hostname:'<img onerror=evil()>',last_seen: Date.now()/1000}]} : path.endsWith('/enrollments') ? {code:'one-use-code'} : path.endsWith('/devices') ? {devices:[]} : {device_id:'device-1',jobs:[]};
+      if(path.endsWith('/approve')) agentData[0].approved=1;
+      const data=path.endsWith('/agents')?{agents:agentData}:path.endsWith('/devices')?{devices:reportData}:path==='/api/client/jobs'?{...agentData[0],jobs:jobData}:{jobs:jobData};
       return {ok:mode==='ok',status:mode==='unauthorized'?401:409,json:async()=>data};
     }
-    '''.replace('ROLE', json.dumps(role)).replace('SESSION', json.dumps(session)))
-    if dashboard:
-        ctx.eval((SOURCE.parent.parent/'static/dashboard.js').read_text())
+    '''.replace('ROLE',json.dumps(role)).replace('SESSION',json.dumps(session)).replace('KEY',json.dumps(key)))
     ctx.eval(SOURCE.read_text())
+    settle(ctx)
     return ctx
 
 
 def settle(ctx):
-    for _ in range(50):
-        if not ctx.execute_pending_job():
-            return
-    raise AssertionError('Unbounded JS jobs')
+    for _ in range(100):
+        if not ctx.execute_pending_job(): return
+    raise AssertionError('Unbounded async work')
 
 
-def connect(ctx):
-    ctx.eval("elements['access-token'].value='scoped-key'; elements.access.listeners.submit({preventDefault(){}})")
+def select(ctx):
+    ctx.eval('elements.devices.children[0].children[4].children[0].listeners.click()')
     settle(ctx)
 
 
-def test_client_key_memory_and_fixed_job_request():
-    ctx = browser()
-    connect(ctx)
-    assert ctx.eval("elements['access-token'].value") == ''
-    assert ctx.eval("elements.start.disabled") is False
-    ctx.eval("elements.action.value='report-test'; elements.request.listeners.submit({preventDefault(){}}); elements.request.listeners.submit({preventDefault(){}})")
+def submit(ctx):
+    ctx.eval('elements.request.listeners.submit({preventDefault(){}})')
     settle(ctx)
-    calls = json.loads(ctx.eval('JSON.stringify(calls)'))
-    posts = [c for c in calls if c['method'] == 'POST']
-    assert len(posts) == 1
-    assert posts[0]['path'] == '/api/client/jobs'
-    assert json.loads(posts[0]['body']) == {'action':'report-test','request_id':'11111111-2222-3333-4444-555555555555'}
-    assert posts[0]['headers']['Authorization'] == 'Bearer scoped-key'
-    ctx.eval("elements.disconnect.listeners.click()")
+
+
+def test_real_pc_selection_persists_and_dummy_reports_are_excluded():
+    ctx=browser()
+    assert ctx.eval('elements.devices.children.length') == 1
+    assert ctx.eval('elements.devices.children[0].children[0].textContent') == '<img onerror=evil()>'
+    assert '1대' in ctx.eval('elements.unmanaged.textContent')
     assert ctx.eval('elements.start.disabled') is True
-    assert ctx.eval('elements.jobs.textContent') == ''
-
-
-def test_deploy_confirmation_and_auth_error():
-    ctx = browser()
-    connect(ctx)
-    ctx.eval("allowed=false; elements.action.value='deploy'; elements.request.listeners.submit({preventDefault(){}})")
-    settle(ctx)
-    assert ctx.eval("calls.filter(c => c.method==='POST').length") == 0
-    ctx.eval("mode='unauthorized'; nextPoll()")
-    settle(ctx)
-    assert ctx.eval('elements.start.disabled') is True
-    assert '접속 키' in ctx.eval('elements.notice.textContent')
-
-
-def test_admin_scope_and_safe_hostname_rendering():
-    ctx = browser('admin')
-    connect(ctx)
-    assert ctx.eval('elements.device.children[0].textContent').startswith('<img onerror=evil()>')
-    ctx.eval("elements.enroll.listeners.click()")
-    settle(ctx)
-    assert 'one-use-code' in ctx.eval('elements.enrollment.textContent')
-    ctx.eval("elements.device.value='device-1'; elements.action.value='report-test'; elements.request.listeners.submit({preventDefault(){}})")
-    settle(ctx)
-    calls = json.loads(ctx.eval('JSON.stringify(calls)'))
-    post = next(c for c in calls if c['path']=='/api/admin/jobs' and c['method']=='POST')
-    assert json.loads(post['body'])['device_id'] == 'device-1'
-    ctx.eval('elements.disconnect.listeners.click()')
-    assert ctx.eval('elements.enrollment.textContent') == ''
-
-
-def test_enrollment_without_login_explains_required_action():
-    ctx = browser('admin')
-    settle(ctx)
-    ctx.eval('elements.enroll.listeners.click()')
-    settle(ctx)
-    assert '관리자 로그인' in ctx.eval('elements.enrollment.textContent')
-    assert ctx.eval("elements['access-token'].focused") is True
-    assert ctx.eval("calls.filter(c => c.path.endsWith('/enrollments')).length") == 0
-
-
-def test_enrollment_error_survives_background_poll():
-    ctx = browser('admin')
-    connect(ctx)
-    ctx.eval("mode='unauthorized'; elements.enroll.listeners.click()")
-    settle(ctx)
-    assert '관리자 로그인' in ctx.eval('elements.enrollment.textContent')
-    ctx.eval("mode='ok'; nextPoll()")
-    settle(ctx)
-    assert '관리자 로그인' in ctx.eval('elements.enrollment.textContent')
-    assert ctx.eval('elements.enroll.disabled') is False
-
-
-def test_admin_session_restores_and_authenticates_dashboard():
-    ctx = browser('admin', session=True, dashboard=True)
-    settle(ctx)
+    select(ctx)
     assert ctx.eval('elements.start.disabled') is False
+    ctx.eval('nextPoll()');settle(ctx)
+    assert ctx.eval('elements.devices.children[0].children[4].children[0].textContent') == '선택됨'
+    submit(ctx)
     calls=json.loads(ctx.eval('JSON.stringify(calls)'))
-    assert not any(c.get('method')=='POST' and c['path']=='/api/admin/session' for c in calls)
-    devices=next(c for c in calls if c['path']=='/api/devices')
-    assert devices['headers']['X-Duct-Tape-Request'] == '1'
-    assert 'Authorization' not in devices['headers']
-    ctx.eval('elements.disconnect.listeners.click()')
+    body=json.loads(next(c['body'] for c in calls if c['path']=='/api/admin/jobs' and c['method']=='POST'))
+    assert body['device_id']=='device-1' and body['action']=='deploy'
+    assert not any('enrollments' in c['path'] for c in calls)
+
+
+def test_pending_pc_is_approved_in_place():
+    ctx=browser()
+    ctx.eval('agentData[0].approved=0;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.devices.children[0].children[4].children[0].textContent') == '연결 승인'
+    assert ctx.eval('elements.start.disabled') is True
+    select(ctx)
+    assert ctx.eval('elements.start.disabled') is False
+    assert ctx.eval("calls.some(c=>c.path==='/api/admin/agents/device-1/approve')") is True
+
+
+def test_offline_busy_and_empty_pcs_cannot_start():
+    ctx=browser();select(ctx)
+    ctx.eval('agentData[0].last_seen=0;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.start.disabled') is True
+    ctx.eval("agentData[0].last_seen=Date.now()/1000;jobData=[{device_id:'device-1',state:'running'}];nextPoll()")
+    settle(ctx);assert ctx.eval('elements.start.disabled') is True
+    ctx.eval('agentData=[];nextPoll()');settle(ctx)
+    assert ctx.eval('elements.empty.hidden') is False
+    assert ctx.eval('elements.start.disabled') is True
+
+
+def test_client_shortcut_has_only_deploy_and_prevents_double_click():
+    ctx=browser('client',key='scoped-key')
+    assert ctx.eval('location.hash') == ''
+    assert ctx.eval("sessionStorage.getItem('duct-client-key')") == 'scoped-key'
+    assert ctx.eval('elements.start.disabled') is False
+    ctx.eval('elements.request.listeners.submit({preventDefault(){}});elements.request.listeners.submit({preventDefault(){}})')
     settle(ctx)
+    calls=json.loads(ctx.eval('JSON.stringify(calls)'))
+    posts=[c for c in calls if c['method']=='POST']
+    assert len(posts)==1
+    assert json.loads(posts[0]['body'])['action']=='deploy'
+    assert posts[0]['headers']['Authorization']=='Bearer scoped-key'
+    assert 'device_id' not in json.loads(posts[0]['body'])
+
+
+def test_client_pending_missing_key_auth_failure_and_confirmation():
+    ctx=browser('client')
+    assert ctx.eval('elements.start.disabled') is True
+    assert '바로가기' in ctx.eval('elements.notice.textContent')
+    ctx=browser('client',key='scoped-key')
+    ctx.eval('agentData[0].approved=0;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.start.disabled') is True
+    assert '승인' in ctx.eval('elements.notice.textContent')
+    ctx.eval('agentData[0].approved=1;nextPoll()');settle(ctx)
+    ctx.eval('allowed=false');submit(ctx)
+    assert ctx.eval("calls.filter(c=>c.method==='POST').length") == 0
+    ctx.eval("mode='unauthorized';nextPoll()");settle(ctx)
+    assert ctx.eval("sessionStorage.getItem('duct-client-key')") is None
+    assert ctx.eval('elements.start.disabled') is True
+
+
+def test_admin_login_and_logout_restore_cookie_session():
+    ctx=browser(session=False)
+    ctx.eval("elements['access-token'].value='admin-key';elements.access.listeners.submit({preventDefault(){}})")
+    settle(ctx)
+    assert ctx.eval("elements['access-token'].value") == ''
+    select(ctx)
+    assert ctx.eval('elements.start.disabled') is False
+    ctx.eval('elements.disconnect.listeners.click()');settle(ctx)
     assert ctx.eval('elements.devices.children.length') == 0
+    assert ctx.eval('sessionValid') is False

@@ -37,6 +37,9 @@ class JobStore:
                 exit_code INTEGER, request_id TEXT NOT NULL,
                 UNIQUE(device_id, request_id));
             ''')
+            columns = {row[1] for row in db.execute('PRAGMA table_info(agents)')}
+            if 'approved' not in columns:
+                db.execute('ALTER TABLE agents ADD COLUMN approved INTEGER NOT NULL DEFAULT 1')
 
     def enrollment(self):
         code = secrets.token_urlsafe(32)
@@ -55,7 +58,7 @@ class JobStore:
             if db.execute('SELECT 1 FROM agents WHERE device_id=?', (device_id,)).fetchone():
                 raise FileExistsError
             db.execute('DELETE FROM agent_enrollment WHERE code_hash=?', (digest(code),))
-            db.execute('INSERT INTO agents VALUES (?,?,?,?,?)',
+            db.execute('INSERT INTO agents VALUES (?,?,?,?,?,1)',
                        (device_id, hostname, digest(agent), digest(client), time.time()))
         return dict(agent_token=agent, client_token=client, device_id=device_id)
 
@@ -67,6 +70,34 @@ class JobStore:
             raise PermissionError
         return row['device_id']
 
+    def join(self, device_id, hostname):
+        agent, client = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+        with closing(self.connect()) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM agents WHERE device_id=?', (device_id,)).fetchone():
+                raise FileExistsError
+            db.execute('INSERT INTO agents VALUES (?,?,?,?,?,0)',
+                       (device_id, hostname, digest(agent), digest(client), time.time()))
+        return dict(agent_token=agent, client_token=client, device_id=device_id, approved=False)
+
+    def info(self, device_id):
+        with closing(self.connect()) as db:
+            row = db.execute('SELECT device_id, hostname, approved, last_seen FROM agents WHERE device_id=?', (device_id,)).fetchone()
+        if not row:
+            raise LookupError
+        return dict(row)
+
+    def approve(self, device_id):
+        with closing(self.connect()) as db, db:
+            if not db.execute('UPDATE agents SET approved=1 WHERE device_id=?', (device_id,)).rowcount:
+                raise LookupError
+
+    def report_identity(self, token):
+        identity = self.authenticate(token, 'agent')
+        if not self.info(identity)['approved']:
+            raise PermissionError
+        return identity
+
     @staticmethod
     def expire(db):
         # Never retry a possibly started installer after a lost agent connection.
@@ -75,7 +106,7 @@ class JobStore:
 
     def agents(self):
         with closing(self.connect()) as db:
-            return [dict(row) for row in db.execute('SELECT device_id, hostname, last_seen FROM agents ORDER BY hostname')]
+            return [dict(row) for row in db.execute('SELECT device_id, hostname, last_seen, approved FROM agents ORDER BY hostname')]
 
     def jobs(self, device_id=None):
         with closing(self.connect()) as db, db:
@@ -87,8 +118,11 @@ class JobStore:
         with closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
-            if not db.execute('SELECT 1 FROM agents WHERE device_id=?', (device_id,)).fetchone():
+            identity = db.execute('SELECT approved FROM agents WHERE device_id=?', (device_id,)).fetchone()
+            if not identity:
                 raise LookupError
+            if not identity['approved']:
+                raise PermissionError
             old = db.execute('SELECT * FROM agent_jobs WHERE device_id=? AND request_id=?', (device_id, request_id)).fetchone()
             if old:
                 if old['action'] != action:
@@ -106,6 +140,8 @@ class JobStore:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
+            if not db.execute('SELECT 1 FROM agents WHERE device_id=? AND approved=1', (device_id,)).fetchone():
+                return None
             row = db.execute("SELECT * FROM agent_jobs WHERE device_id=? AND state='queued' ORDER BY created LIMIT 1", (device_id,)).fetchone()
             if not row:
                 return None
@@ -176,3 +212,8 @@ class JobUpdate(StrictModel):
 
 class AdminLogin(StrictModel):
     token: str = Field(min_length=32, max_length=512)
+
+
+class JoinRequest(StrictModel):
+    device_id: UUID
+    hostname: str = Field(min_length=1, max_length=160)

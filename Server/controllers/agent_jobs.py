@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
-from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin
+from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest
 from Server.models.admin_sessions import COOKIE, HEADER
 
 
@@ -42,6 +42,8 @@ def router(store, admin_token, sessions):
     def enqueue(device_id, body):
         try:
             return store.enqueue(device_id, body.action, str(body.request_id))
+        except PermissionError:
+            raise HTTPException(403, 'Administrator approval required') from None
         except LookupError:
             raise HTTPException(404, 'Unknown device') from None
         except FileExistsError:
@@ -86,6 +88,21 @@ def router(store, admin_token, sessions):
         except FileExistsError:
             raise HTTPException(409, 'Device already registered') from None
 
+    @routes.post('/api/agent/join')
+    def join(body: JoinRequest):
+        try:
+            return store.join(str(body.device_id), body.hostname)
+        except FileExistsError:
+            raise HTTPException(409, 'Device already connected') from None
+
+    @routes.post('/api/admin/agents/{device_id}/approve', dependencies=[Depends(admin)])
+    def approve(device_id: UUID):
+        try:
+            store.approve(str(device_id))
+        except LookupError:
+            raise HTTPException(404, 'Unknown device') from None
+        return {'accepted': True}
+
     @routes.get('/api/admin/agents', dependencies=[Depends(admin)])
     def agents():
         return {'agents': store.agents()}
@@ -100,7 +117,7 @@ def router(store, admin_token, sessions):
 
     @routes.get('/api/client/jobs')
     def client_jobs(device_id=Depends(client)):
-        return {'device_id': device_id, 'jobs': store.jobs(device_id)}
+        return store.info(device_id) | {'jobs': store.jobs(device_id)}
 
     @routes.post('/api/client/jobs')
     def client_request(body: JobRequest, device_id=Depends(client)):

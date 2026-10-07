@@ -1,19 +1,9 @@
-<!doctype html>
-<html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape 중앙 관제</title><link rel="stylesheet" href="/dashboard.css"><script src="/dashboard.js" defer></script></head>
-<body data-role="admin"><main>
-<header><p>학교 무인 배포 자동화</p><h1>duct-tape 중앙 관제</h1><p>관리자 화면 · 기기별 설치 상태 · 5초마다 자동 갱신</p></header><nav><a href="/client">클라이언트 화면</a></nav>
-<form id="access"><label>관리자 로그인 <input id="access-token" type="password" required autocomplete="off" placeholder="관리자 인증 키"></label><button>로그인</button><button id="disconnect" type="button">로그아웃</button></form>
-<p>관리자 인증 키로 한 번 로그인하면 상태 조회와 작업 관리를 함께 사용할 수 있습니다. 로그인은 최대 8시간 유지됩니다.</p>
-<p id="notice" role="status">먼저 관리자 로그인을 진행하세요.</p>
-<p id="connection" role="status"></p>
-<section id="summary" aria-label="기기 요약"></section>
-<label for="search">기기 검색</label><input id="search" type="search" placeholder="호스트명 · 일련번호 · 모델">
-<label for="school">학교 코드</label><input id="school" type="search" placeholder="전체 학교 · 코드 정확히 입력">
-<label for="grade">학년</label><select id="grade"><option value="">전체 학년</option><option value="shared">공용 / 미지정</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option><option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option></select>
-<div class="table-wrap"><table><caption>기기별 최신 보고 (5분 이상 보고가 없으면 경과 표시, 오프라인 판정 아님)</caption><thead><tr><th>기기</th><th>학교 / 학년</th><th>일련번호 / 모델</th><th>MAC</th><th>Office</th><th>한컴</th><th>단계 / 상태</th><th>오류 / 종료 코드</th><th>재부팅</th><th>최종 수신</th></tr></thead><tbody id="devices"></tbody></table></div>
-<section><h2>에이전트 관리</h2>
-<button id="enroll" type="button">1회 등록 코드 발급</button><output id="enrollment" aria-live="polite"></output>
-<form id="request"><label>PC <select id="device" required></select></label><label>작업 <select id="action"><option value="report-test">보고 테스트</option><option value="deploy">Office / 한컴 배포</option></select></label><button id="start" disabled>작업 요청</button></form>
-<p>배포는 기존 프로그램 제거·설치를 수행할 수 있습니다. interrupted 작업은 PC 상태 확인 후 새로 요청하세요.</p><pre id="jobs"></pre><form id="resolve"><label>상태 확인을 마친 interrupted 작업 ID <input id="resolve-id" required></label><button>중단 작업 확인 완료</button></form><button id="revoke" type="button">선택 PC 등록 해제</button>
-</section><script src="/portal.js" defer></script></main></body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape 관리자</title><link rel="stylesheet" href="/dashboard.css"><script src="/portal.js" defer></script></head>
+<body data-role="admin"><main class="portal"><header><p class="eyebrow">DUCT-TAPE · 관리자</p><h1>PC 환경 셋업</h1><p>연결 요청을 승인하고, 연결된 PC의 셋업을 시작하세요.</p></header>
+<form id="access" class="panel"><label for="access-token">관리자 인증 키</label><input id="access-token" type="password" required autocomplete="off"><button>로그인</button><button id="disconnect" class="secondary" type="button">로그아웃</button><small>로그인은 최대 8시간 유지됩니다.</small></form>
+<p id="notice" role="status">관리자 로그인 후 PC 연결 상태를 확인할 수 있습니다.</p>
+<section class="panel"><div class="section-title"><h2>연결된 PC</h2><span id="summary"></span></div><p id="empty">아직 연결된 PC가 없습니다. PC에서 InstallAgent.bat을 한 번 실행하세요.</p>
+<div class="table-wrap"><table><thead><tr><th>PC</th><th>연결</th><th>Office / 한컴</th><th>셋업 상태</th><th>선택 / 승인</th></tr></thead><tbody id="devices"></tbody></table></div><p id="unmanaged" class="muted"></p></section>
+<section class="panel"><h2>환경 셋업 시작</h2><p id="selected">위 목록에서 PC를 선택하세요.</p><form id="request"><button id="start" disabled>선택 PC 셋업 시작</button></form><p class="muted">기존 Office·한컴 제거 및 설치가 진행됩니다.</p><p id="result" role="status"></p></section>
+<details class="panel"><summary>PC 연결 방법 · 문제 해결</summary><ol><li>PC에 설치 매체와 라이선스 키를 준비합니다.</li><li>InstallAgent.bat을 한 번 실행하고 서버 주소를 입력합니다.</li><li>위 목록에 나타나는 PC의 ‘연결 승인’을 누릅니다.</li><li>PC의 바탕화면 ‘duct-tape 작업’ 바로가기에서 환경 셋업을 시작합니다.</li></ol><p>등록 코드를 발급하거나 웹 로그인 칸에 옮겨 입력할 필요가 없습니다.</p><button id="resolve" type="button" class="secondary" disabled>선택 PC 중단 상태 확인 완료</button><button id="revoke" type="button" class="secondary" disabled>선택 PC 연결 해제</button></details>
+</main></body></html>
