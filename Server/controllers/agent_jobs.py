@@ -2,14 +2,15 @@
 import secrets
 from uuid import UUID
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
-from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate
+from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin
+from Server.models.admin_sessions import COOKIE, HEADER
 
 
 
-def router(store, admin_token):
+def router(store, admin_token, sessions):
     routes = APIRouter()
     bearer = HTTPBearer(auto_error=False)
 
@@ -18,9 +19,11 @@ def router(store, admin_token):
             raise HTTPException(401, 'Unauthorized')
         return credentials.credentials
 
-    def admin(credentials=Depends(bearer)):
+    def admin(request: Request, credentials=Depends(bearer)):
         if not admin_token:
             raise HTTPException(503, 'Set DUCT_ADMIN_TOKEN to enable job administration')
+        if sessions.authenticated(request):
+            return
         if not secrets.compare_digest(token(credentials).encode(), admin_token.encode()):
             raise HTTPException(401, 'Unauthorized')
 
@@ -43,6 +46,32 @@ def router(store, admin_token):
             raise HTTPException(404, 'Unknown device') from None
         except FileExistsError:
             raise HTTPException(409, 'A job is already pending or request conflicts') from None
+
+    @routes.post('/api/admin/session')
+    def login(body: AdminLogin, request: Request, response: Response):
+        if request.headers.get(HEADER) != '1':
+            raise HTTPException(403, 'Same-origin request required')
+        if not admin_token:
+            raise HTTPException(503, 'Administrator access is not configured')
+        if not secrets.compare_digest(body.token.encode(), admin_token.encode()):
+            raise HTTPException(401, 'Unauthorized')
+        sessions.revoke(request)
+        response.set_cookie(COOKIE, sessions.issue(), max_age=sessions.lifetime,
+                            httponly=True, secure=request.url.scheme == 'https',
+                            samesite='strict', path='/')
+        return {'authenticated': True, 'expires_in': sessions.lifetime}
+
+    @routes.get('/api/admin/session', dependencies=[Depends(admin)])
+    def session():
+        return {'authenticated': True}
+
+    @routes.delete('/api/admin/session')
+    def logout(request: Request, response: Response):
+        if request.headers.get(HEADER) != '1':
+            raise HTTPException(403, 'Same-origin request required')
+        sessions.revoke(request)
+        response.delete_cookie(COOKIE, path='/')
+        return {'authenticated': False}
 
     @routes.post('/api/admin/enrollments', dependencies=[Depends(admin)])
     def enrollment():

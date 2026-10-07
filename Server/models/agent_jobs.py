@@ -172,3 +172,7 @@ class JobUpdate(StrictModel):
                 or (self.state == 'failed' and (self.exit_code is None or self.exit_code == 0))):
             raise ValueError('Invalid result')
         return self
+
+
+class AdminLogin(StrictModel):
+    token: str = Field(min_length=32, max_length=512)

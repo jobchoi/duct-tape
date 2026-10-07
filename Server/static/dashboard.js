@@ -1,4 +1,6 @@
 'use strict';
+const sessionMode = document.body?.dataset?.role === 'admin';
+let signedIn = false;
 let token = '', timer = null, generation = 0, devices = [];
 const el = id => document.getElementById(id);
 const statusNames = {running: '진행 중', completed: '단계 완료', failed: '실패'};
@@ -23,7 +25,7 @@ function render() {
 }
 async function poll(version) {
   try {
-    const response = await fetch('/api/devices', {headers: {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(8000)});
+    const response = await fetch('/api/devices', {credentials: 'same-origin', headers: signedIn ? {'X-Duct-Tape-Request': '1'} : {Authorization: `Bearer ${token}`}, cache: 'no-store', signal: AbortSignal.timeout(8000)});
     if (version !== generation) return;
     if (!response.ok) {
       if (response.status === 401) { disconnect(); el('connection').textContent = '조회 토큰을 확인하세요.'; return; }
@@ -33,12 +35,17 @@ async function poll(version) {
     if (version !== generation) return;
     devices = data.devices; render(); el('connection').textContent = `연결됨 · 갱신 ${new Date().toLocaleTimeString()}`;
   } catch (_) { if (version === generation) el('connection').textContent = '갱신 실패 · 표시된 데이터는 마지막 성공 시점의 상태입니다.'; }
-  if (version === generation && token) timer = setTimeout(() => poll(version), 5000);
+  if (version === generation && (token || signedIn)) timer = setTimeout(() => poll(version), 5000);
 }
-function disconnect() { generation++; clearTimeout(timer); token = ''; devices = []; render(); el('token').value = ''; el('connection').textContent = '연결 해제됨'; }
-el('login').addEventListener('submit', event => { event.preventDefault(); generation++; clearTimeout(timer); token = el('token').value.trim(); el('token').value = ''; devices = []; render(); if (token) poll(generation); });
-el('logout').addEventListener('click', disconnect);
+function disconnect() { generation++; clearTimeout(timer); token = ''; signedIn = false; devices = []; render(); if (el('token')) el('token').value = ''; el('connection').textContent = '연결 해제됨'; }
+el('login')?.addEventListener('submit', event => { event.preventDefault(); generation++; clearTimeout(timer); token = el('token').value.trim(); el('token').value = ''; devices = []; render(); if (token) poll(generation); });
+el('logout')?.addEventListener('click', disconnect);
 el('search').addEventListener('input', render);
 
 el('school').addEventListener('input', render);
 el('grade').addEventListener('change', render);
+
+if (sessionMode) document.addEventListener('admin-session', event => {
+  disconnect();
+  if (event.detail.authenticated) { signedIn = true; poll(generation); }
+});
