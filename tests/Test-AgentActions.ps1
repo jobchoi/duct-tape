@@ -23,3 +23,18 @@ foreach ($file in @('Scripts/Agent.ps1','Scripts/InstallAgent.ps1','Scripts/Agen
     if ($errors.Count) { throw "Syntax errors: $file" }
 }
 Write-Host 'PASS: fixed actions, report-only isolation, command rejection, agent script syntax'
+
+$tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('duct-ready-'+[guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory $tempRoot | Out-Null
+    if (Test-AgentSetupReady -Root $tempRoot) { throw 'Empty installation incorrectly ready' }
+    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt')) {
+        $file=Join-Path $tempRoot $name
+        New-Item -ItemType Directory (Split-Path $file -Parent) -Force | Out-Null
+        Set-Content $file 'test-placeholder'
+    }
+    if (-not (Test-AgentSetupReady -Root $tempRoot)) { throw 'Prepared installation not ready' }
+    Remove-Item (Join-Path $tempRoot 'Config/HancomKey.txt')
+    if (Test-AgentSetupReady -Root $tempRoot) { throw 'Missing license incorrectly ready' }
+    Write-Host 'PASS: media readiness and missing license guard'
+} finally { Remove-Item $tempRoot -Recurse -Force }

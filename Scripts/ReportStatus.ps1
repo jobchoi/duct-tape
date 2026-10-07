@@ -19,8 +19,8 @@ function Send-StatusReport {
         if (-not $uri.IsAbsoluteUri -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or
             $uri.AbsolutePath -ne '/' -or $uri.Scheme -notin @('http','https') -or
             ($uri.Scheme -eq 'http' -and $config.AllowHttp -ne $true)) { throw 'REPORT_CONFIG' }
-        if ([string]::IsNullOrWhiteSpace($config.ReportToken) -or $config.ReportToken.Length -lt 32 -or
-            $config.ReportToken -match '\s' -or $config.ReportToken -eq 'REPLACE_WITH_REPORT_TOKEN_AT_LEAST_32_CHARS') { throw 'REPORT_CONFIG' }
+        if ($config.AuthMode -ne 'development' -and ([string]::IsNullOrWhiteSpace($config.ReportToken) -or $config.ReportToken.Length -lt 32 -or
+            $config.ReportToken -match '\s' -or $config.ReportToken -eq 'REPLACE_WITH_REPORT_TOKEN_AT_LEAST_32_CHARS')) { throw 'REPORT_CONFIG' }
         $timeout = 3
         $attempts = 2
         if ($null -ne $config.TimeoutSeconds) { $timeout = [int]$config.TimeoutSeconds }
@@ -71,11 +71,12 @@ function Send-StatusReport {
             if ([string]$config.SchoolCode -cnotmatch '^[A-Z0-9_-]{1,32}$') { throw 'REPORT_CONFIG' }
             $payload.school_code = [string]$config.SchoolCode
         }
+        $headers = if ($config.AuthMode -eq 'development') { @{'X-Duct-Tape-Request'='1'; 'X-Duct-Device-ID'=$deviceId} } else { @{Authorization=('Bearer '+$config.ReportToken)} }
         $body = [Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Depth 3 -Compress))
         for ($attempt = 1; $attempt -le $attempts; $attempt++) {
             try {
                 $null = Invoke-RestMethod -Uri ($uri.AbsoluteUri.TrimEnd('/') + '/api/report') -Method Post `
-                    -Headers @{ Authorization = ('Bearer ' + $config.ReportToken) } -Body $body `
+                    -Headers $headers -Body $body `
                     -ContentType 'application/json; charset=utf-8' -TimeoutSec $timeout -MaximumRedirection 0 -ErrorAction Stop
                 return $true
             } catch {

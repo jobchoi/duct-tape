@@ -10,7 +10,8 @@ New-Item -ItemType Directory $logDirectory -Force | Out-Null
 function Invoke-AgentApi {
     param([string]$Path, $Body)
     $json = if ($null -eq $Body) { '{}' } else { $Body | ConvertTo-Json -Compress }
-    Invoke-RestMethod -Uri ($config.ServerUrl+$Path) -Method Post -Headers @{Authorization=('Bearer '+$config.AgentToken)} -ContentType 'application/json' -Body $json -TimeoutSec 10 -MaximumRedirection 0
+    $headers = if ($config.AuthMode -eq 'development') { @{'X-Duct-Tape-Request'='1'; 'X-Duct-Device-ID'=$config.DeviceId} } else { @{Authorization=('Bearer '+$config.AgentToken)} }
+    Invoke-RestMethod -Uri ($config.ServerUrl+$Path) -Method Post -Headers $headers -ContentType 'application/json' -Body $json -TimeoutSec 10 -MaximumRedirection 0
 }
 
 # A persisted claim is never automatically executed a second time.
@@ -24,7 +25,7 @@ while (Test-Path $activePath) {
 }
 while ($true) {
     try {
-        $claim = Invoke-AgentApi '/api/agent/claim' $null
+        $claim = Invoke-AgentApi '/api/agent/claim' @{setup_ready=(Test-AgentSetupReady -Root $root)}
         if ($null -eq $claim.job) { Start-Sleep -Seconds 5; continue }
         $job = $claim.job
         $jobId = ([guid]$job.id).ToString()
