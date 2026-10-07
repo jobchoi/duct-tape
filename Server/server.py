@@ -7,7 +7,7 @@ from pathlib import Path
 import secrets
 import sqlite3
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -17,6 +17,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from Server.gas_relay import GasRelay, load_schools
 from Server.outbox import Outbox, initialize
 from Server.models.agent_jobs import JobStore
+from Server.models.admin_sessions import AdminSessions
 from Server.controllers.agent_jobs import router as agent_router
 from Server.controllers.monitoring import router as monitoring_router
 from Server.models.monitoring import Report
@@ -33,6 +34,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
 
     administrator = admin_token if admin_token is not None else os.environ.get('DUCT_ADMIN_TOKEN', '')
     jobs = JobStore(database)
+    sessions = AdminSessions()
     registry = load_schools() if schools is None else schools
     queue = Outbox(database, relay if relay is not None else GasRelay(registry),
                    int(os.environ.get('DUCT_SENT_RETENTION_DAYS', '30')))
@@ -89,8 +91,9 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         authenticate(credentials, writer)
         return None
 
-    def require_reader(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
-        authenticate(credentials, reader)
+    def require_reader(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        if not sessions.authenticated(request):
+            authenticate(credentials, reader)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_report(request, exc):
@@ -111,7 +114,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         return response
 
     app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader))
-    app.include_router(agent_router(jobs, administrator))
+    app.include_router(agent_router(jobs, administrator, sessions))
     app.include_router(artifact_router(ROOT.parent / "uploads", administrator))
     (ROOT.parent / "downloads").mkdir(exist_ok=True)
     app.mount("/files", StaticFiles(directory=ROOT.parent / "downloads"), name="files")
