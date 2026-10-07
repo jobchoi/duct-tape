@@ -1,49 +1,60 @@
-# 기본 환경 셋업
+# 환경 셋업 사용 방법
 
-관리자는 `/admin`, 클라이언트는 `/client`를 사용한다. 두 화면에는 서로 이동하는 메뉴를 두지 않는다. 클라이언트의 기본 작업은 Office·한컴 환경 셋업 하나이며 작업 종류를 선택하지 않는다.
+기본 기획은 [SETUP_PLAN.md](SETUP_PLAN.md)에 정리했다. 선택 설치·수동 코드 교환은 제외하고 다운로드 → 최초 연결 → 셋업 요청을 우선 검증한다.
 
-## 처음 한 번 준비
+## 처음 사용하는 PC
 
-브라우저만으로 Windows 설치 명령을 실행할 수 없으므로 PC에 실행 도구를 한 번 준비해야 한다.
+1. 서버의 `/client`에서 **실행 도구 다운로드**를 누른다. `/download/agent.zip`에서 실행 도구 ZIP을 받을 수 있다.
+2. ZIP 전체를 압축 해제하고 `InstallAgent.bat`을 실행한다. 관리자 권한 요청을 승인한다. 서버 주소는 ZIP의 `Config/ServerUrl.txt`에 포함된다.
+3. 설치 도구가 서버에 PC 연결을 요청하고 `%ProgramData%\DuctTapeAgent`에 실행 도구와 SYSTEM 예약 작업을 설치한다.
+4. 공용 바탕화면에 `duct-tape 작업` 바로가기가 생성되며 브라우저도 열린다. 설치 전에는 이 바로가기가 없는 것이 정상이다. 브라우저 자동 열기가 실패하면 바로가기를 직접 연다.
+5. 실제 셋업용 Office·한컴 매체와 라이선스 키를 준비한 뒤 환경 셋업 버튼을 사용한다.
 
-1. 담당자가 PC의 로컬 배포 폴더에 `InstallAgent.bat`, `Main.bat`, `Scripts/`, `Modules/`, `Config/`, `Office/`, `Hancom/`을 준비한다. 실제 매체와 `Config/HancomKey.txt`는 [배포 가이드](wiki/Deployment-Guide.md)를 따른다.
-2. PC에서 `InstallAgent.bat`을 실행하고 관리자 권한 요청을 승인한다. 서버 HTTPS 주소만 입력하면 서버에 PC 연결 요청이 자동 전송된다. 등록 코드를 발급하거나 옮겨 입력하지 않는다.
-3. 관리자가 `/admin`에 로그인하면 새 PC가 `연결 승인 대기`로 나타난다. 해당 PC의 `연결 승인`을 한 번 누른다.
-4. PC의 공용 바탕화면 `duct-tape 작업` 바로가기를 연다. 클라이언트 인증은 자동 처리된다. 웹 페이지에서 코드나 로그인 키를 입력하지 않는다.
-5. `환경 셋업 시작`을 누르고 설치 안내를 확인한다. 셋업 진행/완료/실패 상태는 자동 갱신된다.
+**에이전트 설치에는 Office·한컴 매체가 없어도 된다.** 다운로드 ZIP에는 실행 스크립트만 넣고 `.env`, 실제 인증 키, 라이선스 키와 설치 매체는 포함하지 않는다.
 
-설치 도구는 배포 파일과 매체를 `%ProgramData%\DuctTapeAgent`의 새 전용 폴더에 복사하고 SYSTEM 예약 작업을 설치한다. 이후 PC 시작 시 에이전트가 자동 실행된다. 기존 설치 폴더/예약 작업이 있으면 자동 덮어쓰기하지 않는다. Tailscale 연결과 WSL 서버 실행을 유지한다.
+## 실제 설치 준비
 
-보고 설정이 없으면 기본 학년 1·학교 미지정으로 PC 전용 보고 설정을 자동 생성한다. 담당자가 미리 준비한 `Config/Monitoring.json`이 있으면 기존 보고 설정을 사용한다. 학교/학년·선택 설치 옵션은 기본 화면에 노출하지 않는다.
+`C:\ProgramData\DuctTapeAgent`에 담당자가 관리자 권한으로 다음 항목을 준비한다.
 
-## 관리자 화면
+- `Office/setup.exe`, `Office/install.xml`, `Office/remove.xml` 및 정식 Office 매체.
+- `Hancom/Install/Hwp130.msi`, `Hancom/Install/VC_redist.x86.exe` 및 나머지 정식 한컴 매체.
+- `Config/HancomKey.txt`의 유효한 기관 라이선스 키.
 
-- 관리자 인증 키(`.env`의 `DUCT_ADMIN_TOKEN`)로 한 번 로그인한다. 서버 세션은 최대 8시간 유지되며 새로고침 시 복원한다.
-- 연결된 PC 목록에서 `선택`을 누른 뒤 `선택 PC 셋업 시작`을 누른다. PC 선택은 자동 갱신 후에도 유지된다.
-- 승인 전, 연결이 끊긴 PC, 대기/실행/중단 확인이 필요한 PC에는 새 셋업을 요청하지 않는다.
-- 에이전트가 연결되지 않은 보고는 작업 대상에서 제외하고 제외된 대수만 표시한다. 더미 보고가 있어도 작업 가능한 PC처럼 나타나지 않는다. 보고 데이터는 삭제하지 않는다.
-- 상세 연결 방법과 중단 확인/연결 해제 기능은 `PC 연결 방법 · 문제 해결`을 펼쳐 사용한다. 작업 ID를 직접 입력하지 않는다.
+실행 도구는 이 파일들의 준비 여부를 서버에 보고한다. 없으면 웹에서 `설치 매체 준비 필요`를 표시하고 셋업 요청을 차단한다. 준비 여부는 파일 존재 확인이며 실제 키/매체 유효성은 Main의 사전 검증에서 확인한다. 원본 폴더에 매체/키가 이미 있다면 설치 도구가 함께 복사한다. 세부 매체 조건은 [배포 가이드](wiki/Deployment-Guide.md)를 따른다.
 
-## 클라이언트 화면
+현재 개발 저장소에는 정식 매체/기관 키가 없으므로 자동으로 만들어주거나 다운로드 ZIP에 넣지 않는다.
 
-바탕화면 바로가기로 자기 PC에 자동 연결해 셋업 버튼만 사용한다. PC 전용 접속 키는 화면에 표시하지 않고 URL fragment에서 즉시 지운다. 같은 탭에서 새로고침할 수 있도록 sessionStorage에 PC 전용 키만 보관하며 인증 실패 시 제거한다. 관리자 키는 이 저장소에 보관하지 않는다. 바로가기를 다른 PC에 복사하지 않는다.
+## 테스트 모드와 운영 인증 모드
 
-관리자 승인이 아직 없으면 승인 대기 안내만 표시한다. 서버 주소의 `/client`를 직접 열어 PC 정보가 없는 경우에는 바탕화면 바로가기를 열도록 안내한다.
+| 항목 | development | secure (기본값) |
+| --- | --- | --- |
+| 관리자 | 인증 키 입력 없이 상태 조회 | 관리자 키로 한 번 로그인, 최대 8시간 세션 유지 |
+| 클라이언트 | MachineGuid로 식별, 토큰 없이 신청 | PC별 인증은 도구가 자동 처리, 사용자의 토큰 입력 없음 |
+| 최초 연결 | 중복 확인 후 자동 승인 | 관리자 화면에서 PC 연결 한 번 승인 |
+| 같은 PC 재신청 | 기존 식별값 재사용, 중복 생성 없음 | 기존 설치/연결 상태 확인 필요 |
 
-## 중단과 연결 해제
+MachineGuid는 식별값이며 인증 수단은 아니다. PC 이름은 표시용으로 사용한다. 모드별 차이는 `Server/security.py`의 `SecurityPolicy`에 분리했다. `DUCT_AUTH_MODE`의 기본값은 secure다.
 
-기존 Office·한컴 제거 및 설치가 진행될 수 있다. 수동 Main 실행과 에이전트 셋업을 동시에 실행하지 않는다. 설치 후 재부팅 필요 여부와 실제 앱 실행·정품 인증을 확인한다. 실제 설치 백분율은 제공하지 않는다.
+로컬 무인증 테스트는 공유 서버와 다른 임시 DB·루프백 포트에서 실행한다.
 
-에이전트 heartbeat가 120초 이상 끊기거나 실행 중 에이전트가 재시작하면 중단 상태를 표시하며 자동 재실행하지 않는다. 관리자가 실제 PC에서 설치 프로세스가 끝났는지 확인한 뒤 대상 PC를 선택하고 문제 해결 안의 `중단 상태 확인 완료`를 누른다. 실행 프로세스가 남아 있으면 확인 완료를 누르지 않는다.
+```bash
+DUCT_AUTH_MODE=development DUCT_DB_PATH=/tmp/duct-local-onboarding.sqlite3 .venv/bin/python -m uvicorn Server.server:app --host 127.0.0.1 --port 8001
+```
 
-연결 해제는 PC 인증 키를 폐기하고 대기 작업을 취소한다. Windows의 예약 작업은 별도로 정리한다. 재설치 전 서버 연결을 해제하고 기존 설치가 끝났는지 확인한 뒤 관리자 PowerShell에서 `Stop-ScheduledTask -TaskName DuctTapeAgent`, `Unregister-ScheduledTask -TaskName DuctTapeAgent -Confirm:$false`를 실행한다. 매체·설정·로그를 보존하고 기존 ProgramData 폴더/바로가기는 담당자가 정리한다.
+Windows/WSL 호스트에서 `http://localhost:8001/admin`, `/client`로 확인한다. 이 임시 포트는 Tailscale 공유 주소에 연결하지 않았다. 현재 Tailscale 공유 서버의 8000 포트는 secure를 유지한다.
 
-이전 버전의 등록 코드 API는 호환성을 위해 유지하지만 기본 화면과 설치 도구에서는 사용하지 않는다. 예전 코드로 등록된 PC는 승인 상태를 유지한다. 등록 코드는 과거 에이전트 등록에 사용한 1회 허가이며 클라이언트 웹 로그인 키와는 다른 값이었다.
+## 화면과 작업
+
+관리자 화면은 로그인/테스트 모드와 연결 상태를 표시한다. 인증 확인 전에는 PC 관리 영역을 숨기고, 로그인 성공 시 표시한다. 연결 PC가 0대이면 다운로드 안내를 표시한다. PC 선택은 자동 갱신 후에도 유지된다. 보고만 있는 더미 기기는 작업 대상에서 제외한다.
+
+클라이언트는 바탕화면 바로가기에서 자기 PC로 자동 연결한다. 식별값/PC 인증 정보는 URL fragment에서 지우고 현재 탭의 sessionStorage에 보관한다. 관리자 키는 이 저장소에 보관하지 않는다. 바로가기를 다른 PC에 복사하지 않는다.
+
+셋업 요청은 PC별 대기/실행 작업을 하나만 허용한다. 실행 중 끊어진 작업은 자동 재실행하지 않는다. 실제 Office·한컴 제거/설치가 진행될 수 있으며 수동 Main 실행과 동시에 실행하지 않는다. 설치 후 앱 실행·재부팅·정품 인증은 별도로 확인한다.
 
 ## 구조와 검증
 
-Model은 `Server/models/`, HTTP Controller는 `Server/controllers/`, 화면은 `Server/views/`에 둔다. `Server/server.py`는 앱 조립을 맡는다. 에이전트는 고정된 셋업/보고 작업만 실행하고 임의 명령은 받지 않는다. PC 전용 보고 키로는 자기 PC의 상태만 보고할 수 있다.
+Model은 `Server/models/`, Controller는 `Server/controllers/`, View는 `Server/views/`, 인증 정책은 `Server/security.py`에 둔다. `agent_package.py`는 고정 허용 목록으로 ZIP을 생성하며 임의 경로나 비밀 파일을 포함하지 않는다. Windows 실행 도구는 고정 작업만 실행한다.
 
-관련 테스트는 `tests/test_simple_setup.py`, `test_portal.py`, `test_agent_jobs.py`, `test_admin_sessions.py`, `test_server.py`에서 자동 연결·승인·권한·중복 실행·기존 데이터 호환·더미 제외·선택 유지·기본 버튼 흐름을 검증한다. `tests/Test-AgentActions.ps1`은 실제 설치 없이 PowerShell 구문과 실행 작업 제한을 검증한다.
+자동 테스트는 ZIP 내용과 비밀 제외, 로컬 연결 신청/중복, 매체 누락 차단, 준비 후 작업 요청/claim/완료, 운영 인증, 로그인 표시와 기본 화면을 검증한다. PowerShell 실제 HTTP 보고는 secure/development 두 모드에서 확인한다.
 
-실제 Windows 5.1 UAC, SYSTEM 예약 작업·Tailscale 통신, 매체 복사와 ODT/MSI 설치는 Windows 테스트 PC에서 인수 확인이 필요하다. 실제 키·설정·매체·DB·로그·바로가기는 Git에 포함하지 않는다.
+Windows 5.1 UAC, 바탕화면/예약 작업 생성, 정식 매체를 통한 실제 설치는 실제 Windows PC에서 확인해야 한다. 이 범위를 Linux 테스트 통과로 완료했다고 간주하지 않는다.

@@ -6,7 +6,7 @@ import quickjs
 SOURCE=Path(__file__).resolve().parents[1]/'Server/views/portal.js'
 
 
-def browser(role='admin', session=True, key=''):
+def browser(role='admin', session=True, key='', mode='secure'):
     ctx=quickjs.Context()
     ctx.eval('''
     class Element {
@@ -17,21 +17,22 @@ def browser(role='admin', session=True, key=''):
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state']) elements[id]=new Element();
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
-    const location={hash:KEY ? '#key='+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
+    const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
     const sessionStorage={values:{},getItem(name){return this.values[name] || null;},setItem(name,value){this.values[name]=value;},removeItem(name){delete this.values[name];}};
-    class URLSearchParams {constructor(value){this.value=value;} get(){return this.value.startsWith('key=')?this.value.slice(4):null;}}
+    class URLSearchParams {constructor(value){this.value=value;} get(name){return this.value.startsWith(name+'=')?this.value.slice(name.length+1):null;}}
     const AbortSignal={timeout:()=>({})};
     const crypto={randomUUID:()=> '11111111-2222-3333-4444-555555555555'};
     let calls=[],nextPoll,sessionValid=SESSION,allowed=true,mode='ok';
-    let agentData=[{device_id:'device-1',hostname:'<img onerror=evil()>',approved:1,last_seen:Date.now()/1000}];
+    let agentData=[{device_id:'device-1',hostname:'<img onerror=evil()>',approved:1,setup_ready:1,last_seen:Date.now()/1000}];
     let reportData=[{device_id:'dummy-1',hostname:'DUMMY-PC',office:'정상',hancom:'정상'}];
     let jobData=[];
     function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function confirm(){return allowed;}
     async function fetch(path,options){
       calls.push({path,...options});
+      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE})};
       if(path==='/api/admin/session'){
         if(options.method==='POST') sessionValid=mode==='ok';
         if(options.method==='DELETE') sessionValid=false;
@@ -41,7 +42,7 @@ def browser(role='admin', session=True, key=''):
       const data=path.endsWith('/agents')?{agents:agentData}:path.endsWith('/devices')?{devices:reportData}:path==='/api/client/jobs'?{...agentData[0],jobs:jobData}:{jobs:jobData};
       return {ok:mode==='ok',status:mode==='unauthorized'?401:409,json:async()=>data};
     }
-    '''.replace('ROLE',json.dumps(role)).replace('SESSION',json.dumps(session)).replace('KEY',json.dumps(key)))
+    '''.replace('ROLE',json.dumps(role)).replace('SESSION',json.dumps(session)).replace('KEY',json.dumps(key)).replace('MODE',json.dumps(mode)))
     ctx.eval(SOURCE.read_text())
     settle(ctx)
     return ctx
@@ -119,7 +120,7 @@ def test_client_shortcut_has_only_deploy_and_prevents_double_click():
 def test_client_pending_missing_key_auth_failure_and_confirmation():
     ctx=browser('client')
     assert ctx.eval('elements.start.disabled') is True
-    assert '바로가기' in ctx.eval('elements.notice.textContent')
+    assert '다운로드' in ctx.eval('elements.notice.textContent')
     ctx=browser('client',key='scoped-key')
     ctx.eval('agentData[0].approved=0;nextPoll()');settle(ctx)
     assert ctx.eval('elements.start.disabled') is True
@@ -142,3 +143,26 @@ def test_admin_login_and_logout_restore_cookie_session():
     ctx.eval('elements.disconnect.listeners.click()');settle(ctx)
     assert ctx.eval('elements.devices.children.length') == 0
     assert ctx.eval('sessionValid') is False
+
+
+def test_local_admin_connects_without_login_and_media_gate_is_visible():
+    ctx=browser(mode='development',session=False)
+    assert ctx.eval('elements.access.hidden') is True
+    assert '테스트' in ctx.eval("elements['auth-status'].textContent")
+    assert ctx.eval("elements['admin-content'].hidden") is False
+    assert not ctx.eval("calls.some(c=>c.path==='/api/admin/session' && c.method==='POST')")
+    select(ctx)
+    ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.start.disabled') is True
+    assert '매체' in ctx.eval('elements.devices.children[0].children[3].textContent')
+
+
+def test_local_client_uses_identifier_without_bearer_token():
+    ctx=browser('client',key='11111111-2222-3333-4444-555555555555',mode='development')
+    assert ctx.eval('elements.start.disabled') is False
+    submit(ctx)
+    calls=json.loads(ctx.eval('JSON.stringify(calls)'))
+    post=next(c for c in calls if c['path']=='/api/client/jobs' and c['method']=='POST')
+    assert 'Authorization' not in post['headers']
+    assert post['headers']['X-Duct-Device-ID']=='11111111-2222-3333-4444-555555555555'
+    assert ctx.eval('elements.onboarding.hidden') is True

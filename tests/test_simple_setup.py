@@ -39,6 +39,7 @@ def test_automatic_join_requires_approval_before_setup(client):
     assert client.post(url,headers=auth(keys['agent_token'])).status_code==401
     assert client.post(url,headers=auth(ADMIN)).status_code==200
     assert client.get('/api/client/jobs',headers=auth(keys['client_token'])).json()['approved']
+    client.post('/api/agent/claim',json={'setup_ready':True},headers=auth(keys['agent_token']))
     job=client.post('/api/client/jobs',json=request(),headers=auth(keys['client_token'])).json()
     assert job['state']=='queued'
     assert client.post('/api/agent/claim',headers=auth(keys['agent_token'])).json()['job']['id']==job['id']

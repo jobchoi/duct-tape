@@ -14,7 +14,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_powershell_to_fastapi(tmp_path):
+@pytest.mark.parametrize('mode', ['secure', 'development'])
+def test_powershell_to_fastapi(tmp_path, mode):
     engine = os.environ.get('DUCT_TEST_PWSH') or shutil.which('pwsh')
     if not engine:
         pytest.skip('Set DUCT_TEST_PWSH to run the PowerShell/HTTP integration test')
@@ -23,7 +24,7 @@ def test_powershell_to_fastapi(tmp_path):
         port = sock.getsockname()[1]
     writer = 'loopback-test-writer-' + 'x' * 40
     reader = 'loopback-test-reader-' + 'y' * 40
-    env = os.environ | {'DUCT_DB_PATH': str(tmp_path / 'db.sqlite3'), 'DUCT_REPORT_TOKEN': writer, 'DUCT_READ_TOKEN': reader}
+    env = os.environ | {'DUCT_DB_PATH': str(tmp_path / 'db.sqlite3'), 'DUCT_REPORT_TOKEN': writer, 'DUCT_READ_TOKEN': reader, 'DUCT_AUTH_MODE': mode}
     server = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'Server.server:app', '--host', '127.0.0.1', '--port', str(port)],
                               cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     origin = f'http://127.0.0.1:{port}'
@@ -40,9 +41,11 @@ def test_powershell_to_fastapi(tmp_path):
                 time.sleep(0.1)
             else:
                 pytest.fail('Loopback server not ready')
+            if mode == 'development':
+                assert client.post(origin+'/api/agent/join',json={'device_id':'11111111-2222-3333-4444-555555555555','hostname':'TEST-PC'}).status_code==200
             config = tmp_path / 'config.json'
             state = tmp_path / 'state.json'
-            config.write_text(json.dumps({'Enabled': True, 'Grade': 1, 'ServerUrl': origin, 'AllowHttp': True,
+            config.write_text(json.dumps({'Enabled': True, 'AuthMode': mode, 'Grade': 1, 'ServerUrl': origin, 'AllowHttp': True,
                                            'ReportToken': writer, 'TimeoutSeconds': 2, 'MaxAttempts': 1}))
             state.write_text(json.dumps({'OfficeState': '정상', 'HancomState': '정상', 'SerialNumber': '학교-통합검증',
                                          'Model': 'Test tablet', 'PIDKEY': 'MUST_NOT_LEAVE_DEVICE'}, ensure_ascii=False))
@@ -59,7 +62,7 @@ function Get-CimInstance { param($ClassName,$Filter,$ErrorAction)
             result = subprocess.run([engine, '-NoProfile', '-File', str(harness), '-Reporter', str(ROOT / 'Scripts/ReportStatus.ps1'),
                                      '-StatePath', str(state), '-ConfigPath', str(config)], capture_output=True, text=True, timeout=20)
             assert result.returncode == 0, 'PowerShell HTTP sender failed'
-            response = client.get(origin + '/api/devices', headers={'Authorization': f'Bearer {reader}'})
+            response = client.get(origin + '/api/devices', headers={'X-Duct-Tape-Request':'1'} if mode == 'development' else {'Authorization': f'Bearer {reader}'})
             assert response.status_code == 200
             rows = response.json()['devices']
             assert len(rows) == 1 and rows[0]['serial'] == '학교-통합검증'

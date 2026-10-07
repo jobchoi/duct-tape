@@ -18,6 +18,7 @@ from Server.gas_relay import GasRelay, load_schools
 from Server.outbox import Outbox, initialize
 from Server.models.agent_jobs import JobStore
 from Server.models.admin_sessions import AdminSessions
+from Server.security import SecurityPolicy
 from Server.controllers.agent_jobs import router as agent_router
 from Server.controllers.monitoring import router as monitoring_router
 from Server.models.monitoring import Report
@@ -27,7 +28,8 @@ from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
 
-def create_app(db_path=None, report_token=None, read_token=None, schools=None, relay=None, admin_token=None):
+def create_app(db_path=None, report_token=None, read_token=None, schools=None, relay=None, admin_token=None, auth_mode=None):
+    policy = SecurityPolicy(auth_mode or os.environ.get('DUCT_AUTH_MODE', 'secure'))
     database = Path(db_path or os.environ.get('DUCT_DB_PATH', ROOT / 'data' / 'monitoring.sqlite3'))
     writer = report_token if report_token is not None else os.environ.get('DUCT_REPORT_TOKEN', '')
     reader = read_token if read_token is not None else os.environ.get('DUCT_READ_TOKEN', '')
@@ -46,7 +48,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
 
     @asynccontextmanager
     async def lifespan(app):
-        if (len(writer) < 32 or len(reader) < 32 or writer == reader
+        if not policy.development and (len(writer) < 32 or len(reader) < 32 or writer == reader
                 or not writer.isascii() or not reader.isascii()
                 or any(c.isspace() for c in writer + reader)):
             raise RuntimeError('Set distinct ASCII DUCT_REPORT_TOKEN and DUCT_READ_TOKEN (32+ characters).')
@@ -81,7 +83,10 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
                 credentials.credentials.encode('utf-8'), expected.encode('utf-8'))):
             raise HTTPException(401, 'Unauthorized', headers={'WWW-Authenticate': 'Bearer'})
 
-    def require_writer(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+    def require_writer(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        if policy.development and request.headers.get('X-Duct-Device-ID'):
+            policy.device(request, jobs)
+            return None
         if credentials is None:
             authenticate(credentials, writer)
         token = credentials.credentials.encode('utf-8')
@@ -95,7 +100,9 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
             authenticate(credentials, writer)
         return None
 
-    def reporting_device(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+    def reporting_device(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        if policy.development and request.headers.get('X-Duct-Device-ID'):
+            return policy.device(request, jobs)
         if credentials is not None:
             try:
                 return jobs.report_identity(credentials.credentials)
@@ -104,6 +111,8 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         return None
 
     def require_reader(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        if policy.development and request.headers.get('X-Duct-Tape-Request') == '1':
+            return
         if not sessions.authenticated(request):
             authenticate(credentials, reader)
 
@@ -126,7 +135,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         return response
 
     app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader, reporting_device))
-    app.include_router(agent_router(jobs, administrator, sessions))
+    app.include_router(agent_router(jobs, administrator, sessions, policy, ROOT.parent))
     app.include_router(artifact_router(ROOT.parent / "uploads", administrator))
     (ROOT.parent / "downloads").mkdir(exist_ok=True)
     app.mount("/files", StaticFiles(directory=ROOT.parent / "downloads"), name="files")

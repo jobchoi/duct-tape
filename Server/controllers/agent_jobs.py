@@ -5,12 +5,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
-from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest
+from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest, AgentHeartbeat
 from Server.models.admin_sessions import COOKIE, HEADER
+from Server.models.agent_package import build as build_agent_package
 
 
 
-def router(store, admin_token, sessions):
+def router(store, admin_token, sessions, policy, root):
     routes = APIRouter()
     bearer = HTTPBearer(auto_error=False)
 
@@ -20,6 +21,10 @@ def router(store, admin_token, sessions):
         return credentials.credentials
 
     def admin(request: Request, credentials=Depends(bearer)):
+        if policy.development:
+            if request.headers.get(HEADER) != '1':
+                raise HTTPException(403, 'Same-origin request required')
+            return
         if not admin_token:
             raise HTTPException(503, 'Set DUCT_ADMIN_TOKEN to enable job administration')
         if sessions.authenticated(request):
@@ -27,21 +32,25 @@ def router(store, admin_token, sessions):
         if not secrets.compare_digest(token(credentials).encode(), admin_token.encode()):
             raise HTTPException(401, 'Unauthorized')
 
-    def device(role, credentials):
+    def device(role, credentials, request):
+        if policy.development and request.headers.get('X-Duct-Device-ID'):
+            return policy.device(request, store)
         try:
             return store.authenticate(token(credentials), role)
         except PermissionError:
             raise HTTPException(401, 'Unauthorized') from None
 
-    def client(credentials=Depends(bearer)):
-        return device('client', credentials)
+    def client(request: Request, credentials=Depends(bearer)):
+        return device('client', credentials, request)
 
-    def agent(credentials=Depends(bearer)):
-        return device('agent', credentials)
+    def agent(request: Request, credentials=Depends(bearer)):
+        return device('agent', credentials, request)
 
     def enqueue(device_id, body):
         try:
             return store.enqueue(device_id, body.action, str(body.request_id))
+        except ValueError:
+            raise HTTPException(409, 'Prepare Office/Hancom media and license key') from None
         except PermissionError:
             raise HTTPException(403, 'Administrator approval required') from None
         except LookupError:
@@ -88,12 +97,28 @@ def router(store, admin_token, sessions):
         except FileExistsError:
             raise HTTPException(409, 'Device already registered') from None
 
+    @routes.get('/api/config')
+    def configuration():
+        return {'auth_mode': policy.mode, 'agent_download': '/download/agent.zip'}
+
+    @routes.get('/download/agent.zip')
+    def download(request: Request):
+        package = build_agent_package(root, str(request.base_url).rstrip('/'))
+        return Response(package, media_type='application/zip',
+                        headers={'Content-Disposition': 'attachment; filename="duct-tape-agent.zip"'})
+
     @routes.post('/api/agent/join')
     def join(body: JoinRequest):
         try:
-            return store.join(str(body.device_id), body.hostname)
+            result = store.join(str(body.device_id), body.hostname)
         except FileExistsError:
-            raise HTTPException(409, 'Device already connected') from None
+            if not policy.development:
+                raise HTTPException(409, 'Device already connected') from None
+            result = {'device_id': str(body.device_id)}
+        if policy.development:
+            store.approve(str(body.device_id))
+            return {'device_id': str(body.device_id), 'approved': True, 'auth_mode': policy.mode}
+        return result | {'auth_mode': policy.mode}
 
     @routes.post('/api/admin/agents/{device_id}/approve', dependencies=[Depends(admin)])
     def approve(device_id: UUID):
@@ -124,8 +149,8 @@ def router(store, admin_token, sessions):
         return enqueue(device_id, body)
 
     @routes.post('/api/agent/claim')
-    def claim(device_id=Depends(agent)):
-        return {'job': store.claim(device_id)}
+    def claim(body: AgentHeartbeat = AgentHeartbeat(), device_id=Depends(agent)):
+        return {'job': store.claim(device_id, body.setup_ready)}
 
     @routes.post('/api/agent/jobs/{job_id}')
     def update(job_id: UUID, body: JobUpdate, device_id=Depends(agent)):
