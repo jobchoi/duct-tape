@@ -16,7 +16,7 @@ $env:DUCT_READ_TOKEN = (.\.venv\Scripts\python -c "import secrets; print(secrets
 .\.venv\Scripts\python -m uvicorn Server.server:app --host 127.0.0.1 --port 8000
 ```
 
-Linux에서는 `.venv/bin/python`과 셸 환경변수를 사용합니다. 두 토큰은 서로 다른 32자 이상 ASCII 문자열이어야 합니다. 예시 명령은 서버 세션마다 새 토큰을 만드므로 기관 운영 시 비밀 저장소에서 기존 값을 주입합니다. `.env` 자동 로딩 기능은 없습니다. 토큰 원문을 Git·Wiki·로그에 저장하지 않습니다.
+Linux에서는 `.venv/bin/python`과 셸 환경변수를 사용합니다. 두 토큰은 서로 다른 32자 이상 ASCII 문자열이어야 합니다. 예시 명령은 서버 세션마다 새 토큰을 만드므로 기관 운영 시 비밀 저장소에서 기존 값을 주입합니다. `./manage.sh start`는 `config/app.conf`와 `.env`를 로딩합니다. Python/uvicorn을 직접 실행할 때는 환경변수를 별도로 설정해야 합니다. 토큰 원문을 Git·Wiki·로그에 저장하지 않습니다.
 
 기본 DB는 `Server/data/monitoring.sqlite3`이며 `DUCT_DB_PATH`로 변경할 수 있습니다. 실행 계정에 DB 디렉터리 쓰기 권한을 부여합니다. SQLite WAL 파일까지 같은 로컬 디스크에 두며 SMB 공유 DB는 사용하지 않습니다. 기본 실행은 loopback 전용입니다. 기관망 배포 승인 후 HTTPS 역방향 프록시를 구성하고 방화벽을 관리 대상 서브넷으로 제한합니다. 대시보드 브라우저는 최신 Edge/Chrome을 사용합니다.
 

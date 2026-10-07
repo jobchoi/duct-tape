@@ -5,6 +5,10 @@ REAL_BASE_DIR="$(cd "$BASE_DIR" && pwd -P)"
 cd "$BASE_DIR" || exit 1
 
 # 환경설정 및 보안키 로드
+set -a
+[ -f "$BASE_DIR/config/app.conf" ] && source "$BASE_DIR/config/app.conf"
+[ -f "$BASE_DIR/.env" ] && source "$BASE_DIR/.env"
+set +a
 if [ -f "$BASE_DIR/scripts/load_secrets.sh" ]; then
     # shellcheck disable=SC1091
     source "$BASE_DIR/scripts/load_secrets.sh" || exit 1
