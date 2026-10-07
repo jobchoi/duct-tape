@@ -17,7 +17,7 @@ def browser(role='admin', session=True, key='', mode='secure'):
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content']) elements[id]=new Element();
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
     const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
@@ -25,14 +25,14 @@ def browser(role='admin', session=True, key='', mode='secure'):
     class URLSearchParams {constructor(value){this.value=value;} get(name){return this.value.startsWith(name+'=')?this.value.slice(name.length+1):null;}}
     const AbortSignal={timeout:()=>({})};
     const crypto={randomUUID:()=> '11111111-2222-3333-4444-555555555555'};
-    let calls=[],nextPoll,sessionValid=SESSION,allowed=true,mode='ok';
+    let calls=[],nextPoll,sessionValid=SESSION,allowed=true,mode='ok', serverMedia=false;
     let agentData=[{device_id:'device-1',hostname:'<img onerror=evil()>',approved:1,setup_ready:1,last_seen:Date.now()/1000}];
     let reportData=[{device_id:'dummy-1',hostname:'DUMMY-PC',office:'정상',hancom:'정상'}];
     let jobData=[];
     function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function confirm(){return allowed;}
     async function fetch(path,options){
       calls.push({path,...options});
-      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE})};
+      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,media:{ready:serverMedia}})};
       if(path==='/api/admin/session'){
         if(options.method==='POST') sessionValid=mode==='ok';
         if(options.method==='DELETE') sessionValid=false;
@@ -149,7 +149,7 @@ def test_local_admin_connects_without_login_and_media_gate_is_visible():
     ctx=browser(mode='development',session=False)
     assert ctx.eval('elements.access.hidden') is True
     assert '테스트' in ctx.eval("elements['auth-status'].textContent")
-    assert ctx.eval("elements['admin-content'].hidden") is False
+    assert ctx.eval("elements['admin-content','media-status'].hidden") is False
     assert not ctx.eval("calls.some(c=>c.path==='/api/admin/session' && c.method==='POST')")
     select(ctx)
     ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
@@ -166,3 +166,12 @@ def test_local_client_uses_identifier_without_bearer_token():
     assert 'Authorization' not in post['headers']
     assert post['headers']['X-Duct-Device-ID']=='11111111-2222-3333-4444-555555555555'
     assert ctx.eval('elements.onboarding.hidden') is True
+
+
+def test_server_media_enables_setup_without_local_files():
+    ctx=browser();select(ctx)
+    ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.start.disabled') is True
+    ctx.eval('serverMedia=true;nextPoll()');settle(ctx)
+    assert ctx.eval('elements.start.disabled') is False
+    assert '자동으로' in ctx.eval("elements['media-status'].textContent")

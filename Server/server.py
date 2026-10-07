@@ -19,6 +19,7 @@ from Server.outbox import Outbox, initialize
 from Server.models.agent_jobs import JobStore
 from Server.models.admin_sessions import AdminSessions
 from Server.security import SecurityPolicy
+from Server.models.deployment_media import DeploymentMedia
 from Server.controllers.agent_jobs import router as agent_router
 from Server.controllers.monitoring import router as monitoring_router
 from Server.models.monitoring import Report
@@ -28,7 +29,7 @@ from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
 
-def create_app(db_path=None, report_token=None, read_token=None, schools=None, relay=None, admin_token=None, auth_mode=None):
+def create_app(db_path=None, report_token=None, read_token=None, schools=None, relay=None, admin_token=None, auth_mode=None, media_root=None):
     policy = SecurityPolicy(auth_mode or os.environ.get('DUCT_AUTH_MODE', 'secure'))
     database = Path(db_path or os.environ.get('DUCT_DB_PATH', ROOT / 'data' / 'monitoring.sqlite3'))
     writer = report_token if report_token is not None else os.environ.get('DUCT_REPORT_TOKEN', '')
@@ -37,6 +38,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
     administrator = admin_token if admin_token is not None else os.environ.get('DUCT_ADMIN_TOKEN', '')
     jobs = JobStore(database)
     sessions = AdminSessions()
+    media = DeploymentMedia(media_root or os.environ.get('DUCT_MEDIA_ROOT', ROOT.parent))
     registry = load_schools() if schools is None else schools
     queue = Outbox(database, relay if relay is not None else GasRelay(registry),
                    int(os.environ.get('DUCT_SENT_RETENTION_DAYS', '30')))
@@ -135,7 +137,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         return response
 
     app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader, reporting_device))
-    app.include_router(agent_router(jobs, administrator, sessions, policy, ROOT.parent))
+    app.include_router(agent_router(jobs, administrator, sessions, policy, ROOT.parent, media))
     app.include_router(artifact_router(ROOT.parent / "uploads", administrator))
     (ROOT.parent / "downloads").mkdir(exist_ok=True)
     app.mount("/files", StaticFiles(directory=ROOT.parent / "downloads"), name="files")

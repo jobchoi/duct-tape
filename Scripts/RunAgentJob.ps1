@@ -1,6 +1,10 @@
 ﻿param([switch]$ReportOnly)
 $ErrorActionPreference = 'Stop'
 try {
+    if (-not $ReportOnly) {
+        . (Join-Path $PSScriptRoot 'PrepareAgentMedia.ps1')
+        Initialize-AgentMedia -Root (Split-Path $PSScriptRoot -Parent)
+    }
     . (Join-Path $PSScriptRoot 'ReportStatus.ps1')
     $sent = Send-StatusReport -StateFile (Join-Path $env:TEMP 'Tapbook_State.json') -Stage Preflight -Status running -ConfigPath (Join-Path (Split-Path $PSScriptRoot -Parent) 'Config/Monitoring.json')
     if (-not $sent) { exit 1 }

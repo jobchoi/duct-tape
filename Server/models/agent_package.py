@@ -6,7 +6,7 @@ FILES = (
     'InstallAgent.bat', 'Main.bat',
     'Scripts/Agent.ps1', 'Scripts/AgentActions.ps1', 'Scripts/ClientSetup.ps1',
     'Scripts/Common.ps1', 'Scripts/InstallAgent.ps1', 'Scripts/ReportStatus.ps1',
-    'Scripts/RunAgentJob.ps1', 'Scripts/Test-DeploymentPrerequisites.ps1',
+    'Scripts/RunAgentJob.ps1', 'Scripts/PrepareAgentMedia.ps1', 'Scripts/Test-DeploymentPrerequisites.ps1',
     'Modules/01_GetInfo.ps1', 'Modules/02_CheckOffice.ps1', 'Modules/03_RemoveOffice.ps1',
     'Modules/04_InstallOffice.ps1', 'Modules/05_CheckHancom.ps1', 'Modules/06_InstallHancom.ps1',
 )

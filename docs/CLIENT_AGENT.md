@@ -14,7 +14,7 @@
 
 ## 실제 설치 준비
 
-`C:\ProgramData\DuctTapeAgent`에 담당자가 관리자 권한으로 다음 항목을 준비한다.
+`C:\ProgramData\DuctTapeAgent`에 직접 준비하거나, 서버 배포 원본에서 자동 전달받을 수 있다. 서버 원본에는 다음 항목을 준비한다.
 
 - `Office/setup.exe`, `Office/install.xml`, `Office/remove.xml` 및 정식 Office 매체.
 - `Hancom/Install/Hwp130.msi`, `Hancom/Install/VC_redist.x86.exe` 및 나머지 정식 한컴 매체.
@@ -22,7 +22,11 @@
 
 실행 도구는 이 파일들의 준비 여부를 서버에 보고한다. 없으면 웹에서 `설치 매체 준비 필요`를 표시하고 셋업 요청을 차단한다. 준비 여부는 파일 존재 확인이며 실제 키/매체 유효성은 Main의 사전 검증에서 확인한다. 원본 폴더에 매체/키가 이미 있다면 설치 도구가 함께 복사한다. 세부 매체 조건은 [배포 가이드](wiki/Deployment-Guide.md)를 따른다.
 
-현재 개발 저장소에는 정식 매체/기관 키가 없으므로 자동으로 만들어주거나 다운로드 ZIP에 넣지 않는다.
+설치 원본이 저장소 밖에 있으면 `config/app.conf`에 `DUCT_MEDIA_ROOT="/mnt/d/deployment/duct-tape"`처럼 WSL에서 접근 가능한 상위 폴더를 지정하고 서버를 재시작한다. 그 아래에 Office/, Hancom/, Config/HancomKey.txt 구조가 있어야 한다. `.gitignore`는 Git 추적에만 영향을 주며 이 읽기/전송을 차단하지 않는다.
+
+서버 원본이 준비되면 PC에 파일이 없어도 셋업 버튼이 활성화된다. 승인된 에이전트가 `/api/agent/media`에서 비공개 ZIP을 받아 압축을 풀고 실제 설치를 시작한다. 정식 매체 전체와 키를 전달하되 서버 `.env`나 기타 설정은 전달하지 않는다. 공개 실행 도구 ZIP에는 계속 키를 넣지 않는다.
+
+현재 확인 가능한 작업 폴더에는 실제 매체/기관 키가 없다. 실제 원본 경로가 필요하며 예제 키로 대체하거나 없는 설치 파일을 만들지 않는다.
 
 ## 테스트 모드와 운영 인증 모드
 

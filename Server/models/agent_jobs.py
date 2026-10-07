@@ -116,7 +116,7 @@ class JobStore:
             where, args = (' WHERE device_id=?', (device_id,)) if device_id else ('', ())
             return [dict(row) for row in db.execute('SELECT * FROM agent_jobs'+where+' ORDER BY created DESC LIMIT 100', args)]
 
-    def enqueue(self, device_id, action, request_id):
+    def enqueue(self, device_id, action, request_id, server_media_ready=False):
         with closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
@@ -125,7 +125,7 @@ class JobStore:
                 raise LookupError
             if not identity['approved']:
                 raise PermissionError
-            if action == 'deploy' and not identity['setup_ready']:
+            if action == 'deploy' and not (identity['setup_ready'] or server_media_ready):
                 raise ValueError('Setup media missing')
             old = db.execute('SELECT * FROM agent_jobs WHERE device_id=? AND request_id=?', (device_id, request_id)).fetchone()
             if old:
