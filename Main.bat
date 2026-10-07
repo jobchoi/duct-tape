@@ -31,7 +31,7 @@ if errorlevel 1 goto FAILED
 echo [완료] 설치 단계가 완료되었습니다. 상태 파일: %STATE_FILE%
 echo [안내] RebootRequired가 true이면 재부팅하세요. 앱 실행 및 정품 인증을 확인하세요.
 popd
-pause
+if /I not "%~1"=="--unattended" pause
 exit /b 0
 
 :KEY_MISSING
@@ -41,13 +41,13 @@ goto FAILED
 :FAILED
 echo [오류] 작업을 중단했습니다. 앞 단계의 오류 코드와 로컬 Deployment.log를 확인하세요.
 popd
-pause
+if /I not "%~1"=="--unattended" pause
 exit /b 1
 :NOT_ADMIN
 echo [오류] 관리자 권한으로 실행하세요.
-pause
+if /I not "%~1"=="--unattended" pause
 exit /b 1
 :PATH_FAILED
 echo [오류] 배포 경로에 접근할 수 없습니다. 공유 폴더 권한을 확인하세요.
-pause
+if /I not "%~1"=="--unattended" pause
 exit /b 1

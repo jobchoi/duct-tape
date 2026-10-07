@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape 중앙 관제</title><link rel="stylesheet" href="/dashboard.css"><script src="/dashboard.js" defer></script></head>
-<body><main>
-<header><p>학교 무인 배포 자동화</p><h1>duct-tape 중앙 관제</h1><p>기기별 설치 상태 · 5초마다 자동 갱신</p></header>
+<body data-role="admin"><main>
+<header><p>학교 무인 배포 자동화</p><h1>duct-tape 중앙 관제</h1><p>관리자 화면 · 기기별 설치 상태 · 5초마다 자동 갱신</p></header><nav><a href="/client">클라이언트 화면</a></nav>
 <form id="login"><label for="token">조회 토큰</label><input id="token" type="password" required autocomplete="off"><button>연결</button><button id="logout" type="button">연결 해제</button></form>
 <p id="connection" role="status">조회 토큰을 입력하세요. 토큰은 이 탭의 메모리에만 보관합니다.</p>
 <section id="summary" aria-label="기기 요약"></section>
@@ -10,4 +10,9 @@
 <label for="school">학교 코드</label><input id="school" type="search" placeholder="전체 학교 · 코드 정확히 입력">
 <label for="grade">학년</label><select id="grade"><option value="">전체 학년</option><option value="shared">공용 / 미지정</option><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option><option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option></select>
 <div class="table-wrap"><table><caption>기기별 최신 보고 (5분 이상 보고가 없으면 경과 표시, 오프라인 판정 아님)</caption><thead><tr><th>기기</th><th>학교 / 학년</th><th>일련번호 / 모델</th><th>MAC</th><th>Office</th><th>한컴</th><th>단계 / 상태</th><th>오류 / 종료 코드</th><th>재부팅</th><th>최종 수신</th></tr></thead><tbody id="devices"></tbody></table></div>
-</main></body></html>
+<section><h2>에이전트 관리</h2>
+<form id="access"><label>작업 관리자 토큰 <input id="access-token" type="password" required autocomplete="off"></label><button>연결</button><button id="disconnect" type="button">연결 해제</button></form>
+<p id="notice" role="status"></p><button id="enroll" type="button" disabled>1회 등록 코드 발급</button><output id="enrollment"></output>
+<form id="request"><label>PC <select id="device" required></select></label><label>작업 <select id="action"><option value="report-test">보고 테스트</option><option value="deploy">Office / 한컴 배포</option></select></label><button id="start" disabled>작업 요청</button></form>
+<p>배포는 기존 프로그램 제거·설치를 수행할 수 있습니다. interrupted 작업은 PC 상태 확인 후 새로 요청하세요.</p><pre id="jobs"></pre><form id="resolve"><label>상태 확인을 마친 interrupted 작업 ID <input id="resolve-id" required></label><button>중단 작업 확인 완료</button></form><button id="revoke" type="button">선택 PC 등록 해제</button>
+</section><script src="/portal.js" defer></script></main></body></html>
