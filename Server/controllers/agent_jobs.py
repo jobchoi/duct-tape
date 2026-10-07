@@ -5,13 +5,14 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
+from starlette.background import BackgroundTask
 from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest, AgentHeartbeat
 from Server.models.admin_sessions import COOKIE, HEADER
 from Server.models.agent_package import build as build_agent_package
 
 
 
-def router(store, admin_token, sessions, policy, root):
+def router(store, admin_token, sessions, policy, root, media):
     routes = APIRouter()
     bearer = HTTPBearer(auto_error=False)
 
@@ -48,7 +49,7 @@ def router(store, admin_token, sessions, policy, root):
 
     def enqueue(device_id, body):
         try:
-            return store.enqueue(device_id, body.action, str(body.request_id))
+            return store.enqueue(device_id, body.action, str(body.request_id), media.manifest()['ready'])
         except ValueError:
             raise HTTPException(409, 'Prepare Office/Hancom media and license key') from None
         except PermissionError:
@@ -99,13 +100,26 @@ def router(store, admin_token, sessions, policy, root):
 
     @routes.get('/api/config')
     def configuration():
-        return {'auth_mode': policy.mode, 'agent_download': '/download/agent.zip'}
+        return {'auth_mode': policy.mode, 'agent_download': '/download/agent.zip', 'media': media.manifest()}
 
     @routes.get('/download/agent.zip')
     def download(request: Request):
         package = build_agent_package(root, str(request.base_url).rstrip('/'))
         return Response(package, media_type='application/zip',
                         headers={'Content-Disposition': 'attachment; filename="duct-tape-agent.zip"'})
+
+    @routes.get('/api/agent/media')
+    def download_media(device_id=Depends(agent)):
+        if not store.info(device_id)['approved']:
+            raise HTTPException(403, 'Administrator approval required')
+        try:
+            path = media.build()
+        except FileNotFoundError:
+            raise HTTPException(409, 'Server deployment media is incomplete') from None
+        except ValueError:
+            raise HTTPException(409, 'Invalid deployment source') from None
+        return FileResponse(path, media_type='application/zip', filename='deployment-media.zip',
+                            background=BackgroundTask(path.unlink, missing_ok=True))
 
     @routes.post('/api/agent/join')
     def join(body: JoinRequest):

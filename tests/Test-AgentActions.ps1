@@ -17,7 +17,7 @@ if ($script:Arguments -match '-ReportOnly') { throw 'Deploy mismatch' }
 $rejected=$false
 try { $null = Start-AgentAction -Action 'powershell -Command evil' -Root $root -JobId $id } catch { $rejected=$true }
 if (-not $rejected -or $script:Calls -ne 2) { throw 'Arbitrary command accepted' }
-foreach ($file in @('Scripts/Agent.ps1','Scripts/InstallAgent.ps1','Scripts/AgentActions.ps1','Scripts/RunAgentJob.ps1')) {
+foreach ($file in @('Scripts/Agent.ps1','Scripts/InstallAgent.ps1','Scripts/AgentActions.ps1','Scripts/RunAgentJob.ps1','Scripts/PrepareAgentMedia.ps1')) {
     $tokens=$null; $errors=$null
     $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $file),[ref]$tokens,[ref]$errors)
     if ($errors.Count) { throw "Syntax errors: $file" }

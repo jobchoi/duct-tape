@@ -2,7 +2,7 @@
 const portal = (() => {
   const el = id => document.getElementById(id), admin = document.body.dataset.role === 'admin';
   const names = {queued:'셋업 대기',running:'셋업 진행 중',succeeded:'셋업 완료',failed:'셋업 실패',interrupted:'PC 상태 확인 필요',cancelled:'취소됨'};
-  let mode = 'secure', deviceId = '';
+  let mode = 'secure', deviceId = '', serverMediaReady = false;
   let token = '', authenticated = false, timer = null, version = 0, pending = false, selected = '', agents = [], jobs = [], clientApproved = false;
   const connected = () => admin ? authenticated : Boolean(token || deviceId);
   async function api(path, body, method) {
@@ -18,7 +18,7 @@ const portal = (() => {
     const agent = agents.find(item => item.device_id===selected);
     if (!agent) selected='';
     el('selected').textContent = agent ? `선택한 PC: ${agent.hostname}${busy(selected) ? ' · '+names[jobs.find(j => j.device_id===selected && ['queued','running','interrupted'].includes(j.state)).state] : ''}` : '위 목록에서 PC를 선택하세요.';
-    el('start').disabled = pending || !agent || !agent.approved || !agent.setup_ready || Date.now()/1000-agent.last_seen>=120 || busy(selected);
+    el('start').disabled = pending || !agent || !agent.approved || !(agent.setup_ready || serverMediaReady) || Date.now()/1000-agent.last_seen>=120 || busy(selected);
     el('revoke').disabled = !agent;
     el('resolve').disabled = !jobs.some(job => job.device_id===selected && job.state==='interrupted');
   }
@@ -34,7 +34,7 @@ const portal = (() => {
     el('unmanaged').textContent=missing ? `에이전트가 연결되지 않은 보고 ${missing}대는 셋업 대상에서 제외했습니다.` : '';
     for (const agent of agents) {
       const row=document.createElement('tr'), report=reports.find(r=>r.device_id===agent.device_id), latest=jobs.find(j=>j.device_id===agent.device_id);
-      const values=[agent.hostname, !agent.approved ? '연결 승인 대기' : Date.now()/1000-agent.last_seen<120 ? '연결됨':'연결 끊김', report ? `${report.office} / ${report.hancom}` : '아직 보고 없음', !agent.setup_ready ? '설치 매체 준비 필요' : latest ? names[latest.state] || latest.state : '셋업 전'];
+      const values=[agent.hostname, !agent.approved ? '연결 승인 대기' : Date.now()/1000-agent.last_seen<120 ? '연결됨':'연결 끊김', report ? `${report.office} / ${report.hancom}` : '아직 보고 없음', !agent.setup_ready && !serverMediaReady ? '설치 매체 준비 필요' : latest ? names[latest.state] || latest.state : '셋업 전'];
       for (const value of values) { const cell=document.createElement('td');cell.textContent=value;row.append(cell); }
       const cell=document.createElement('td'), button=document.createElement('button');button.type='button';
       button.textContent=agent.approved ? (selected===agent.device_id ? '선택됨':'선택') : '연결 승인';
@@ -51,17 +51,19 @@ const portal = (() => {
   }
   async function poll(current) {
     try {
+      const configuration=await api('/api/config');if (current!==version) return;serverMediaReady=Boolean(configuration.media?.ready);
       if (admin) {
         const [devices,work,reports]=await Promise.all([api('/api/admin/agents'),api('/api/admin/jobs'),api('/api/devices')]);
         if (current!==version) return;
         el('admin-content').hidden=false;el('auth-status').textContent=mode==='development' ? '로컬 테스트 모드 · 인증 키 없이 연결됨' : '관리자 로그인 완료';agents=devices.agents;jobs=work.jobs;renderAdmin(reports.devices,current);el('notice').textContent='서버에 연결됨 · 5초마다 갱신';
+        el('media-status').textContent=serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : '서버 매체가 준비되지 않았습니다. 배포 원본 경로의 Office/, Hancom/, Config/HancomKey.txt를 확인하세요.';
       } else {
         const data=await api('/api/client/jobs');if (current!==version) return;
         jobs=data.jobs;clientApproved=Boolean(data.approved);
         el('onboarding').hidden=true;
-        el('notice').textContent=clientApproved ? `${data.hostname} · ${data.setup_ready ? '셋업 준비됨' : '실행 도구 연결 완료'}` : `${data.hostname} · 관리자의 연결 승인을 기다리고 있습니다.`;
-        el('client-state').textContent=!data.setup_ready ? '셋업하려면 C:\\ProgramData\\DuctTapeAgent에 Office·Hancom 매체와 Config\\HancomKey.txt를 준비하세요.' : jobs[0] ? names[jobs[0].state] || jobs[0].state : '';
-        el('start').disabled=pending || !clientApproved || !data.setup_ready || jobs.some(j=>['queued','running','interrupted'].includes(j.state));
+        el('notice').textContent=clientApproved ? `${data.hostname} · ${data.setup_ready || serverMediaReady ? '셋업 준비됨' : '실행 도구 연결 완료'}` : `${data.hostname} · 관리자의 연결 승인을 기다리고 있습니다.`;
+        el('client-state').textContent=!data.setup_ready && !serverMediaReady ? '셋업하려면 C:\\ProgramData\\DuctTapeAgent에 Office·Hancom 매체와 Config\\HancomKey.txt를 준비하세요.' : jobs[0] ? names[jobs[0].state] || jobs[0].state : '';
+        el('start').disabled=pending || !clientApproved || !(data.setup_ready || serverMediaReady) || jobs.some(j=>['queued','running','interrupted'].includes(j.state));
       }
     } catch (error) { if (current===version) { if (error.status===401) { disconnect(); if (!admin) { try {sessionStorage.removeItem('duct-client-key');sessionStorage.removeItem('duct-client-device');el('onboarding').hidden=false;} catch (_) {} } } el('notice').textContent=error.message;el('start').disabled=true; } }
     if (current===version && connected()) timer=setTimeout(()=>poll(current),5000);
@@ -97,7 +99,7 @@ const portal = (() => {
   async function initialize() {
     const current=version;
     try {
-      const config=await api('/api/config');if (current!==version) return;mode=config.auth_mode;
+      const config=await api('/api/config');if (current!==version) return;mode=config.auth_mode;serverMediaReady=Boolean(config.media?.ready);
       if (admin) {
         el('access').hidden=mode==='development';
         if (mode==='development') {authenticated=true;await poll(current);}
