@@ -6,10 +6,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from Server.models.monitoring import Report
 from Server.outbox import enqueue
 
-def router(queue, connect, registry, require_writer, require_reader):
+def router(queue, connect, registry, require_writer, require_reader, reporting_device):
     routes = APIRouter()
     @routes.post('/api/report')
-    def receive(report: Report, background_tasks: BackgroundTasks, school=Depends(require_writer)):
+    def receive(report: Report, background_tasks: BackgroundTasks, school=Depends(require_writer), device_id=Depends(reporting_device)):
+        if device_id is not None and str(report.device_id) != device_id:
+            raise HTTPException(403, 'Device scope mismatch')
         if report.school_code != school:
             raise HTTPException(403, 'School scope mismatch')
         if school is not None and report.grade > (6 if registry[school]['school_type'] == 'elementary' else 3):

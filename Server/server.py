@@ -88,7 +88,19 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         for code, school in registry.items():
             if secrets.compare_digest(token, school['report_token'].encode('utf-8')):
                 return code
-        authenticate(credentials, writer)
+        try:
+            jobs.report_identity(credentials.credentials)
+            return None
+        except PermissionError:
+            authenticate(credentials, writer)
+        return None
+
+    def reporting_device(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        if credentials is not None:
+            try:
+                return jobs.report_identity(credentials.credentials)
+            except PermissionError:
+                pass
         return None
 
     def require_reader(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
@@ -113,7 +125,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
         return response
 
-    app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader))
+    app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader, reporting_device))
     app.include_router(agent_router(jobs, administrator, sessions))
     app.include_router(artifact_router(ROOT.parent / "uploads", administrator))
     (ROOT.parent / "downloads").mkdir(exist_ok=True)

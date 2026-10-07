@@ -1,8 +1,5 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape 클라이언트</title><link rel="stylesheet" href="/dashboard.css"><script src="/portal.js" defer></script></head>
-<body data-role="client"><main><header><h1>이 PC 작업 시작</h1><p>최초 에이전트 등록 후 버튼으로 설치 작업을 요청할 수 있습니다.</p></header><nav><a href="/admin">관리자 화면</a></nav>
-<form id="access"><label>이 PC의 접속 키 <input id="access-token" type="password" autocomplete="off" required></label><button>연결</button><button id="disconnect" type="button">연결 해제</button></form>
-<p id="notice" role="status">등록 담당자에게 받은 PC 전용 접속 키로 연결하세요.</p>
-<form id="request"><label>작업 <select id="action"><option value="report-test">보고 연결 테스트</option><option value="deploy">Office / 한컴 배포</option></select></label><button id="start" disabled>작업 시작</button></form>
-<p>배포 작업은 기존 Office·한컴 제거 및 설치를 수행할 수 있습니다. PC를 켜 두고 Tailscale 연결을 유지하세요.</p><pre id="jobs"></pre>
-<details><summary>최초 설치 안내</summary><p>담당자가 설치 매체와 보고 설정을 준비하고 InstallAgent.bat을 관리자 권한으로 한 번 실행해야 합니다. 등록 후에는 이 페이지에서 작업을 요청하세요.</p></details>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape 환경 셋업</title><link rel="stylesheet" href="/dashboard.css"><script src="/portal.js" defer></script></head>
+<body data-role="client"><main class="portal client"><header><p class="eyebrow">DUCT-TAPE</p><h1>이 PC 환경 셋업</h1><p>Office와 한컴 설치를 준비하고 실행합니다.</p></header>
+<section class="panel"><p id="notice" role="status">바탕화면의 ‘duct-tape 작업’ 바로가기로 접속하세요.</p><p id="client-state"></p><form id="request"><button id="start" disabled>환경 셋업 시작</button></form><p id="result" role="status"></p><p class="muted">기존 Office·한컴 제거 및 설치가 진행됩니다. PC를 켜 두세요.</p></section>
+<details class="panel"><summary>처음 접속하는 PC인가요?</summary><p>브라우저에서 설치하려면 PC의 실행 도구가 한 번 준비되어야 합니다. 담당자가 매체와 키를 준비한 뒤 InstallAgent.bat을 실행하면 서버에 자동 연결 요청을 보냅니다. 관리자가 승인하면 바탕화면 바로가기로 접속해 셋업 버튼을 누르세요.</p><p>이 화면에는 등록 코드나 로그인 키를 입력하지 않습니다.</p></details>
 </main></body></html>

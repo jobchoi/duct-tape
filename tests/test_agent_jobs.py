@@ -33,8 +33,8 @@ def request(action='report-test', **extra):
 def test_pages_and_privilege_separation(api):
     c, _ = api
     assert c.get('/', follow_redirects=False).headers['location'] == '/client'
-    assert '이 PC 작업 시작' in c.get('/client').text
-    assert '에이전트 관리' in c.get('/admin').text
+    assert '이 PC 환경 셋업' in c.get('/client').text
+    assert '연결된 PC' in c.get('/admin').text
     for token in (READ, WRITE, 'wrong'):
         assert c.post('/api/admin/enrollments', headers=auth(token)).status_code == 401
     keys, _ = register(c)
