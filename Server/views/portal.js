@@ -2,7 +2,7 @@
 const portal = (() => {
   const el = id => document.getElementById(id), admin = document.body.dataset.role === 'admin';
   const names = {queued:'셋업 대기',running:'셋업 진행 중',succeeded:'셋업 완료',failed:'셋업 실패',interrupted:'PC 상태 확인 필요',cancelled:'취소됨'};
-  let mode = 'secure', deviceId = '', serverMediaReady = false;
+  let mode = 'secure', deviceId = '', serverMediaReady = false, missingMedia = [];
   let token = '', authenticated = false, timer = null, version = 0, pending = false, selected = '', agents = [], jobs = [], clientApproved = false;
   const connected = () => admin ? authenticated : Boolean(token || deviceId);
   async function api(path, body, method) {
@@ -19,6 +19,8 @@ const portal = (() => {
     if (!agent) selected='';
     el('selected').textContent = agent ? `선택한 PC: ${agent.hostname}${busy(selected) ? ' · '+names[jobs.find(j => j.device_id===selected && ['queued','running','interrupted'].includes(j.state)).state] : ''}` : '위 목록에서 PC를 선택하세요.';
     el('start').disabled = pending || !agent || !agent.approved || !(agent.setup_ready || serverMediaReady) || Date.now()/1000-agent.last_seen>=120 || busy(selected);
+    el('start-reason').textContent = !agent ? (agents.length ? '목록에서 작업할 PC를 선택하세요.' : '실행 도구 설치 또는 연결 복구 후 PC를 선택할 수 있습니다.') : !agent.approved ? 'PC 연결 승인이 필요합니다.' : Date.now()/1000-agent.last_seen>=120 ? 'PC가 응답하지 않습니다. 실행 도구와 Tailscale을 확인하세요.' : busy(selected) ? '기존 작업이 끝나거나 중단 상태를 확인한 뒤 시작할 수 있습니다.' : !(agent.setup_ready || serverMediaReady) ? '설치 매체가 준비되면 시작할 수 있습니다.' : '셋업을 시작할 수 있습니다.';
+    el('media-status').textContent = agent?.setup_ready ? '선택 PC의 설치 매체가 준비되었습니다.' : serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : `서버 확인이 필요한 파일\n${missingMedia.join('\n') || '배포 원본 경로를 확인하세요.'}`;
     el('revoke').disabled = !agent;
     el('resolve').disabled = !jobs.some(job => job.device_id===selected && job.state==='interrupted');
   }
@@ -29,11 +31,16 @@ const portal = (() => {
   function renderAdmin(reports, current) {
     el('devices').replaceChildren();
     el('empty').hidden=agents.length>0;
-    el('summary').textContent=`연결된 PC ${agents.filter(a=>a.approved).length}대 · 승인 대기 ${agents.filter(a=>!a.approved).length}대`;
+    el('summary').textContent=`등록 ${agents.length}대 · 승인 대기 ${agents.filter(a=>!a.approved).length}대`;
     const missing = new Set(reports.filter(report => !agents.some(a=>a.device_id===report.device_id)).map(report=>report.device_id)).size;
-    el('unmanaged').textContent=missing ? `에이전트가 연결되지 않은 보고 ${missing}대는 셋업 대상에서 제외했습니다.` : '';
+    el('unmanaged').textContent=missing ? `현재 PC 등록이 없는 기기의 이전 상태 보고 ${missing}대를 별도 보관 중입니다.` : '';
+    el('legacy-count').textContent=`${missing}대`;el('legacy-reports').hidden=missing===0;
+    el('metric-online').textContent=String(agents.filter(a=>a.approved && Date.now()/1000-a.last_seen<120).length);
+    el('metric-pending').textContent=String(agents.filter(a=>!a.approved).length);
+    el('metric-media').textContent=serverMediaReady ? '준비 완료' : `누락 ${missingMedia.length}개`;
     for (const agent of agents) {
       const row=document.createElement('tr'), report=reports.find(r=>r.device_id===agent.device_id), latest=jobs.find(j=>j.device_id===agent.device_id);
+      row.className=selected===agent.device_id ? 'is-selected':'';
       const values=[agent.hostname, !agent.approved ? '연결 승인 대기' : Date.now()/1000-agent.last_seen<120 ? '연결됨':'연결 끊김', report ? `${report.office} / ${report.hancom}` : '아직 보고 없음', !agent.setup_ready && !serverMediaReady ? '설치 매체 준비 필요' : latest ? names[latest.state] || latest.state : '셋업 전'];
       for (const value of values) { const cell=document.createElement('td');cell.textContent=value;row.append(cell); }
       const cell=document.createElement('td'), button=document.createElement('button');button.type='button';
@@ -46,17 +53,17 @@ const portal = (() => {
   }
   function disconnect() {
     version++;clearTimeout(timer);token='';authenticated=false;selected='';agents=[];jobs=[];clientApproved=false;deviceId='';el('start').disabled=true;
-    if (admin) { el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;updateSelection(); }
+    if (admin) { el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;el('legacy-reports').hidden=true;updateSelection(); }
     el('result').textContent='';el('notice').textContent=admin ? '관리자 로그인 후 PC 연결 상태를 확인할 수 있습니다.' : '처음이면 실행 도구를 다운로드해 설치하세요. 설치 후 바탕화면 바로가기가 생성됩니다.';
   }
   async function poll(current) {
     try {
-      const configuration=await api('/api/config');if (current!==version) return;serverMediaReady=Boolean(configuration.media?.ready);
+      const configuration=await api('/api/config');if (current!==version) return;serverMediaReady=Boolean(configuration.media?.ready);missingMedia=configuration.media?.missing || [];
       if (admin) {
         const [devices,work,reports]=await Promise.all([api('/api/admin/agents'),api('/api/admin/jobs'),api('/api/devices')]);
         if (current!==version) return;
         el('admin-content').hidden=false;el('auth-status').textContent=mode==='development' ? '로컬 테스트 모드 · 인증 키 없이 연결됨' : '관리자 로그인 완료';agents=devices.agents;jobs=work.jobs;renderAdmin(reports.devices,current);el('notice').textContent='서버에 연결됨 · 5초마다 갱신';
-        el('media-status').textContent=serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : '서버 매체가 준비되지 않았습니다. 배포 원본 경로의 Office/, Hancom/, Config/HancomKey.txt·OfficeKey.txt를 확인하세요.';
+
       } else {
         const data=await api('/api/client/jobs');if (current!==version) return;
         jobs=data.jobs;clientApproved=Boolean(data.approved);
@@ -99,7 +106,7 @@ const portal = (() => {
   async function initialize() {
     const current=version;
     try {
-      const config=await api('/api/config');if (current!==version) return;mode=config.auth_mode;serverMediaReady=Boolean(config.media?.ready);
+      const config=await api('/api/config');if (current!==version) return;mode=config.auth_mode;serverMediaReady=Boolean(config.media?.ready);missingMedia=config.media?.missing || [];
       if (admin) {
         el('access').hidden=mode==='development';
         if (mode==='development') {authenticated=true;await poll(current);}

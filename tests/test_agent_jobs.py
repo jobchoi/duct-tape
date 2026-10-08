@@ -141,3 +141,18 @@ def test_revoking_cancels_queued_work_and_allows_new_enrollment(api):
     code = c.post('/api/admin/enrollments', headers=auth(ADMIN)).json()['code']
     assert c.post('/api/agent/register', json=body | {'code':code}).status_code == 200
     assert c.post('/api/agent/claim', headers=auth(keys['agent_token'])).status_code == 401
+
+def test_agent_reconnect_rotates_browser_key_and_blocks_active_work(api):
+    c,_=api
+    keys,_=register(c)
+    assert c.get('/api/agent/status',headers=auth(keys['agent_token'])).json()['device_id']==keys['device_id']
+    assert c.post('/api/agent/reconnect',headers=auth(keys['client_token'])).status_code==401
+    result=c.post('/api/agent/reconnect',headers=auth(keys['agent_token']))
+    assert result.status_code==200
+    new=result.json()['client_token']
+    assert c.get('/api/client/jobs',headers=auth(keys['client_token'])).status_code==401
+    assert c.get('/api/client/jobs',headers=auth(new)).status_code==200
+    assert 'agent_token' not in result.json()
+    c.post('/api/client/jobs',json=request(),headers=auth(new))
+    assert c.post('/api/agent/reconnect',headers=auth(keys['agent_token'])).status_code==409
+    assert c.get('/api/client/jobs',headers=auth(new)).status_code==200
