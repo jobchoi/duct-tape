@@ -17,7 +17,8 @@
 
 # 2. 대용량 설치 파일 및 패키지
 Hancom/
-Office/
+/Office/*
+!/Office/README.md
 *.exe
 *.msi
 *.cab
