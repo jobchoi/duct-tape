@@ -2,6 +2,7 @@
 function Invoke-ApplicationPlan {
     param([string]$Root, [string]$StateFile)
     . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
+    . (Join-Path $PSScriptRoot 'JobProgress.ps1')
     $catalog=Get-ApplicationCatalog -Root $Root
     $modules=@($catalog.common_modules)+@($catalog.applications | ForEach-Object {$_.modules})
     foreach ($module in $modules) {
@@ -10,9 +11,14 @@ function Invoke-ApplicationPlan {
     foreach ($app in $catalog.applications) {
         if ($app.key_file -and -not (Test-Path -LiteralPath (Join-Path $Root $app.key_file) -PathType Leaf)) {throw 'APPLICATION_KEY_MISSING'}
     }
+    $done=0
     foreach ($module in $modules) {
+        Write-JobProgress -Phase module -Status started -Module ([IO.Path]::GetFileName($module)) -Current $done -Total $modules.Count -Unit steps
         Write-Host ('실행: '+[IO.Path]::GetFileName($module))
-        Invoke-ApplicationModule -Path (Join-Path $Root $module) -StateFile $StateFile
+        try {Invoke-ApplicationModule -Path (Join-Path $Root $module) -StateFile $StateFile}
+        catch {Write-JobProgress -Phase module -Status failed -Module ([IO.Path]::GetFileName($module)) -Current $done -Total $modules.Count -Unit steps;throw}
+        $done++
+        Write-JobProgress -Phase module -Status completed -Module ([IO.Path]::GetFileName($module)) -Current $done -Total $modules.Count -Unit steps
     }
 }
 function Invoke-ApplicationModule {

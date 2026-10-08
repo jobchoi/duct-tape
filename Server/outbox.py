@@ -3,6 +3,7 @@ from contextlib import closing
 import json
 import random
 import sqlite3
+from Server.database import connect as connect_database
 import threading
 import time
 from uuid import uuid4
@@ -65,7 +66,7 @@ class Outbox:
         self.last_error = ''
 
     def connect(self):
-        db = sqlite3.connect(self.database, timeout=10)
+        db = connect_database(self.database, timeout=10)
         db.row_factory = sqlite3.Row
         return db
 

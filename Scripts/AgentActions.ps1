@@ -7,7 +7,7 @@
         default { throw '허용되지 않은 작업입니다.' }
     }
     $script = Join-Path $Root 'Scripts/RunAgentJob.ps1'
-    Start-Process powershell.exe -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "'+$script+'" '+$arguments) -WorkingDirectory $Root -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $Root ('logs/'+$id+'.out.log')) -RedirectStandardError (Join-Path $Root ('logs/'+$id+'.err.log'))
+    Start-Process powershell.exe -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "'+$script+'" -JobId '+$id+' '+$arguments) -WorkingDirectory $Root -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $Root ('logs/'+$id+'.out.log')) -RedirectStandardError (Join-Path $Root ('logs/'+$id+'.err.log'))
 }
 
 function Test-AgentSetupReady {

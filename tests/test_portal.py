@@ -10,14 +10,14 @@ def browser(role='admin', session=True, key='', mode='secure'):
     ctx=quickjs.Context()
     ctx.eval('''
     class Element {
-      constructor() {this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.children=[];this.listeners={};}
+      constructor() {this.value='';this.textContent='';this.disabled=false;this.hidden=false;this.dataset={};this.children=[];this.listeners={};}
       append(item) {this.children.push(item);}
       replaceChildren() {this.children=[];}
       addEventListener(name,fn) {this.listeners[name]=fn;}
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media']) elements[id]=new Element();
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
     const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
@@ -28,10 +28,11 @@ def browser(role='admin', session=True, key='', mode='secure'):
     let calls=[],nextPoll,sessionValid=SESSION,allowed=true,mode='ok', serverMedia=false;
     let agentData=[{device_id:'device-1',hostname:'<img onerror=evil()>',approved:1,setup_ready:1,last_seen:Date.now()/1000}];
     let reportData=[{device_id:'dummy-1',hostname:'DUMMY-PC',office:'정상',hancom:'정상'}];
-    let jobData=[];
-    function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function confirm(){return allowed;}
+    let jobData=[];let progressData={job:{id:'job-1',state:'running',created:Date.now()/1000-30,updated:Date.now()/1000},events:[]};
+    function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function setInterval(){return 1;} function clearInterval(){} function confirm(){return allowed;}
     async function fetch(path,options){
       calls.push({path,...options});
+      if(path.includes('/progress?')) return {ok:true,json:async()=>progressData};
       if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,media:{ready:serverMedia,missing:serverMedia?[]:['Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe']}})};
       if(path==='/api/admin/session'){
         if(options.method==='POST') sessionValid=mode==='ok';
@@ -149,7 +150,7 @@ def test_local_admin_connects_without_login_and_media_gate_is_visible():
     ctx=browser(mode='development',session=False)
     assert ctx.eval('elements.access.hidden') is True
     assert '테스트' in ctx.eval("elements['auth-status'].textContent")
-    assert ctx.eval("elements['admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media'].hidden") is False
+    assert ctx.eval("elements['admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events'].hidden") is False
     assert not ctx.eval("calls.some(c=>c.path==='/api/admin/session' && c.method==='POST')")
     select(ctx)
     ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
@@ -196,3 +197,18 @@ def test_console_distinguishes_legacy_reports_and_current_selection():
     select(ctx)
     assert ctx.eval("elements['media-status'].textContent")=='선택 PC의 설치 매체가 준비되었습니다.'
     assert ctx.eval('elements.devices.children[0].className')=='is-selected'
+
+
+def test_actual_progress_counters_and_module_elapsed_are_rendered():
+    ctx=browser()
+    ctx.eval("jobData=[{id:'job-1',device_id:'device-1',state:'running',created:Date.now()/1000-30,updated:Date.now()/1000}];progressData.events=[{sequence:1,phase:'download',status:'progress',current:5242880,total:10485760,unit:'bytes',label:'설치 매체 다운로드',received:Date.now()/1000-10},{sequence:2,phase:'module',status:'started',module:'04_InstallOffice.ps1',current:3,total:6,unit:'steps',label:'Office 설치',received:Date.now()/1000-5}];nextPoll()")
+    settle(ctx);select(ctx);settle(ctx)
+    assert ctx.eval("elements['progress-panel'].hidden") is False
+    text=ctx.eval("elements['progress-events'].children.map(e=>e.textContent).join(' ')")
+    assert '5.0 MB / 10.0 MB · 50%' in text
+    assert 'Office 설치' in text and '경과' in text
+    assert ctx.eval("elements['progress-bar'].value")==3
+    assert ctx.eval("elements['progress-bar'].max")==6
+    assert '실행 단계' in ctx.eval("elements['progress-caption'].textContent")
+    ctx.eval('elements.disconnect.listeners.click()');settle(ctx)
+    assert ctx.eval("elements['progress-panel'].hidden") is True

@@ -45,3 +45,5 @@ Windows 클라이언트에서는 `Client.bat`을 더블클릭해 보고 설정, 
 기본 흐름과 추후 범위는 [단순화 기획](docs/SETUP_PLAN.md)에 기록했습니다. 로컬 테스트와 운영 인증은 SecurityPolicy로 분리합니다.
 
 앱별 원본과 설치 모듈은 [Config/Applications.json](Config/Applications.json)에서 정의합니다. Tools는 참고 원본 후보이며 고정 실행 경로가 아닙니다. [애플리케이션 모듈 구조](docs/APPLICATION_ARCHITECTURE.md).
+
+셋업 시작 후 실제 다운로드량·압축 해제·모듈 단계를 [실시간 진행 내역](docs/LIVE_PROGRESS.md)으로 확인할 수 있습니다.

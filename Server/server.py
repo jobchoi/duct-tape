@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import secrets
 import sqlite3
+from Server.database import connect as connect_database
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -44,7 +45,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
                    int(os.environ.get('DUCT_SENT_RETENTION_DAYS', '30')))
 
     def connect():
-        connection = sqlite3.connect(database, timeout=10)
+        connection = connect_database(database, timeout=10)
         connection.row_factory = sqlite3.Row
         return connection
 

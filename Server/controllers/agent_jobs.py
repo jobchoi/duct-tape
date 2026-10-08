@@ -2,12 +2,13 @@
 import secrets
 from uuid import UUID
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
 from starlette.background import BackgroundTask
 from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest, AgentHeartbeat
 from Server.models.admin_sessions import COOKIE, HEADER
+from Server.models.job_progress import ProgressBatch
 from Server.models.agent_package import build as build_agent_package
 
 
@@ -177,6 +178,26 @@ def router(store, admin_token, sessions, policy, root, media):
     @routes.post('/api/agent/claim')
     def claim(body: AgentHeartbeat = AgentHeartbeat(), device_id=Depends(agent)):
         return {'job': store.claim(device_id, body.setup_ready)}
+
+    @routes.post('/api/agent/jobs/{job_id}/progress')
+    def report_progress(job_id: UUID, body: ProgressBatch, device_id=Depends(agent)):
+        try:
+            store.append_progress(device_id,str(job_id),[e.model_dump(exclude_none=True) for e in body.events])
+        except LookupError:
+            raise HTTPException(404,'Unknown job') from None
+        except FileExistsError:
+            raise HTTPException(409,'Progress sequence or job state conflict') from None
+        return {'accepted':True}
+
+    @routes.get('/api/admin/jobs/{job_id}/progress',dependencies=[Depends(admin)])
+    def admin_progress(job_id: UUID, after: int = Query(default=-1,ge=-1)):
+        try:return store.progress(str(job_id),after=after)
+        except LookupError:raise HTTPException(404,'Unknown job') from None
+
+    @routes.get('/api/client/jobs/{job_id}/progress')
+    def client_progress(job_id: UUID,after: int = Query(default=-1,ge=-1),device_id=Depends(client)):
+        try:return store.progress(str(job_id),device_id,after)
+        except LookupError:raise HTTPException(404,'Unknown job') from None
 
     @routes.post('/api/agent/jobs/{job_id}')
     def update(job_id: UUID, body: JobUpdate, device_id=Depends(agent)):
