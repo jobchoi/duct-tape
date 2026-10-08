@@ -28,7 +28,7 @@ $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('duct-ready-'+[guid]::NewGuid(
 try {
     New-Item -ItemType Directory $tempRoot | Out-Null
     if (Test-AgentSetupReady -Root $tempRoot) { throw 'Empty installation incorrectly ready' }
-    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt')) {
+    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt', 'Config/OfficeKey.txt')) {
         $file=Join-Path $tempRoot $name
         New-Item -ItemType Directory (Split-Path $file -Parent) -Force | Out-Null
         Set-Content $file 'test-placeholder'

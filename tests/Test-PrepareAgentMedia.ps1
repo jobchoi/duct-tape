@@ -13,7 +13,7 @@ try {
     New-Item -ItemType Directory (Join-Path $tempRoot 'pc/Config') -Force | Out-Null
     @{ServerUrl='https://server.example';AgentToken='fake-agent-key';AuthMode='secure'} | ConvertTo-Json | Set-Content (Join-Path $tempRoot 'pc/Config/Agent.json')
     $source=Join-Path $tempRoot 'source'
-    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt')) {
+    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt', 'Config/OfficeKey.txt')) {
         $file=Join-Path $source $name
         New-Item -ItemType Directory (Split-Path $file -Parent) -Force | Out-Null
         Set-Content $file 'test-placeholder'

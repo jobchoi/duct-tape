@@ -3,7 +3,7 @@
 이 폴더에 실제 설치 파일과 설정을 준비합니다.
 
 - `setup.exe`: Microsoft Office Deployment Tool 실행 파일.
-- `install.xml`: 구매한 Office LTSC 2024 제품과 정품 인증 방식에 맞춘 설정. MAK 키는 Product의 PIDKEY에 입력합니다.
+- `install.xml`: 구매한 Office LTSC 2024 제품과 정품 인증 방식에 맞춘 설정. MAK 키는 별도 Config/OfficeKey.txt에 입력합니다. 설치 직전 임시 XML의 Product.PIDKEY에 자동 주입합니다.
 - `remove.xml`: 기존 Office 제거 설정.
 - 정식 Office 설치 원본: ODT 다운로드/설치 설정에 맞는 전체 파일.
 

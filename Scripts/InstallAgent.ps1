@@ -48,8 +48,10 @@ try {
     foreach ($name in @('Office','Hancom')) {
         if (Test-Path (Join-Path $source $name)) { Copy-Item -LiteralPath (Join-Path $source $name) -Destination $target -Recurse }
     }
-    if (Test-Path (Join-Path $source 'Config/HancomKey.txt')) {
-        Copy-Item -LiteralPath (Join-Path $source 'Config/HancomKey.txt') -Destination (Join-Path $target 'Config')
+    foreach ($name in @('HancomKey.txt','OfficeKey.txt')) {
+        if (Test-Path (Join-Path $source ('Config/'+$name))) {
+            Copy-Item -LiteralPath (Join-Path $source ('Config/'+$name)) -Destination (Join-Path $target 'Config')
+        }
     }
     $id = ([guid](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Cryptography').MachineGuid).ToString()
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12

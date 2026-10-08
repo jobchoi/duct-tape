@@ -48,7 +48,7 @@ def test_download_contains_runnable_files_without_secrets(client):
         names=set(archive.namelist())
         assert { 'duct-tape-agent/'+name for name in FILES } <= names
         assert archive.read('duct-tape-agent/Config/ServerUrl.txt')==b'https://testserver'
-        assert not any(name.endswith(('.env','Agent.json','HancomKey.txt','Monitoring.json')) for name in names)
+        assert not any(name.endswith(('.env','Agent.json','HancomKey.txt','OfficeKey.txt','Monitoring.json')) for name in names)
         script=archive.read('duct-tape-agent/Scripts/InstallAgent.ps1').decode('utf-8-sig')
         assert '/api/agent/join' in script and 'CommonDesktopDirectory' in script
         assert "Start-Process $url" in script
