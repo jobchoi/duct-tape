@@ -54,3 +54,21 @@ powershell -NoProfile -File .\tests\Test-Common.ps1
 ## Phase 3 중앙 보고
 
 Config/Monitoring.json.example을 준비한 뒤 [[Central-Monitoring]]에 따라 서버 주소와 보고용 토큰을 설정합니다. 중앙 관제를 사용하지 않을 때는 설정을 만들지 않거나 Enabled=false로 둡니다. 관제 장애가 설치를 중단하지 않습니다.
+
+## Office 2024 제품 키
+
+현재 `Modules/04_InstallOffice.ps1`은 `Office/setup.exe /configure Office/install.xml`을 실행한다. `Config/OfficeKey.txt`를 읽는 기능은 현재 없다.
+
+Office LTSC 2024 볼륨 MAK 방식에서는 실제 `Office/install.xml`의 Product 요소에 해당 제품의 2024 키를 `PIDKEY` 속성으로 지정한다.
+
+```xml
+<Product ID="ProPlus2024Volume" PIDKEY="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
+  <Language ID="ko-kr" />
+</Product>
+```
+
+이 예시는 Office LTSC Professional Plus 2024용이다. `XXXXX`는 실제 키로 바꾼다. 2021/2024 키와 제품 에디션을 혼용하지 않는다. KMS 방식은 기관 KMS 구성에 맞춘 별도 활성화 방식을 사용한다. 실제 키를 문의·로그·Git에 남기지 않는다. `Office/`와 XML 파일은 Git 제외 대상이다.
+
+현재 설치 판별은 Office LTSC Professional Plus 2024 전체 제품을 기준으로 한다. Excel 단품 또는 Standard 제품을 사용할 때에는 구매한 제품 ID와 설치 판별을 먼저 맞춰야 한다. 파일이 준비되었다는 판단이 라이선스 인증 성공을 의미하지 않는다.
+
+공식 참고: [Office LTSC 2024 배포](https://learn.microsoft.com/en-us/office/ltsc/2024/deploy).

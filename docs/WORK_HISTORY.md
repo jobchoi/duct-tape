@@ -73,3 +73,10 @@
 - 관련 Python/UI 테스트 26개, PowerShell 실제 ZIP 다운로드 모의·압축 해제·키 배치·준비 검사·위험 경로 거부/정리 테스트 통과.
 - 현재 작업 폴더에는 Office/, Hancom/, 실제 HancomKey.txt가 없고 실제 원본 경로를 요청했다. 정식 매체를 사용하는 실제 Windows 설치는 해당 경로와 PC 연결을 확인한 뒤 검증해야 한다.
 - 원격 push는 수행하지 않는다.
+
+## 2026-10-08 Office 제품 키 입력 위치 정리
+
+- 브랜치: `docs/office-2024-key-setup` → `develop`.
+- 현재 Office 모듈은 별도 키 텍스트 파일을 읽지 않고 install.xml의 ODT 설정을 사용함을 확인했다.
+- Office LTSC 2024 MAK의 PIDKEY 입력 위치, 버전/에디션 구분, Excel 단품과 현재 ProPlus 판별 차이를 배포 가이드에 기록했다. 실제 키는 읽거나 문서/커밋에 포함하지 않았다.
+- 검증: 설치·판별 스크립트와 Microsoft 공식 배포 문서 확인, 문서 공백 검증. 프로그램 실행 변경은 없다.
