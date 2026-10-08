@@ -12,8 +12,13 @@
 
 function Test-AgentSetupReady {
     param([string]$Root)
-    foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt', 'Config/OfficeKey.txt')) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Root $name) -PathType Leaf)) { return $false }
+    . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
+    foreach ($app in (Get-ApplicationCatalog -Root $Root).applications) {
+        $directory=Resolve-ApplicationMedia -Root $Root -Application $app
+        foreach ($name in $app.required_files) {
+            if (-not (Test-Path -LiteralPath (Join-Path $directory $name) -PathType Leaf)) { return $false }
+        }
+        if ($app.key_file -and -not (Test-Path -LiteralPath (Join-Path $Root $app.key_file) -PathType Leaf)) { return $false }
     }
     return $true
 }

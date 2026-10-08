@@ -14,7 +14,7 @@ H = {'X-Duct-Tape-Request':'1'}
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(tmp_path/'db.sqlite3', WRITE, READ, schools={}, admin_token=ADMIN), base_url='https://testserver') as c:
+    with TestClient(create_app(tmp_path/'db.sqlite3', WRITE, READ, schools={}, admin_token=ADMIN, media_root=tmp_path/'missing-media'), base_url='https://testserver') as c:
         yield c
 
 

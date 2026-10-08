@@ -1,9 +1,11 @@
 ﻿# Windows PowerShell 5.1; dot-source from Modules or Scripts.
+$ErrorActionPreference = 'Stop'
 $DeployRoot = Split-Path -Path $PSScriptRoot -Parent
 $ConfigDir = Join-Path $DeployRoot 'Config'
-$HancomDir = Join-Path $DeployRoot 'Hancom'
-$OfficeDir = Join-Path $DeployRoot 'Office'
-$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
+$applications = (Get-ApplicationCatalog -Root $DeployRoot).applications
+$HancomDir = Resolve-ApplicationMedia -Root $DeployRoot -Application ($applications | Where-Object {$_.id -eq 'hancom'})
+$OfficeDir = Resolve-ApplicationMedia -Root $DeployRoot -Application ($applications | Where-Object {$_.id -eq 'office'})
 $script:LastInstallerExitCode = $null
 
 function Read-DeploymentState {
@@ -62,7 +64,7 @@ function Unblock-DeploymentFiles {
 
 function Assert-HancomSilentConfiguration {
     # Shared/read-only media is prepared once by the operator, never concurrently rewritten by clients.
-    $files = @(Get-ChildItem -LiteralPath $HancomDir -Filter setup.ini -File -Recurse)
+    $files = @(Get-ChildItem -LiteralPath $HancomDir -Filter *.ini -File -Recurse | Where-Object {$_.Name -in @('setup.ini','InstallerConfig.ini')})
     if ($files.Count -eq 0) { throw 'HANCOM_INI_MISSING' }
     foreach ($file in $files) {
         $settings = @(Get-Content -LiteralPath $file.FullName | Where-Object { $_ -match '^\s*LevelOption\s*=' })
@@ -91,7 +93,7 @@ function Write-DeploymentFailure {
     param([string]$Module, [string]$Code)
     $known = @('KEY_MISSING','KEY_UNREADABLE','KEY_INVALID','STATE_READ_FAILED','STATE_WRITE_FAILED',
         'MEDIA_MISSING','HANCOM_INI_MISSING','HANCOM_INI_INVALID','INSTALL_PROCESS_FAILED',
-        'UNINSTALL_COMMAND_INVALID','STATE_INVALID','OFFICE_KEY_MISSING','OFFICE_KEY_UNREADABLE','OFFICE_KEY_INVALID','OFFICE_CONFIG_INVALID')
+        'UNINSTALL_COMMAND_INVALID','STATE_INVALID','OFFICE_KEY_MISSING','OFFICE_KEY_UNREADABLE','OFFICE_KEY_INVALID','OFFICE_CONFIG_INVALID','APPLICATION_CATALOG_INVALID')
     if ($Code -notin $known) { $Code = 'OPERATION_FAILED' }
     Write-DeploymentLog "$Module : $Code" 'ERROR'
     Send-DeploymentEvent -StateFile $StateFile -Stage $Module -Status failed -ErrorCode $Code

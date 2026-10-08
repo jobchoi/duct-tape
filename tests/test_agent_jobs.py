@@ -17,7 +17,7 @@ def auth(token):
 @pytest.fixture
 def api(tmp_path):
     db = tmp_path/'state.db'
-    with TestClient(create_app(db, WRITE, READ, schools={}, admin_token=ADMIN)) as client:
+    with TestClient(create_app(db, WRITE, READ, schools={}, admin_token=ADMIN, media_root=tmp_path/'missing-media')) as client:
         yield client, db
 
 def register(client):

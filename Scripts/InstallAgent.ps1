@@ -58,14 +58,13 @@ try {
         }
     }
     New-Item -ItemType Directory -Path (Join-Path $target 'Config') -Force | Out-Null
-    foreach ($name in @('Office','Hancom')) {
-        if (Test-Path (Join-Path $source $name)) { Copy-Item -LiteralPath (Join-Path $source $name) -Destination $target -Recurse }
+    . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
+    foreach ($app in (Get-ApplicationCatalog -Root $source).applications) {
+        $directory=Resolve-ApplicationMedia -Root $source -Application $app
+        if (Test-Path $directory) {Copy-Item -LiteralPath $directory -Destination (Join-Path $target $app.media_folder) -Recurse -Force}
+        if ($app.key_file -and (Test-Path (Join-Path $source $app.key_file))) {Copy-Item -LiteralPath (Join-Path $source $app.key_file) -Destination (Join-Path $target $app.key_file) -Force}
     }
-    foreach ($name in @('HancomKey.txt','OfficeKey.txt')) {
-        if (Test-Path (Join-Path $source ('Config/'+$name))) {
-            Copy-Item -LiteralPath (Join-Path $source ('Config/'+$name)) -Destination (Join-Path $target 'Config')
-        }
-    }
+    Copy-Item -LiteralPath (Join-Path $source 'Config/Applications.json') -Destination (Join-Path $target 'Config/Applications.json') -Force
     if ($generatedConfig -or -not $monitor.ReportToken -or ($stored -and $monitor.ReportToken -eq $stored.AgentToken)) { $monitor.ReportToken = $registered.agent_token }
     if ($monitor -is [Collections.IDictionary]) { $monitor.AuthMode = $registered.auth_mode } else { $monitor | Add-Member -NotePropertyName AuthMode -NotePropertyValue $registered.auth_mode -Force }
     $monitor | ConvertTo-Json | Set-Content (Join-Path $target 'Config/Monitoring.json') -Encoding UTF8

@@ -1,0 +1,45 @@
+{
+  "applications": [
+    {
+      "id": "office",
+      "name": "Office LTSC Professional Plus 2024",
+      "media_folder": "Office",
+      "source_candidates": [
+        "Office",
+        "Tools/Office"
+      ],
+      "required_files": [
+        "setup.exe",
+        "install.xml",
+        "remove.xml"
+      ],
+      "key_file": "Config/OfficeKey.txt",
+      "modules": [
+        "Modules/02_CheckOffice.ps1",
+        "Modules/03_RemoveOffice.ps1",
+        "Modules/04_InstallOffice.ps1"
+      ]
+    },
+    {
+      "id": "hancom",
+      "name": "한컴오피스 2024",
+      "media_folder": "Hancom",
+      "source_candidates": [
+        "Hancom",
+        "Tools/Hancom"
+      ],
+      "required_files": [
+        "Install/Hwp130.msi",
+        "Install/VC_redist.x86.exe"
+      ],
+      "key_file": "Config/HancomKey.txt",
+      "modules": [
+        "Modules/05_CheckHancom.ps1",
+        "Modules/06_InstallHancom.ps1"
+      ]
+    }
+  ],
+  "common_modules": [
+    "Modules/01_GetInfo.ps1"
+  ]
+}

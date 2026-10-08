@@ -11,6 +11,7 @@ function Invoke-WebRequest {
 }
 try {
     New-Item -ItemType Directory (Join-Path $tempRoot 'pc/Config') -Force | Out-Null
+    Copy-Item (Join-Path $root 'Config/Applications.json') (Join-Path $tempRoot 'pc/Config/Applications.json')
     @{ServerUrl='https://server.example';AgentToken='fake-agent-key';AuthMode='secure'} | ConvertTo-Json | Set-Content (Join-Path $tempRoot 'pc/Config/Agent.json')
     $source=Join-Path $tempRoot 'source'
     foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt', 'Config/OfficeKey.txt')) {
