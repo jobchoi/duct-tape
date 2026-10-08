@@ -57,18 +57,14 @@ Config/Monitoring.json.example을 준비한 뒤 [[Central-Monitoring]]에 따라
 
 ## Office 2024 제품 키
 
-현재 `Modules/04_InstallOffice.ps1`은 `Office/setup.exe /configure Office/install.xml`을 실행한다. `Config/OfficeKey.txt`를 읽는 기능은 현재 없다.
+`Config/OfficeKey.txt.example`을 `Config/OfficeKey.txt`로 복사하고 Office LTSC Professional Plus 2024 키만 한 줄로 입력한다. 형식은 영숫자 5자씩 5그룹을 하이픈으로 연결한 25자 키다. 예제 문구·공백·여러 줄은 거부한다. 실제 키는 Git 제외 파일에만 보관한다.
 
-Office LTSC 2024 볼륨 MAK 방식에서는 실제 `Office/install.xml`의 Product 요소에 해당 제품의 2024 키를 `PIDKEY` 속성으로 지정한다.
+`Office/install.xml`은 제품/언어/설치 옵션만 담는 원본 설정으로 두며 PIDKEY에 실제 키를 직접 기록하지 않는다. `Scripts/OfficeConfiguration.ps1`이 설치 직전에 별도 키를 읽고 현재 실행 계정과 SYSTEM만 접근하는 임시 폴더의 XML에 PIDKEY를 주입한다. ODT 명령줄에는 임시 XML 경로만 넘긴다. 성공/실패 모두 임시 파일을 정리하고 원본 XML은 변경하지 않는다.
 
-```xml
-<Product ID="ProPlus2024Volume" PIDKEY="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX">
-  <Language ID="ko-kr" />
-</Product>
-```
+현재 구현은 ProPlus2024Volume 단일 제품에 적용한다. 2021/Standard/Excel 단품/Visio 등 여러 제품은 키와 판별 정책이 달라 별도 확장해야 한다. Office 키와 한컴 키는 사전 검증에서 확인해 제거 작업 전에 누락·형식 오류로 중단한다.
 
-이 예시는 Office LTSC Professional Plus 2024용이다. `XXXXX`는 실제 키로 바꾼다. 2021/2024 키와 제품 에디션을 혼용하지 않는다. KMS 방식은 기관 KMS 구성에 맞춘 별도 활성화 방식을 사용한다. 실제 키를 문의·로그·Git에 남기지 않는다. `Office/`와 XML 파일은 Git 제외 대상이다.
+원본 키 파일은 평문이며 담당자/배포 계정으로 접근을 제한한다. ODT 설치 중에는 키를 포함한 임시 XML이 필요하다. 시스템 강제 종료는 finally 정리를 보장하지 못하므로 실행 계정의 임시 폴더 관리도 필요하다. 앱 실행·정품 인증 성공은 별도 확인한다.
 
-현재 설치 판별은 Office LTSC Professional Plus 2024 전체 제품을 기준으로 한다. Excel 단품 또는 Standard 제품을 사용할 때에는 구매한 제품 ID와 설치 판별을 먼저 맞춰야 한다. 파일이 준비되었다는 판단이 라이선스 인증 성공을 의미하지 않는다.
+서버의 비공개 매체 ZIP에는 Config/OfficeKey.txt와 HancomKey.txt를 포함하고, 공개 실행 도구 ZIP에는 포함하지 않는다. 실제 키를 로그·문의·Git에 남기지 않는다.
 
-공식 참고: [Office LTSC 2024 배포](https://learn.microsoft.com/en-us/office/ltsc/2024/deploy).
+공식 참고: [ODT 구성 옵션](https://learn.microsoft.com/en-us/microsoft-365-apps/deploy/office-deployment-tool-configuration-options).

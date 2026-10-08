@@ -15,7 +15,7 @@
             foreach ($entry in $archive.Entries) {
                 $name = $entry.FullName.Replace('\','/')
                 if ($name -match '(^/|(^|/)\.\.(/|$)|:)' -or
-                    -not ($name.StartsWith('Office/') -or $name.StartsWith('Hancom/') -or $name -eq 'Config/HancomKey.txt')) {
+                    -not ($name.StartsWith('Office/') -or $name.StartsWith('Hancom/') -or $name -in @('Config/HancomKey.txt','Config/OfficeKey.txt'))) {
                     throw '서버 매체 압축 파일에 허용되지 않은 경로가 있습니다.'
                 }
             }
@@ -25,7 +25,9 @@
         foreach ($folder in @('Office','Hancom')) {
             Copy-Item -LiteralPath (Join-Path $extract $folder) -Destination $Root -Recurse -Force
         }
-        Copy-Item -LiteralPath (Join-Path $extract 'Config/HancomKey.txt') -Destination (Join-Path $Root 'Config/HancomKey.txt') -Force
+        foreach ($name in @('HancomKey.txt','OfficeKey.txt')) {
+            Copy-Item -LiteralPath (Join-Path $extract ('Config/'+$name)) -Destination (Join-Path $Root ('Config/'+$name)) -Force
+        }
         if (-not (Test-AgentSetupReady -Root $Root)) { throw '서버에서 받은 설치 매체가 완전하지 않습니다.' }
     } finally { Remove-Item -LiteralPath $work -Recurse -Force }
 }

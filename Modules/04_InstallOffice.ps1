@@ -1,5 +1,6 @@
 ﻿param([Parameter(Mandatory=$true)][string]$StateFile)
 . (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Scripts/Common.ps1')
+. (Join-Path $DeployRoot 'Scripts/OfficeConfiguration.ps1')
 try {
     Send-DeploymentEvent -StateFile $StateFile -Stage '04' -Status running
     $null = Get-HancomKey
@@ -17,7 +18,12 @@ try {
         }
         Write-Host ''
         Write-Progress -Activity 'Office LTSC 2024 설치 중' -Status '백그라운드 설치 중입니다. 기다려주세요.'
-        try { $code = Invoke-DeploymentProcess $setup "/configure `"$xml`"" }
+        try {
+            $code = Invoke-WithOfficeConfiguration -TemplatePath $xml -KeyPath (Join-Path $ConfigDir 'OfficeKey.txt') -Install {
+                param($runtimeXml)
+                Invoke-DeploymentProcess $setup "/configure `"$runtimeXml`""
+            }
+        }
         finally { Write-Progress -Activity 'Office LTSC 2024 설치 중' -Completed }
         Set-RebootRequired $state $code
         $state.OfficeState = '정상'

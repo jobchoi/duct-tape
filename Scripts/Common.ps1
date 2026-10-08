@@ -91,7 +91,7 @@ function Write-DeploymentFailure {
     param([string]$Module, [string]$Code)
     $known = @('KEY_MISSING','KEY_UNREADABLE','KEY_INVALID','STATE_READ_FAILED','STATE_WRITE_FAILED',
         'MEDIA_MISSING','HANCOM_INI_MISSING','HANCOM_INI_INVALID','INSTALL_PROCESS_FAILED',
-        'UNINSTALL_COMMAND_INVALID','STATE_INVALID')
+        'UNINSTALL_COMMAND_INVALID','STATE_INVALID','OFFICE_KEY_MISSING','OFFICE_KEY_UNREADABLE','OFFICE_KEY_INVALID','OFFICE_CONFIG_INVALID')
     if ($Code -notin $known) { $Code = 'OPERATION_FAILED' }
     Write-DeploymentLog "$Module : $Code" 'ERROR'
     Send-DeploymentEvent -StateFile $StateFile -Stage $Module -Status failed -ErrorCode $Code

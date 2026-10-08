@@ -56,13 +56,13 @@ const portal = (() => {
         const [devices,work,reports]=await Promise.all([api('/api/admin/agents'),api('/api/admin/jobs'),api('/api/devices')]);
         if (current!==version) return;
         el('admin-content').hidden=false;el('auth-status').textContent=mode==='development' ? '로컬 테스트 모드 · 인증 키 없이 연결됨' : '관리자 로그인 완료';agents=devices.agents;jobs=work.jobs;renderAdmin(reports.devices,current);el('notice').textContent='서버에 연결됨 · 5초마다 갱신';
-        el('media-status').textContent=serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : '서버 매체가 준비되지 않았습니다. 배포 원본 경로의 Office/, Hancom/, Config/HancomKey.txt를 확인하세요.';
+        el('media-status').textContent=serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : '서버 매체가 준비되지 않았습니다. 배포 원본 경로의 Office/, Hancom/, Config/HancomKey.txt·OfficeKey.txt를 확인하세요.';
       } else {
         const data=await api('/api/client/jobs');if (current!==version) return;
         jobs=data.jobs;clientApproved=Boolean(data.approved);
         el('onboarding').hidden=true;
         el('notice').textContent=clientApproved ? `${data.hostname} · ${data.setup_ready || serverMediaReady ? '셋업 준비됨' : '실행 도구 연결 완료'}` : `${data.hostname} · 관리자의 연결 승인을 기다리고 있습니다.`;
-        el('client-state').textContent=!data.setup_ready && !serverMediaReady ? '셋업하려면 C:\\ProgramData\\DuctTapeAgent에 Office·Hancom 매체와 Config\\HancomKey.txt를 준비하세요.' : jobs[0] ? names[jobs[0].state] || jobs[0].state : '';
+        el('client-state').textContent=!data.setup_ready && !serverMediaReady ? '셋업하려면 C:\\ProgramData\\DuctTapeAgent에 Office·Hancom 매체와 Config\\HancomKey.txt·OfficeKey.txt를 준비하세요.' : jobs[0] ? names[jobs[0].state] || jobs[0].state : '';
         el('start').disabled=pending || !clientApproved || !(data.setup_ready || serverMediaReady) || jobs.some(j=>['queued','running','interrupted'].includes(j.state));
       }
     } catch (error) { if (current===version) { if (error.status===401) { disconnect(); if (!admin) { try {sessionStorage.removeItem('duct-client-key');sessionStorage.removeItem('duct-client-device');el('onboarding').hidden=false;} catch (_) {} } } el('notice').textContent=error.message;el('start').disabled=true; } }

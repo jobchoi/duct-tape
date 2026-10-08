@@ -18,7 +18,7 @@
 
 - `Office/setup.exe`, `Office/install.xml`, `Office/remove.xml` 및 정식 Office 매체.
 - `Hancom/Install/Hwp130.msi`, `Hancom/Install/VC_redist.x86.exe` 및 나머지 정식 한컴 매체.
-- `Config/HancomKey.txt`의 유효한 기관 라이선스 키.
+- `Config/HancomKey.txt`의 한컴 키와 `Config/OfficeKey.txt`의 Office 2024 키.
 
 실행 도구는 이 파일들의 준비 여부를 서버에 보고한다. 없으면 웹에서 `설치 매체 준비 필요`를 표시하고 셋업 요청을 차단한다. 준비 여부는 파일 존재 확인이며 실제 키/매체 유효성은 Main의 사전 검증에서 확인한다. 원본 폴더에 매체/키가 이미 있다면 설치 도구가 함께 복사한다. 세부 매체 조건은 [배포 가이드](wiki/Deployment-Guide.md)를 따른다.
 

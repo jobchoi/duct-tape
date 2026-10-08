@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 
 REQUIRED = ('Office/setup.exe', 'Office/install.xml', 'Office/remove.xml',
-            'Hancom/Install/Hwp130.msi', 'Hancom/Install/VC_redist.x86.exe', 'Config/HancomKey.txt')
+            'Hancom/Install/Hwp130.msi', 'Hancom/Install/VC_redist.x86.exe', 'Config/HancomKey.txt', 'Config/OfficeKey.txt')
 
 
 class DeploymentMedia:
@@ -26,10 +26,11 @@ class DeploymentMedia:
                     if not path.resolve().is_relative_to(self.root):
                         raise ValueError('Media links must remain inside the configured root')
                     entries.append(path)
-        key = self.root/'Config/HancomKey.txt'
-        if not key.resolve().is_relative_to(self.root):
-            raise ValueError('Key must remain inside the configured root')
-        entries.append(key)
+        for name in ('HancomKey.txt', 'OfficeKey.txt'):
+            key = self.root/'Config'/name
+            if not key.resolve().is_relative_to(self.root):
+                raise ValueError('Key must remain inside the configured root')
+            entries.append(key)
         with NamedTemporaryFile(prefix='duct-media-', suffix='.zip', delete=False) as temp:
             target = Path(temp.name)
         try:
