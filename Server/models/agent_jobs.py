@@ -1,12 +1,16 @@
 """Persistent device credentials and finite, non-replayed deployment jobs."""
 from contextlib import closing
+import json
+from datetime import datetime
 import hashlib
 import secrets
 import sqlite3
+from Server.database import connect as connect_database
 import time
 from uuid import uuid4, UUID
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from Server.models.job_progress import label
 
 
 def digest(value):
@@ -18,7 +22,7 @@ class JobStore:
         self.database = database
 
     def connect(self):
-        db = sqlite3.connect(self.database, timeout=10)
+        db = connect_database(self.database, timeout=10)
         db.row_factory = sqlite3.Row
         return db
 
@@ -36,6 +40,9 @@ class JobStore:
                 state TEXT NOT NULL, created REAL NOT NULL, updated REAL NOT NULL,
                 exit_code INTEGER, request_id TEXT NOT NULL,
                 UNIQUE(device_id, request_id));
+            CREATE TABLE IF NOT EXISTS job_progress (
+                job_id TEXT NOT NULL, sequence INTEGER NOT NULL, payload TEXT NOT NULL,
+                received REAL NOT NULL, PRIMARY KEY(job_id,sequence));
             ''')
             columns = {row[1] for row in db.execute('PRAGMA table_info(agents)')}
             if 'approved' not in columns:
@@ -137,6 +144,7 @@ class JobStore:
             now, job_id = time.time(), str(uuid4())
             db.execute('INSERT INTO agent_jobs VALUES (?,?,?,?,?,?,?,?)',
                        (job_id, device_id, action, 'queued', now, now, None, request_id))
+            db.execute('INSERT INTO job_progress VALUES (?,?,?,?)', (job_id,0,json.dumps({'phase':'queued','status':'completed'}),now))
             return dict(db.execute('SELECT * FROM agent_jobs WHERE id=?', (job_id,)).fetchone())
 
     def claim(self, device_id, setup_ready=None):
@@ -164,10 +172,47 @@ class JobStore:
                 if row['exit_code'] != exit_code:
                     raise FileExistsError
                 return
-            if row['state'] not in ('running', 'interrupted') or (row['state'] == 'interrupted' and state == 'running'):
+            if row['state'] not in ('running', 'interrupted'):
                 raise FileExistsError
             db.execute('UPDATE agent_jobs SET state=?, updated=?, exit_code=? WHERE id=?', (state, time.time(), exit_code, job_id))
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
+            if state in ('succeeded','failed'):
+                event={'phase':'complete' if state=='succeeded' else 'error','status':'completed' if state=='succeeded' else 'failed'}
+                db.execute('INSERT OR IGNORE INTO job_progress VALUES (?,?,?,?)', (job_id,2147483647,json.dumps(event),time.time()))
+
+    def progress(self, job_id, device_id=None, after=-1):
+        with closing(self.connect()) as db:
+            row=db.execute('SELECT * FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
+            if not row or (device_id is not None and row['device_id']!=device_id):
+                raise LookupError
+            legacy_row=db.execute('SELECT payload,received_at FROM devices WHERE device_id=? ORDER BY received_at DESC LIMIT 1',(row['device_id'],)).fetchone()
+            rows=db.execute('SELECT sequence,payload,received FROM job_progress WHERE job_id=? AND sequence>? ORDER BY sequence LIMIT 501', (job_id,after)).fetchall()
+        legacy=None
+        if legacy_row:
+            received=datetime.fromisoformat(legacy_row['received_at'].replace('Z','+00:00')).timestamp()
+            payload=json.loads(legacy_row['payload']);stage=payload.get('stage')
+            if received>=row['created'] and stage in ('Preflight','01','02','03','04','05','06'):
+                from Server.models.job_progress import MODULES
+                known={name.split('_',1)[0]:text for name,text in MODULES.items()}
+                legacy={'label':known.get(stage,'사전 검사'), 'status':payload.get('status'), 'received':received}
+        more=len(rows)>500;rows=rows[:500]
+        return {'legacy':legacy, 'job':dict(row), 'has_more':more, 'events':[dict(json.loads(r['payload']),sequence=r['sequence'],received=r['received'],label=label(json.loads(r['payload']))) for r in rows]}
+
+    def append_progress(self, device_id, job_id, events):
+        with closing(self.connect()) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            job=db.execute('SELECT state FROM agent_jobs WHERE id=? AND device_id=?', (job_id,device_id)).fetchone()
+            if not job:raise LookupError
+            for event in events:
+                sequence=event['sequence'];payload=json.dumps(event,sort_keys=True)
+                old=db.execute('SELECT payload FROM job_progress WHERE job_id=? AND sequence=?', (job_id,sequence)).fetchone()
+                if old:
+                    if old['payload']!=payload:raise FileExistsError
+                    continue
+                if job['state'] not in ('running','interrupted'):raise FileExistsError
+                db.execute('INSERT INTO job_progress VALUES (?,?,?,?)', (job_id,sequence,payload,time.time()))
+            db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(),device_id))
+            db.execute("UPDATE agent_jobs SET updated=? WHERE id=? AND state='running'", (time.time(),job_id))
 
     def reconnect(self, device_id):
         client = secrets.token_urlsafe(32)

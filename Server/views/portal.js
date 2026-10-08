@@ -13,6 +13,66 @@ const portal = (() => {
     }
     return response.json();
   }
+  let progressJob = '', progressAfter = -1, progressEvents = [], progressTimer = null, progressClock = null, progressState = null, legacyProgress = null;
+  const eventStatus = {started:'시작',progress:'진행',completed:'완료',failed:'실패'};
+  function duration(seconds) { const value=Math.max(0,Math.floor(seconds));return value<60 ? `${value}초` : `${Math.floor(value/60)}분 ${value%60}초`; }
+  function counter(event) {
+    if (event.current == null) return '';
+    if (event.unit==='bytes') { const mb=n=>(n/1048576).toFixed(1);return `${mb(event.current)} MB${event.total ? ' / '+mb(event.total)+' MB · '+Math.floor(event.current/event.total*100)+'%' : ''}`; }
+    return `${event.current}${event.total ? ' / '+event.total : ''}${event.unit==='steps' ? '단계' : '개'}`;
+  }
+  function paintProgress() {
+    if (!progressState) return;
+    const now=Date.now()/1000, active=['queued','running'].includes(progressState.state);
+    el('progress-state').textContent=names[progressState.state] || progressState.state;
+    el('progress-panel').dataset.state=progressState.state;
+    el('progress-meta').textContent=`요청 후 ${duration((active ? now : progressState.updated)-progressState.created)} · ${progressState.state==='queued' ? '실행 도구 인수 대기' : progressState.state==='running' ? '마지막 실행 도구 응답 '+duration(now-progressState.updated)+' 전' : '최종 상태 수신 '+new Date(progressState.updated*1000).toLocaleTimeString()}`;
+    const grouped=new Map();
+    for (const event of progressEvents) {
+      const key=event.phase+'/'+(event.module || '');
+      const old=grouped.get(key);grouped.set(key,{...event,started:old?.started || event.received});
+    }
+    el('progress-events').replaceChildren();
+    if (legacyProgress && !progressEvents.some(e=>e.sequence>0 && e.sequence<2147483647)) {
+      const row=document.createElement('li');row.textContent=`최근 수신 단계 · ${legacyProgress.label} · ${names[legacyProgress.status] || legacyProgress.status} · ${new Date(legacyProgress.received*1000).toLocaleTimeString()}`;el('progress-events').append(row);
+    }
+    for (const event of grouped.values()) {
+      const row=document.createElement('li');row.className=event.status;
+      const elapsed=active && ['started','progress'].includes(event.status) ? ` · ${duration(now-event.started)} 경과` : event.received-event.started>=1 ? ` · ${duration(event.received-event.started)} 소요` : '';
+      row.textContent=`${new Date(event.received*1000).toLocaleTimeString()}  ${event.label} · ${eventStatus[event.status] || event.status}${counter(event) ? ' · '+counter(event) : ''}${elapsed}`;
+      el('progress-events').append(row);
+    }
+    const last=[...grouped.values()].reverse().find(e=>e.current!=null && e.total);
+    el('progress-bar').hidden=!last;
+    if (last) {el('progress-bar').max=last.total;el('progress-bar').value=last.current;el('progress-caption').textContent=`${last.unit==='steps' ? '완료한 실행 단계' : last.label} · ${counter(last)}`;}
+    else el('progress-caption').textContent=progressState.state==='queued' ? '요청이 접수되었습니다. 실행 도구가 작업을 가져오기를 기다립니다.' : '현재 단계와 경과 시간을 확인하세요.';
+    const detailed=progressEvents.some(e=>e.sequence>0 && e.sequence<2147483647);
+    el('progress-warning').textContent=progressState.state==='running' && !detailed ? '실행 도구 응답은 확인 중입니다. 상세 단계가 나타나지 않으면 최신 실행 도구로 갱신하세요.' : '설치기는 단계와 경과 시간을 표시합니다. 수치 막대는 실제 다운로드량·압축 해제 항목·완료 단계 기준입니다.';
+  }
+  function clearProgress() {
+    clearTimeout(progressTimer);clearInterval(progressClock);progressJob='';progressAfter=-1;progressEvents=[];progressState=null;legacyProgress=null;
+    el('progress-panel').hidden=true;el('progress-events').replaceChildren();
+  }
+  async function readProgress(id,current) {
+    try {
+      const data=await api(`${admin ? '/api/admin':'/api/client'}/jobs/${id}/progress?after=${progressAfter}`);
+      if (id!==progressJob || current!==version) return;
+      progressState=data.job;legacyProgress=data.legacy || null;
+      for (const event of data.events) {progressEvents.push(event);progressAfter=Math.max(progressAfter,event.sequence);}
+      paintProgress();
+      if (data.has_more) progressTimer=setTimeout(()=>readProgress(id,current),0);
+      else if (['queued','running'].includes(data.job.state)) progressTimer=setTimeout(()=>readProgress(id,current),2000);
+      else clearInterval(progressClock);
+    } catch (_) {
+      if (id===progressJob && current===version) {el('progress-warning').textContent='진행 내역 갱신 실패 · 마지막 수신 내용을 유지합니다.';progressTimer=setTimeout(()=>readProgress(id,current),3000);}
+    }
+  }
+  function watchProgress(job) {
+    if (!job?.id) {if (progressJob) clearProgress();return;}
+    if (progressJob===job.id) return;
+    clearProgress();progressJob=job.id;progressState=job;el('progress-panel').hidden=false;paintProgress();
+    progressClock=setInterval(paintProgress,1000);readProgress(job.id,version);
+  }
   const busy = id => jobs.some(job => job.device_id===id && ['queued','running','interrupted'].includes(job.state));
   function updateSelection() {
     const agent = agents.find(item => item.device_id===selected);
@@ -21,6 +81,7 @@ const portal = (() => {
     el('start').disabled = pending || !agent || !agent.approved || !(agent.setup_ready || serverMediaReady) || Date.now()/1000-agent.last_seen>=120 || busy(selected);
     el('start-reason').textContent = !agent ? (agents.length ? '목록에서 작업할 PC를 선택하세요.' : '실행 도구 설치 또는 연결 복구 후 PC를 선택할 수 있습니다.') : !agent.approved ? 'PC 연결 승인이 필요합니다.' : Date.now()/1000-agent.last_seen>=120 ? 'PC가 응답하지 않습니다. 실행 도구와 Tailscale을 확인하세요.' : busy(selected) ? '기존 작업이 끝나거나 중단 상태를 확인한 뒤 시작할 수 있습니다.' : !(agent.setup_ready || serverMediaReady) ? '설치 매체가 준비되면 시작할 수 있습니다.' : '셋업을 시작할 수 있습니다.';
     el('media-status').textContent = agent?.setup_ready ? '선택 PC의 설치 매체가 준비되었습니다.' : serverMediaReady ? '서버 매체 준비 완료 · PC에서 자동으로 내려받습니다.' : `서버 확인이 필요한 파일\n${missingMedia.join('\n') || '배포 원본 경로를 확인하세요.'}`;
+    watchProgress(agent ? jobs.find(j=>j.device_id===agent.device_id) : null);
     el('revoke').disabled = !agent;
     el('resolve').disabled = !jobs.some(job => job.device_id===selected && job.state==='interrupted');
   }
@@ -52,7 +113,7 @@ const portal = (() => {
     updateSelection();
   }
   function disconnect() {
-    version++;clearTimeout(timer);token='';authenticated=false;selected='';agents=[];jobs=[];clientApproved=false;deviceId='';el('start').disabled=true;
+    version++;clearProgress();clearTimeout(timer);token='';authenticated=false;selected='';agents=[];jobs=[];clientApproved=false;deviceId='';el('start').disabled=true;
     if (admin) { el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;el('legacy-reports').hidden=true;updateSelection(); }
     el('result').textContent='';el('notice').textContent=admin ? '관리자 로그인 후 PC 연결 상태를 확인할 수 있습니다.' : '처음이면 실행 도구를 다운로드해 설치하세요. 설치 후 바탕화면 바로가기가 생성됩니다.';
   }
@@ -66,7 +127,7 @@ const portal = (() => {
 
       } else {
         const data=await api('/api/client/jobs');if (current!==version) return;
-        jobs=data.jobs;clientApproved=Boolean(data.approved);
+        jobs=data.jobs;watchProgress(jobs[0]);clientApproved=Boolean(data.approved);
         el('onboarding').hidden=true;
         el('notice').textContent=clientApproved ? `${data.hostname} · ${data.setup_ready || serverMediaReady ? '셋업 준비됨' : '실행 도구 연결 완료'}` : `${data.hostname} · 관리자의 연결 승인을 기다리고 있습니다.`;
         el('client-state').textContent=!data.setup_ready && !serverMediaReady ? '셋업하려면 C:\\ProgramData\\DuctTapeAgent에 Office·Hancom 매체와 Config\\HancomKey.txt·OfficeKey.txt를 준비하세요.' : jobs[0] ? names[jobs[0].state] || jobs[0].state : '';
@@ -81,7 +142,7 @@ const portal = (() => {
     const target=admin ? agents.find(a=>a.device_id===selected)?.hostname : '이 PC';
     if (!confirm(`${target}에서 기존 Office·한컴 제거 및 설치를 시작할까요?`)) return;
     const current=version;pending=true;el('start').disabled=true;
-    try {await api(admin ? '/api/admin/jobs':'/api/client/jobs',{action:'deploy',request_id:crypto.randomUUID(),...(admin ? {device_id:selected} : {})});if (current===version) el('result').textContent='환경 셋업을 요청했습니다. 진행 상태가 자동 갱신됩니다.';}
+    try {const job=await api(admin ? '/api/admin/jobs':'/api/client/jobs',{action:'deploy',request_id:crypto.randomUUID(),...(admin ? {device_id:selected} : {})});if (current===version) {if (job.id) {jobs=[job,...jobs.filter(j=>j.id!==job.id)];watchProgress(job);}el('result').textContent='환경 셋업을 요청했습니다. 진행 상태가 자동 갱신됩니다.';}}
     catch (error) {if (current===version) el('result').textContent=error.message;}
     finally {pending=false;if (current===version && connected()) {clearTimeout(timer);poll(current);}}
   });

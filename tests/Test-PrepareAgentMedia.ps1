@@ -4,8 +4,8 @@ $root=Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'Scripts/AgentActions.ps1')
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ('duct-media-test-'+[guid]::NewGuid().ToString('N'))
-function Invoke-WebRequest {
-    param($Uri,$Headers,$OutFile,[switch]$UseBasicParsing,$TimeoutSec,$MaximumRedirection)
+function Receive-FixtureMedia {
+    param($Uri,$Headers,$OutFile)
     if ($Uri -ne 'https://server.example/api/agent/media' -or $Headers.Authorization -ne 'Bearer fake-agent-key') { throw 'Unexpected media endpoint' }
     Copy-Item $script:Fixture $OutFile
 }
@@ -21,7 +21,7 @@ try {
     }
     $script:Fixture=Join-Path $tempRoot 'media.zip'
     Compress-Archive -Path (Join-Path $source '*') -DestinationPath $script:Fixture
-    Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc')
+    Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc') -Download {param($uri,$headers,$path);Receive-FixtureMedia -Uri $uri -Headers $headers -OutFile $path}
     if (-not (Test-AgentSetupReady -Root (Join-Path $tempRoot 'pc'))) { throw 'Media not prepared' }
     if (@(Get-ChildItem (Join-Path $tempRoot 'pc') -Filter 'media-stage-*').Count) { throw 'Staging not cleaned' }
     Remove-Item (Join-Path $tempRoot 'pc/Office/setup.exe')
@@ -29,7 +29,7 @@ try {
     $bad=[IO.Compression.ZipFile]::Open($script:Fixture,[IO.Compression.ZipArchiveMode]::Create)
     try { $null=$bad.CreateEntry('Office/../../escape.txt') } finally { $bad.Dispose() }
     $rejected=$false
-    try { Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc') } catch { $rejected=$true }
+    try { Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc') -Download {param($uri,$headers,$path);Receive-FixtureMedia -Uri $uri -Headers $headers -OutFile $path} } catch { $rejected=$true }
     if (-not $rejected -or (Test-Path (Join-Path $tempRoot 'escape.txt'))) { throw 'Unsafe archive accepted' }
     Write-Host 'PASS: media download, actual ZIP extraction, key placement, readiness and cleanup'
 } finally {Remove-Item $tempRoot -Recurse -Force}
