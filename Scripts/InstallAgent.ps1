@@ -10,16 +10,19 @@ try {
     }
     $source = Split-Path $PSScriptRoot -Parent
     $target = Join-Path $env:ProgramData 'DuctTapeAgent'
-    if (Test-Path (Join-Path $target 'Config/Agent.json')) { throw '이미 등록된 에이전트입니다. 기존 작업과 등록 상태를 확인하세요.' }
-    if (Get-ScheduledTask -TaskName 'DuctTapeAgent' -ErrorAction SilentlyContinue) { throw '기존 DuctTapeAgent 작업을 먼저 확인하세요.' }
+    if (Test-Path (Join-Path $target 'Config/ActiveJob.json')) { throw '진행 중 또는 결과 확인 중인 작업이 있습니다. 실제 PC 작업 상태를 확인한 뒤 복구하세요.' }
+    try { $stored = if (Test-Path (Join-Path $target 'Config/Agent.json')) { Get-Content (Join-Path $target 'Config/Agent.json') -Raw -Encoding UTF8 | ConvertFrom-Json } else { $null } } catch { throw '로컬 에이전트 설정을 읽을 수 없습니다. 설정 복구가 필요합니다.' }
+    . (Join-Path $PSScriptRoot 'AgentRegistration.ps1')
     . (Join-Path $PSScriptRoot 'ClientSetup.ps1')
-    $generatedConfig = -not (Test-Path $configPath)
+    $monitorPath = if (Test-Path $configPath) { $configPath } elseif (Test-Path (Join-Path $target 'Config/Monitoring.json')) { Join-Path $target 'Config/Monitoring.json' } else { $null }
+    $generatedConfig = $null -eq $monitorPath
     if ($generatedConfig) {
         $addressFile = Join-Path $source 'Config/ServerUrl.txt'
         $url = if (Test-Path $addressFile) { (Get-Content $addressFile -Raw).Trim() } else { Read-Host '서버 HTTPS 주소' }
     } else {
-        $monitor = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        $url = $monitor.ServerUrl
+        $monitor = Get-Content $monitorPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $addressFile = Join-Path $source 'Config/ServerUrl.txt'
+        $url = if (Test-Path $addressFile) { (Get-Content $addressFile -Raw).Trim() } else { $monitor.ServerUrl }
     }
     $uri = [uri]$url
     if (-not $uri.IsAbsoluteUri -or $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/' -or
@@ -32,19 +35,29 @@ try {
         $monitor.ServerUrl = $url.TrimEnd('/')
         $monitor.AllowHttp = $uri.Scheme -eq 'http'
     }
+    $monitor.ServerUrl = $url.TrimEnd('/')
     foreach ($name in @('Main.bat','Scripts','Modules','Config')) {
         if (-not (Test-Path (Join-Path $source $name))) { throw "필수 실행 도구 누락: $name" }
     }
-    if (Test-Path $target) { throw '전용 설치 폴더가 이미 있습니다. 기존 설치 상태를 담당자가 확인하세요.' }
-    New-Item -ItemType Directory -Path $target | Out-Null
-    & icacls.exe $target /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw '에이전트 폴더 접근 권한 설정에 실패했습니다.' }
+    $id = ([guid](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Cryptography').MachineGuid).ToString()
+    $registered = Get-AgentRegistration -ServerUrl $url.TrimEnd('/') -DeviceId $id -Hostname $env:COMPUTERNAME -Stored $stored
+    $task = Get-ScheduledTask -TaskName 'DuctTapeAgent' -ErrorAction SilentlyContinue
+    if ($task) { Stop-ScheduledTask -TaskName 'DuctTapeAgent' }
+    if (Test-Path (Join-Path $target 'Config/ActiveJob.json')) {
+        if ($task) { Start-ScheduledTask -TaskName 'DuctTapeAgent' }
+        throw '복구 전에 작업이 시작되었습니다. 파일을 변경하지 않았습니다. 작업 종료 후 다시 실행하세요.'
+    }
+    if (-not (Test-Path $target)) {
+        New-Item -ItemType Directory -Path $target | Out-Null
+        & icacls.exe $target /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw '에이전트 폴더 접근 권한 설정에 실패했습니다.' }
+    }
     foreach ($name in @('Main.bat','Scripts','Modules')) {
         if ([IO.Path]::GetFullPath($source) -ne [IO.Path]::GetFullPath($target)) {
             Copy-Item -LiteralPath (Join-Path $source $name) -Destination $target -Recurse -Force
         }
     }
-    New-Item -ItemType Directory -Path (Join-Path $target 'Config') | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $target 'Config') -Force | Out-Null
     foreach ($name in @('Office','Hancom')) {
         if (Test-Path (Join-Path $source $name)) { Copy-Item -LiteralPath (Join-Path $source $name) -Destination $target -Recurse }
     }
@@ -53,13 +66,7 @@ try {
             Copy-Item -LiteralPath (Join-Path $source ('Config/'+$name)) -Destination (Join-Path $target 'Config')
         }
     }
-    $id = ([guid](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Cryptography').MachineGuid).ToString()
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $body = @{device_id=$id; hostname=$env:COMPUTERNAME} | ConvertTo-Json -Compress
-    try {
-        $registered = Invoke-RestMethod -Uri ($monitor.ServerUrl.TrimEnd('/')+'/api/agent/join') -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 10 -MaximumRedirection 0
-    } catch { throw '연결 요청 실패. Tailscale, 서버 주소 및 기존 연결 여부를 확인하세요.' }
-    if ($generatedConfig) { $monitor.ReportToken = $registered.agent_token }
+    if ($generatedConfig -or -not $monitor.ReportToken -or ($stored -and $monitor.ReportToken -eq $stored.AgentToken)) { $monitor.ReportToken = $registered.agent_token }
     if ($monitor -is [Collections.IDictionary]) { $monitor.AuthMode = $registered.auth_mode } else { $monitor | Add-Member -NotePropertyName AuthMode -NotePropertyValue $registered.auth_mode -Force }
     $monitor | ConvertTo-Json | Set-Content (Join-Path $target 'Config/Monitoring.json') -Encoding UTF8
     $agentConfig = @{ServerUrl=$monitor.ServerUrl.TrimEnd('/'); DeviceId=$id; AuthMode=$registered.auth_mode}
@@ -69,7 +76,7 @@ try {
     $trigger = New-ScheduledTaskTrigger -AtStartup
     $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName 'DuctTapeAgent' -Action $action -Trigger $trigger -Principal $principal -Settings $settings | Out-Null
+    Register-ScheduledTask -Force -TaskName 'DuctTapeAgent' -Action $action -Trigger $trigger -Principal $principal -Settings $settings | Out-Null
     $fragment = if ($registered.auth_mode -eq 'development') { 'device='+$id } else { 'key='+$registered.client_token }
     $url = $monitor.ServerUrl.TrimEnd('/')+'/client#'+$fragment
     $desktop = [Environment]::GetFolderPath('CommonDesktopDirectory')

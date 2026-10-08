@@ -169,6 +169,17 @@ class JobStore:
             db.execute('UPDATE agent_jobs SET state=?, updated=?, exit_code=? WHERE id=?', (state, time.time(), exit_code, job_id))
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
 
+    def reconnect(self, device_id):
+        client = secrets.token_urlsafe(32)
+        with closing(self.connect()) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute("SELECT 1 FROM agent_jobs WHERE device_id=? AND state IN ('queued','running','interrupted')", (device_id,)).fetchone():
+                raise FileExistsError
+            if not db.execute('UPDATE agents SET client_hash=?, last_seen=? WHERE device_id=?',
+                              (digest(client), time.time(), device_id)).rowcount:
+                raise LookupError
+        return client
+
     def resolve(self, job_id):
         with closing(self.connect()) as db, db:
             changed = db.execute("UPDATE agent_jobs SET state='failed', exit_code=1, updated=? WHERE id=? AND state='interrupted'", (time.time(), job_id)).rowcount

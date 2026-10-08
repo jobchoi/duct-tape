@@ -162,6 +162,18 @@ def router(store, admin_token, sessions, policy, root, media):
     def client_request(body: JobRequest, device_id=Depends(client)):
         return enqueue(device_id, body)
 
+    @routes.get('/api/agent/status')
+    def agent_status(device_id=Depends(agent)):
+        return store.info(device_id) | {'jobs': store.jobs(device_id)}
+
+    @routes.post('/api/agent/reconnect')
+    def reconnect(device_id=Depends(agent)):
+        try:
+            client_token = store.reconnect(device_id)
+        except FileExistsError:
+            raise HTTPException(409, 'Inspect active work before repairing this agent') from None
+        return store.info(device_id) | {'client_token': client_token, 'auth_mode': policy.mode}
+
     @routes.post('/api/agent/claim')
     def claim(body: AgentHeartbeat = AgentHeartbeat(), device_id=Depends(agent)):
         return {'job': store.claim(device_id, body.setup_ready)}

@@ -17,7 +17,7 @@ def browser(role='admin', session=True, key='', mode='secure'):
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status']) elements[id]=new Element();
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
     const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
@@ -32,7 +32,7 @@ def browser(role='admin', session=True, key='', mode='secure'):
     function setTimeout(fn){nextPoll=fn;return 1;} function clearTimeout(){} function confirm(){return allowed;}
     async function fetch(path,options){
       calls.push({path,...options});
-      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,media:{ready:serverMedia}})};
+      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,media:{ready:serverMedia,missing:serverMedia?[]:['Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe']}})};
       if(path==='/api/admin/session'){
         if(options.method==='POST') sessionValid=mode==='ok';
         if(options.method==='DELETE') sessionValid=false;
@@ -149,7 +149,7 @@ def test_local_admin_connects_without_login_and_media_gate_is_visible():
     ctx=browser(mode='development',session=False)
     assert ctx.eval('elements.access.hidden') is True
     assert '테스트' in ctx.eval("elements['auth-status'].textContent")
-    assert ctx.eval("elements['admin-content','media-status'].hidden") is False
+    assert ctx.eval("elements['admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media'].hidden") is False
     assert not ctx.eval("calls.some(c=>c.path==='/api/admin/session' && c.method==='POST')")
     select(ctx)
     ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
@@ -175,3 +175,24 @@ def test_server_media_enables_setup_without_local_files():
     ctx.eval('serverMedia=true;nextPoll()');settle(ctx)
     assert ctx.eval('elements.start.disabled') is False
     assert '자동으로' in ctx.eval("elements['media-status'].textContent")
+
+
+def test_admin_readiness_shows_exact_missing_files():
+    ctx=browser()
+    message=ctx.eval("elements['media-status'].textContent")
+    assert 'Hancom/Install/Hwp130.msi' in message
+    assert 'Hancom/Install/VC_redist.x86.exe' in message
+    assert 'OfficeKey.txt' not in message
+
+
+def test_console_distinguishes_legacy_reports_and_current_selection():
+    ctx=browser()
+    assert ctx.eval("elements['metric-online'].textContent")=='1'
+    assert ctx.eval("elements['metric-pending'].textContent")=='0'
+    assert ctx.eval("elements['metric-media'].textContent")=='누락 2개'
+    assert '이전 상태 보고' in ctx.eval('elements.unmanaged.textContent')
+    assert '제외' not in ctx.eval('elements.unmanaged.textContent')
+    assert '선택' in ctx.eval("elements['start-reason'].textContent")
+    select(ctx)
+    assert ctx.eval("elements['media-status'].textContent")=='선택 PC의 설치 매체가 준비되었습니다.'
+    assert ctx.eval('elements.devices.children[0].className')=='is-selected'
