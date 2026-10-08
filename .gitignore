@@ -58,3 +58,10 @@ __pycache__/
 /downloads/
 /uploads/
 /logs/
+
+# Application installation sources (keep only guidance)
+/Tools/*
+!/Tools/README.md
+
+# Reviewed application metadata contains paths only, never product keys
+!/Config/Applications.json

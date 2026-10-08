@@ -58,6 +58,8 @@ try {
     New-Item -ItemType Directory (Join-Path $fixture 'Scripts') -Force | Out-Null
     New-Item -ItemType Directory (Join-Path $fixture 'Modules') -Force | Out-Null
     New-Item -ItemType Directory (Join-Path $fixture 'Config') -Force | Out-Null
+    Copy-Item (Join-Path $root 'Scripts/ApplicationMedia.ps1') (Join-Path $fixture 'Scripts/ApplicationMedia.ps1')
+    Copy-Item (Join-Path $root 'Config/Applications.json') (Join-Path $fixture 'Config/Applications.json')
     Copy-Item (Join-Path $root 'Scripts/Common.ps1') (Join-Path $fixture 'Scripts/Common.ps1')
     Copy-Item (Join-Path $root 'Modules/06_InstallHancom.ps1') (Join-Path $fixture 'Modules/06_InstallHancom.ps1')
     $engine = (Get-Process -Id $PID).Path

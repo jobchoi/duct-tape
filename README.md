@@ -43,3 +43,5 @@ Windows 클라이언트에서는 `Client.bat`을 더블클릭해 보고 설정, 
 클라이언트 화면 `/client`에서 실행 도구 ZIP을 내려받아 `InstallAgent.bat`을 실행하면 서버에 PC 연결 요청이 전송됩니다. 실행 도구 설치에는 Office·한컴 매체가 없어도 됩니다. 관리자가 `/admin`에서 한 번 승인하면 클라이언트는 바탕화면 바로가기를 열고 환경 셋업 버튼 하나로 시작합니다. 등록 코드를 옮겨 입력할 필요가 없습니다. [에이전트 운영 방법](docs/CLIENT_AGENT.md)을 참고하세요.
 
 기본 흐름과 추후 범위는 [단순화 기획](docs/SETUP_PLAN.md)에 기록했습니다. 로컬 테스트와 운영 인증은 SecurityPolicy로 분리합니다.
+
+앱별 원본과 설치 모듈은 [Config/Applications.json](Config/Applications.json)에서 정의합니다. Tools는 참고 원본 후보이며 고정 실행 경로가 아닙니다. [애플리케이션 모듈 구조](docs/APPLICATION_ARCHITECTURE.md).

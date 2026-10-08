@@ -1,4 +1,4 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'Scripts/OfficeConfiguration.ps1')
 $temp=Join-Path ([IO.Path]::GetTempPath()) ('duct-office-test-'+[guid]::NewGuid().ToString('N'))
@@ -38,7 +38,8 @@ try {
     Assert-Code {Invoke-WithOfficeConfiguration -TemplatePath $template -KeyPath $keyPath -Install {throw 'Should not execute'}} 'OFFICE_CONFIG_INVALID'
     $fixture=Join-Path $temp 'fixture'
     foreach ($folder in @('Config','Office','Scripts','Modules')) {New-Item -ItemType Directory (Join-Path $fixture $folder) -Force | Out-Null}
-    foreach ($script in @('Common.ps1','OfficeConfiguration.ps1','Test-DeploymentPrerequisites.ps1')) {Copy-Item (Join-Path $root ('Scripts/'+$script)) (Join-Path $fixture ('Scripts/'+$script))}
+    foreach ($script in @('Common.ps1','OfficeConfiguration.ps1','Test-DeploymentPrerequisites.ps1','ApplicationMedia.ps1')) {Copy-Item (Join-Path $root ('Scripts/'+$script)) (Join-Path $fixture ('Scripts/'+$script))}
+    Copy-Item (Join-Path $root 'Config/Applications.json') (Join-Path $fixture 'Config/Applications.json')
     Copy-Item (Join-Path $root 'Modules/04_InstallOffice.ps1') (Join-Path $fixture 'Modules/04_InstallOffice.ps1')
     Set-Content (Join-Path $fixture 'Config/OfficeKey.txt') $key
     Set-Content (Join-Path $fixture 'Config/HancomKey.txt') 'TEST-HANCOM-KEY'

@@ -27,6 +27,8 @@ Write-Host 'PASS: fixed actions, report-only isolation, command rejection, agent
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('duct-ready-'+[guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory $tempRoot | Out-Null
+    New-Item -ItemType Directory (Join-Path $tempRoot 'Config') -Force | Out-Null
+    Copy-Item (Join-Path $root 'Config/Applications.json') (Join-Path $tempRoot 'Config/Applications.json')
     if (Test-AgentSetupReady -Root $tempRoot) { throw 'Empty installation incorrectly ready' }
     foreach ($name in @('Office/setup.exe','Office/install.xml','Office/remove.xml','Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe','Config/HancomKey.txt', 'Config/OfficeKey.txt')) {
         $file=Join-Path $tempRoot $name

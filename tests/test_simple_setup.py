@@ -15,7 +15,7 @@ def auth(value):
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(tmp_path/'db.sqlite3', WRITE, READ, schools={}, admin_token=ADMIN)) as c:
+    with TestClient(create_app(tmp_path/'db.sqlite3', WRITE, READ, schools={}, admin_token=ADMIN, media_root=tmp_path/'missing-media')) as c:
         yield c
 
 def join(c):
