@@ -26,7 +26,7 @@ LOG_MAX_BYTES="${LOG_MAX_BYTES:-10485760}"    # 10MB
 
 # 기본값 fallback (설정 파일 누락 대비)
 SERVER_HOST="${SERVER_HOST:-0.0.0.0}"
-SERVER_PORT="${SERVER_PORT:-8000}"
+SERVER_PORT="${SERVER_PORT:-8100}"
 
 mkdir -p "$BASE_DIR/logs"
 
