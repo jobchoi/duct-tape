@@ -42,11 +42,18 @@ while ($true) {
                     try {$null=Invoke-AgentApi ('/api/agent/jobs/'+$jobId) @{state='running'};$lastHeartbeat=[DateTime]::UtcNow} catch {}
                 }
             }
+            $process.WaitForExit()
             $process.Refresh()
             $exitCode = $process.ExitCode
+            if ($null -eq $exitCode) { throw 'JOB_EXIT_CODE_UNAVAILABLE' }
             if ($exitCode -lt 0) { $exitCode = 1 }
         } catch { $exitCode = 1 }
         $state = if ($exitCode -eq 0) { 'succeeded' } else { 'failed' }
+        try {
+            [IO.File]::AppendAllText((Join-Path $logDirectory ($jobId+'.out.log')),
+                ('AGENT_RESULT: state={0} exit_code={1}' -f $state,$exitCode)+[Environment]::NewLine,
+                (New-Object Text.UTF8Encoding($false)))
+        } catch { }
         @{id=$jobId; state=$state; exit_code=$exitCode} | ConvertTo-Json | Set-Content $activePath -Encoding UTF8
         while (Test-Path $activePath) {
             try {

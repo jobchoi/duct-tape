@@ -30,3 +30,14 @@ Common.ps1의 런타임 도우미는 배포 실행 파일의 제품 버전과 Wi
 - 후속: 실패 단계별 원인 수집, 안전한 앱별 재시도, 설치 후 검증, 프로세스 정리 범위 개선. 손상된 런타임까지 버전 등록만으로 검증할 수는 없다.
 
 참고: [Microsoft VC++ 호환 버전 안내](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist), [Windows Installer 종료 코드](https://learn.microsoft.com/en-us/windows/win32/msi/error-codes), [v2 기획](V2_PLAN.md).
+
+## 6/6 완료 후 실패 표시와 한글 로그 (2026-10-14)
+
+후속 현장 로그에서 VC++ 건너뛰기, 한컴 MSI 종료 0, 전체 설치 완료까지 확인했다. 이는 설치기 성공 반환이며 실제 실행/인증 검증을 대신하지 않는다.
+Windows PowerShell 5.1에서 출력 리다이렉트된 Start-Process의 WaitForExit/Refresh 후 ExitCode가 null이 되는 현상을 설치 없이 재현했다. 기존 에이전트는 이를 failed로 판정할 수 있었다. 시작 직후 Handle을 유지하면 성공/실패 코드가 정상 보존됨을 확인했다. 실제 과거 서버 작업의 종료 코드를 조회해 확정한 것은 아니다.
+
+수정: 프로세스 핸들 유지, 종료 후 출력 배출 대기, null 종료 코드 명시적 실패 처리, 작업 출력 끝에 AGENT_RESULT: state/exit_code 기록. 과거 실패 기록을 임의로 성공으로 변경하지 않는다.
+인코딩: 리다이렉트 부모와 자식/모듈의 콘솔 출력을 UTF8로 통일했다. 새 작업 로그는 PowerShell Get-Content -Encoding UTF8로 읽는다. 기존에 이미 깨져 저장된 로그는 복구되지 않는다.
+
+검증: 실제 Windows 자식 프로세스(설치기 아님)의 0/1/3010 종료 코드와 한글 UTF8 파일 내용 확인. 기존 AgentActions/Common/VcRuntime 테스트도 통과했다.
+클라이언트에는 최신 ZIP으로 InstallAgent.bat 업데이트가 필요하다. 서버 재시작만으로 기존 클라이언트 코드는 바뀌지 않는다. 설치 완료된 PC의 전체 셋업을 상태 확인 없이 반복하지 말고 업데이트 후 서버의 연결/상태 보고 테스트부터 확인한다.
