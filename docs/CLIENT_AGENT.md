@@ -14,6 +14,8 @@
 
 ## 실제 설치 준비
 
+한컴 설치 중 VC++ 런타임 충돌(1638)이 발생했거나 실패 후 도구를 업데이트해야 하면 [한컴 런타임 복구](HANCOM_RUNTIME_RECOVERY.md)를 따른다. 기존 VC++를 삭제하지 않는다.
+
 `C:\ProgramData\DuctTapeAgent`에 직접 준비하거나, 서버 배포 원본에서 자동 전달받을 수 있다. 서버 원본에는 다음 항목을 준비한다.
 
 - `Office/setup.exe`, `Office/install.xml`, `Office/remove.xml` 및 정식 Office 매체.

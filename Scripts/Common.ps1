@@ -75,6 +75,46 @@ function Assert-HancomSilentConfiguration {
     }
 }
 
+function Get-VcRuntimePackageVersion {
+    param([string]$Path)
+    $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($Path)
+    $version = $null
+    if ([version]::TryParse(($info.ProductVersion -replace ',\s*','.'), [ref]$version) -and $version.Major -eq 14) { return $version }
+    return $null
+}
+
+function Test-VcX86Runtime {
+    param([version]$MinimumVersion)
+    if ($null -eq $MinimumVersion -or $MinimumVersion.Major -ne 14) { return $false }
+    foreach ($path in @('HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86',
+                        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86')) {
+        $runtime = Get-ItemProperty -LiteralPath $path -ErrorAction SilentlyContinue
+        $version = $null
+        if ($runtime -and $runtime.Installed -eq 1 -and
+            [version]::TryParse(([string]$runtime.Version).TrimStart('v','V'), [ref]$version) -and
+            $version.Major -eq 14 -and $version -ge $MinimumVersion) { return $true }
+    }
+    return $false
+}
+
+function Install-VcX86Runtime {
+    param([string]$Path)
+    $minimum = Get-VcRuntimePackageVersion $Path
+    if (Test-VcX86Runtime $minimum) {
+        Write-DeploymentLog '06: VC++ x86 호환 런타임 확인, 설치 건너뜀'
+        return 0
+    }
+    Write-DeploymentLog '06: VC++ x86 런타임 설치 시작'
+    # 1638 / HRESULT 0x80070666 are provisional, never unconditional success.
+    $code = Invoke-DeploymentProcess $Path '/install /quiet /norestart' @(0,3010,1638,-2147023258)
+    if ($code -in @(1638,-2147023258)) {
+        if (-not (Test-VcX86Runtime $minimum)) { throw 'VC_RUNTIME_CONFLICT' }
+        Write-DeploymentLog '06: VC++ x86 충돌 후 호환 런타임 확인'
+        return 0
+    }
+    return $code
+}
+
 function Invoke-DeploymentProcess {
     param([string]$FilePath, [string]$Arguments, [int[]]$SuccessCodes = @(0, 3010))
     $process = Start-Process -FilePath $FilePath -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
@@ -92,7 +132,7 @@ function Set-RebootRequired {
 function Write-DeploymentFailure {
     param([string]$Module, [string]$Code)
     $known = @('KEY_MISSING','KEY_UNREADABLE','KEY_INVALID','STATE_READ_FAILED','STATE_WRITE_FAILED',
-        'MEDIA_MISSING','HANCOM_INI_MISSING','HANCOM_INI_INVALID','INSTALL_PROCESS_FAILED',
+        'MEDIA_MISSING','HANCOM_INI_MISSING','HANCOM_INI_INVALID','INSTALL_PROCESS_FAILED','VC_RUNTIME_CONFLICT',
         'UNINSTALL_COMMAND_INVALID','STATE_INVALID','OFFICE_KEY_MISSING','OFFICE_KEY_UNREADABLE','OFFICE_KEY_INVALID','OFFICE_CONFIG_INVALID','APPLICATION_CATALOG_INVALID')
     if ($Code -notin $known) { $Code = 'OPERATION_FAILED' }
     Write-DeploymentLog "$Module : $Code" 'ERROR'
