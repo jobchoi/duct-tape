@@ -79,7 +79,12 @@ function Stop-Process { param($Name,[switch]$Force,$ErrorAction)
     Add-Content (Join-Path $DeployRoot 'calls.log') ('STOP:' + ($Name -join ','))
 }
 function Start-Sleep { param($Seconds,$Milliseconds) }
-function Get-ItemProperty { param($Path,$ErrorAction) }
+function Get-ItemProperty { param($Path,$LiteralPath,$ErrorAction)
+    if ($LiteralPath -and (Test-Path (Join-Path $DeployRoot 'runtime-present'))) {
+        return [pscustomobject]@{Installed=1;Version='v14.50.35719.0'}
+    }
+}
+function Get-VcRuntimePackageVersion { param($Path) return [version]'14.29.30139.0' }
 function Start-Process { param($FilePath,$ArgumentList,[switch]$Wait,[switch]$PassThru,$WindowStyle)
     if (-not $Wait -or -not $PassThru -or $WindowStyle -ne 'Hidden') { throw 'Wrong invocation' }
     Add-Content (Join-Path $DeployRoot 'calls.log') ([IO.Path]::GetFileName($FilePath))
@@ -101,6 +106,15 @@ function Start-Process { param($FilePath,$ArgumentList,[switch]$Wait,[switch]$Pa
     $calls = @(Get-Content $callsPath)
     if ($calls.Count -ne 3 -or $calls[0] -ne 'STOP:Install,setup,msiexec' -or
         $calls[1] -ne 'VC_redist.x86.exe' -or $calls[2] -ne 'msiexec.exe') { throw 'Install order incorrect' }
+    Remove-Item $callsPath
+    # Installed newer x86 runtime must bypass redist and still execute Hancom MSI.
+    Set-Content (Join-Path $fixture 'runtime-present') 'fixture'
+    Write-DeploymentState $fixtureState ([pscustomobject]@{ OfficeState='정상'; HancomState='설치 필요' })
+    $output = & $engine -NoProfile -File (Join-Path $fixture 'Modules/06_InstallHancom.ps1') -StateFile $fixtureState
+    if ($LASTEXITCODE -ne 0 -or (Read-DeploymentState $fixtureState).HancomState -ne '정상') { throw 'New runtime blocked Hancom' }
+    $calls = @(Get-Content $callsPath)
+    if ($calls.Count -ne 2 -or $calls[1] -ne 'msiexec.exe') { throw 'Redist was not bypassed' }
+    if (($output -join '') -match 'TEST-ONLY-NOT-A-LICENSE') { throw 'Skip path leaked key' }
     Remove-Item $callsPath
     Write-DeploymentState $fixtureState ([pscustomobject]@{ OfficeState='정상'; HancomState='설치 필요' })
     Set-Content (Join-Path $fixture 'Hancom/setup.ini') 'LevelOption=2'

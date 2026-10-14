@@ -19,6 +19,7 @@ try {
         $oldApps = @(Get-ItemProperty $paths -ErrorAction SilentlyContinue |
             Where-Object { $_.DisplayName -like '*한컴오피스*' -and $_.DisplayName -notlike '*2024*' })
         foreach ($app in $oldApps) {
+            Write-DeploymentLog '06: 기존 한컴 제거 시작'
             if ($app.PSChildName -match '^\{[0-9A-Fa-f-]{36}\}$') {
                 $code = Invoke-DeploymentProcess 'msiexec.exe' "/x $($app.PSChildName) /qn /norestart" @(0, 1605, 1614, 3010)
             } else {
@@ -35,10 +36,11 @@ try {
             Set-RebootRequired $state $code
         }
         Start-Sleep -Seconds 3
-        $code = Invoke-DeploymentProcess $runtime '/install /quiet /norestart'
+        $code = Install-VcX86Runtime $runtime
         Set-RebootRequired $state $code
         Start-Sleep -Seconds 3
         # Do not enable verbose MSI logging with the license property.
+        Write-DeploymentLog '06: 한컴 MSI 설치 시작'
         $arguments = "/i `"$msi`" /qn AGREETOLICENSE=yes PIDKEY=$key /norestart"
         $code = Invoke-DeploymentProcess 'msiexec.exe' $arguments
         Set-RebootRequired $state $code
