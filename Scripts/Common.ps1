@@ -1,5 +1,6 @@
 ﻿# Windows PowerShell 5.1; dot-source from Modules or Scripts.
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 $DeployRoot = Split-Path -Path $PSScriptRoot -Parent
 $ConfigDir = Join-Path $DeployRoot 'Config'
 . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')

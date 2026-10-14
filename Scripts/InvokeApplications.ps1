@@ -1,4 +1,5 @@
 ﻿param([string]$StateFile)
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 function Invoke-ApplicationPlan {
     param([string]$Root, [string]$StateFile)
     . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')

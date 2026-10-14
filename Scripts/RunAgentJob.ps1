@@ -1,5 +1,6 @@
 ﻿param([switch]$ReportOnly,[guid]$JobId)
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 . (Join-Path $PSScriptRoot 'JobProgress.ps1')
 if ($JobId -ne [guid]::Empty) {$env:DUCT_JOB_ID=$JobId.ToString()}
 try {
