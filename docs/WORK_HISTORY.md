@@ -191,3 +191,10 @@
 - DB·매체·임시 ZIP·업로드는 외부 볼륨으로 분리하고 매체/키/환경/DB를 이미지 빌드에서 제외했다. healthcheck와 컨테이너 로그 회전을 설정했다.
 - PI_DOCKER.md에 현재 ~/my-server/duct-tape 배치에 맞는 복사·환경·매체·실행·업데이트·등록 확인을 기록했다. Git 제외 파일과 미push 코드의 별도 이전 필요성을 명시했다.
 - Python 앱 원본·작업 큐 14개 통과. 이미지 복사 구조에서 공개 ZIP 생성과 HTTPS 주소/키 제외 확인, git diff --check 통과. Docker CLI가 없어 Compose 파싱/빌드/ARM64/Pi 현장 실행은 미검증이다. 원격 push는 수행하지 않았다.
+
+## 2026-10-15 공개용 개발기 초안
+
+- 브랜치: docs/blog-development-story → develop.
+- 실제 대화의 현장 로그와 작업 이력을 근거로 Markdown, 게시 본문 HTML, UTF8 미리보기 HTML 및 사용/첨삭 안내를 docs/blog에 작성했다. 미검증·추정·계획을 구분하고 실제 접속 주소·비밀번호·키·PC 식별값은 제외했다.
+- 추가 현장 확인은 사용자 보고 기준이다: Pi Docker healthy 및 API 200, Funnel 활성화 및 클라이언트 페이지 접속. 초기화 PC의 전체 설치 검증과 Pi 원본 준비 완료는 확인되지 않았다.
+- 다운로드 ZIP은 Git 제외 downloads/duct-tape-blog-draft.zip에 생성했다. UTF8 읽기, HTML 생성/내용 확인 및 ZIP 무결성, git diff --check 검증을 수행했다. 플랫폼 게시 미리보기/실제 게시/외부 AI 전송은 수행하지 않았다. 원격 push는 수행하지 않았다.
