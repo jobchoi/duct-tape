@@ -1,0 +1,32 @@
+# Copy this file to ~/my-server/compose.duct-tape.yml.
+# Paths below are relative to ~/my-server, not this repository's deploy directory.
+services:
+  duct-tape:
+    build:
+      context: ./duct-tape
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./duct-tape/.env
+    environment:
+      DUCT_AUTH_MODE: secure
+      DUCT_DB_PATH: /data/monitoring.sqlite3
+      DUCT_MEDIA_ROOT: /media
+      TMPDIR: /work
+    volumes:
+      - ./duct-data:/data
+      - ./deployment:/media:ro
+      - ./duct-temp:/work
+      - ./duct-uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config', timeout=3).close()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

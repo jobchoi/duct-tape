@@ -183,3 +183,11 @@
 - 기존 V2_PLAN에 관리자 앱 등록·공개 UI와 클라이언트 선택 설치, 공통 모듈 규약 및 버전 고정 패키지 실행을 연결했다. 실패 진단/복구 방향은 유지한다.
 - 사용자 답변 반영: Windows 재설치 후 클라이언트 검증, Pi 4 → Pi 5 서버 구축 방향, 병렬/폐쇄망 작업 후순위. Pi 5 사양과 전환 시점은 추가 확인 사항이다.
 - 문서만 변경했고 git diff --check를 통과했다. 현장 성공을 주장하지 않으며 원격 push는 수행하지 않았다.
+
+## 2026-10-15 Pi 5 Docker 배포 구성
+
+- 브랜치: feat/pi-docker-deployment → develop.
+- Dockerfile/.dockerignore 및 deploy/compose.pi.yml을 추가했다. 기존 File Browser와 포트 충돌을 피하고 Pi loopback 8000 → 호스트 Tailscale HTTPS로 접속하는 구성이다.
+- DB·매체·임시 ZIP·업로드는 외부 볼륨으로 분리하고 매체/키/환경/DB를 이미지 빌드에서 제외했다. healthcheck와 컨테이너 로그 회전을 설정했다.
+- PI_DOCKER.md에 현재 ~/my-server/duct-tape 배치에 맞는 복사·환경·매체·실행·업데이트·등록 확인을 기록했다. Git 제외 파일과 미push 코드의 별도 이전 필요성을 명시했다.
+- Python 앱 원본·작업 큐 14개 통과. 이미지 복사 구조에서 공개 ZIP 생성과 HTTPS 주소/키 제외 확인, git diff --check 통과. Docker CLI가 없어 Compose 파싱/빌드/ARM64/Pi 현장 실행은 미검증이다. 원격 push는 수행하지 않았다.
