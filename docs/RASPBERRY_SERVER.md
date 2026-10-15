@@ -49,3 +49,6 @@ Pages는 공개 사용 설명서나 소개 페이지에 사용할 수 있다. �
 - [Raspberry Pi 외부 저장 장치](https://www.raspberrypi.com/documentation/computers/configuration.html)
 
 이 문서는 운영 계획이다. 실제 파이에 배포하거나 ARM64 설치·성능을 검증한 상태는 아니다.
+# Pi 5 Docker 배포 추가 안내
+
+2026-10-15: 현재 Nginx/File Browser와 병행하는 컨테이너 배포는 [PI_DOCKER.md](PI_DOCKER.md)를 따른다. 최신 Compose 예제와 Dockerfile을 추가했다.

@@ -1,0 +1,27 @@
+# Allow only server and public execution tools into the build context.
+**
+!Dockerfile
+!Server/
+!Server/**
+!Scripts/
+!Scripts/**
+!Modules/
+!Modules/01_GetInfo.ps1
+!Modules/02_CheckOffice.ps1
+!Modules/03_RemoveOffice.ps1
+!Modules/04_InstallOffice.ps1
+!Modules/05_CheckHancom.ps1
+!Modules/06_InstallHancom.ps1
+!Config/
+!Config/Applications.json
+!Main.bat
+!InstallAgent.bat
+**/__pycache__/
+**/*.pyc
+**/data/
+**/logs/
+**/uploads/
+**/*.sqlite3*
+**/*.db*
+**/*.log
+**/.env
