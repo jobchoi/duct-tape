@@ -198,3 +198,9 @@
 - 실제 대화의 현장 로그와 작업 이력을 근거로 Markdown, 게시 본문 HTML, UTF8 미리보기 HTML 및 사용/첨삭 안내를 docs/blog에 작성했다. 미검증·추정·계획을 구분하고 실제 접속 주소·비밀번호·키·PC 식별값은 제외했다.
 - 추가 현장 확인은 사용자 보고 기준이다: Pi Docker healthy 및 API 200, Funnel 활성화 및 클라이언트 페이지 접속. 초기화 PC의 전체 설치 검증과 Pi 원본 준비 완료는 확인되지 않았다.
 - 다운로드 ZIP은 Git 제외 downloads/duct-tape-blog-draft.zip에 생성했다. UTF8 읽기, HTML 생성/내용 확인 및 ZIP 무결성, git diff --check 검증을 수행했다. 플랫폼 게시 미리보기/실제 게시/외부 AI 전송은 수행하지 않았다. 원격 push는 수행하지 않았다.
+
+## 2026-10-15 v2 현장 피드백 메모
+
+- 브랜치: docs/v2-field-feedback → develop.
+- 사용자 요청으로 Windows 재부팅 후 복구·다운로드 이어받기, 두 PC 전송 지연, 패키지 캐시/분산 배포, PC별 모니터링을 V2_PLAN.md 논의 후보로 기록했다. 원인과 우선순위는 확정하지 않았다.
+- 문서만 변경했으며 git diff --check로 검증했다. 기능 구현·서버 재시작·원격 push는 수행하지 않았다.
