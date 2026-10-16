@@ -26,3 +26,7 @@ DUCT_TEST_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/tmp/duct-browser .venv/bin/python 
 ```
 
 브라우저 수용 테스트에는 선택 설치한 Playwright/Chromium이 필요하다. 실제 Windows 예약 작업·권한·설치 인수 검증은 테스트 PC에서 별도로 확인한다.
+
+## 관리자 PC 시리얼 표시 (2026-10-16)
+
+등록 PC 목록에 PC 이름과 함께 BIOS 시리얼을 표시한다. 기존 기기 정보 수집/보고의 serial 필드를 사용하며, 같은 device_id의 보고만 연결한다. 보고가 없거나 시리얼 값이 비어 있으면 확인 전으로 표시한다. 서버 화면 변경이므로 이것만을 위해 에이전트를 재설치할 필요는 없지만 해당 PC의 상태 보고는 필요하다. 제조사의 기본 시리얼 문자열은 실제 고유 번호라고 보장할 수 없다.
