@@ -192,7 +192,7 @@ class ManagedApplications:
         return result
 
     def secret_status(self):
-        """Only readiness is returned. Credentials are never sent to agents/browser."""
+        """Catalogue returns readiness only; explicit authorized reveal is separate."""
         path=self.private_root/'Config/ArgosEnrollment.json'
         if not path.is_file():
             return {'configured':False,'automatic_enrollment':False}
@@ -202,7 +202,26 @@ class ManagedApplications:
             if path.stat().st_size>16384:
                 raise ValueError
             data=json.loads(path.read_text(encoding='utf-8-sig'))
-            configured=all(isinstance(data.get(k),str) and bool(data[k].strip()) for k in ('email','username','password','server_url'))
+            configured=(isinstance(data,dict) and isinstance(data.get('server_url'),str)
+                        and bool(data['server_url'].strip())
+                        and any(isinstance(data.get(k),str) and bool(data[k].strip()) for k in ('email','username')))
         except (ValueError,OSError):
             configured=False
         return {'configured':configured,'automatic_enrollment':False}
+
+    def registration_details(self):
+        """Explicit authenticated reveal only; never included in catalogue or archives."""
+        path=self.private_root/'Config/ArgosEnrollment.json'
+        if (not path.is_file() or path.stat().st_size>16384
+                or (os.name!='nt' and path.stat().st_mode & 0o077)):
+            return {'configured':False}
+        try:
+            data=json.loads(path.read_text(encoding='utf-8-sig'))
+            if not isinstance(data,dict):
+                return {'configured':False}
+            fields={key:data.get(key,'') for key in ('server_url','email','username','password')}
+            if not all(isinstance(value,str) for value in fields.values()):
+                return {'configured':False}
+            return {'configured':any(fields.values()),**fields}
+        except (ValueError,OSError):
+            return {'configured':False}

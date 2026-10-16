@@ -1,5 +1,8 @@
 # v2 착수: MDM 우선 설치와 앱 관리 UI
 
+> 2026-10-16 방향 변경: Argos MDM은 **원본 ZIP 다운로드 + 등록 URL·계정 확인 + 수동 설치·등록**으로 변경했다. 아래 최초 구현 기록의 Argos 자동 MSI 설치/계정 비공개 전제는 이 결정으로 대체한다. 일반 앱 MSI 설치 기능은 유지한다. 상세 사용법은 [MDM_MANUAL_SETUP.md](MDM_MANUAL_SETUP.md)를 따른다.
+
+
 작성: 2026-10-16. 브랜치: feature/v2-mdm-ui. 상태: MSI 어댑터 기반 앱 등록/선택 설치 구현 및 자체 검증 완료. 실제 Argos Windows 설치/계정 등록은 미검증이다. 구현 범위와 적용 절차는 [V2_APPLICATIONS.md](V2_APPLICATIONS.md)를 따른다.
 
 ## 보존과 목표

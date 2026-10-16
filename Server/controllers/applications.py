@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_STORED
 from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from typing import Literal
 from Server.models.managed_applications import AppDefinition
@@ -136,9 +136,46 @@ def router(store, catalogue, admin, client, agent, root):
             raise HTTPException(403,'Administrator approval required')
         return {'applications':catalogue.list(public=True)}
 
+    def allowed_client(device_id):
+        if not store.info(device_id)['approved']:
+            raise HTTPException(403,'Administrator approval required')
+
+    @routes.get('/api/admin/mdm/registration',dependencies=[Depends(admin)])
+    def admin_registration():
+        return JSONResponse(catalogue.registration_details(),headers={'Cache-Control':'no-store'})
+
+    @routes.get('/api/client/mdm/registration')
+    def client_registration(device_id=Depends(client)):
+        allowed_client(device_id)
+        return JSONResponse(catalogue.registration_details(),headers={'Cache-Control':'no-store'})
+
+    def manual_package(app_id,version):
+        try:
+            app=catalogue.get(app_id,version)
+        except LookupError:
+            raise HTTPException(404,'Unknown application') from None
+        if app_id!='argos-mdm' or not app['published']:
+            raise HTTPException(404,'No published MDM download')
+        path=catalogue.root/(app['sha256']+'.zip')
+        if not path.is_file():
+            raise HTTPException(409,'Package missing')
+        return FileResponse(path,media_type='application/zip',filename='ArgosMDM-'+version+'.zip',
+                            headers={'Cache-Control':'no-store'})
+
+    @routes.get('/api/admin/mdm/{version}/package',dependencies=[Depends(admin)])
+    def admin_manual_package(version: str):
+        return manual_package('argos-mdm',version)
+
+    @routes.get('/api/client/mdm/{version}/package')
+    def client_manual_package(version: str,device_id=Depends(client)):
+        allowed_client(device_id)
+        return manual_package('argos-mdm',version)
+
     def enqueue(device_id,body):
         try:
             plan=catalogue.snapshot(body.applications)
+            if any(app['id']=='argos-mdm' for app in plan):
+                raise HTTPException(409,'MDM is download-only; install and enroll manually')
             return store.enqueue(device_id,'install-apps',str(body.request_id),application_plan=plan)
         except LookupError:
             raise HTTPException(404,'Unknown PC or application') from None

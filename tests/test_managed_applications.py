@@ -17,7 +17,7 @@ def auth(token):return {'Authorization':'Bearer '+token}
 
 
 def manifest(**kw):
-    return dict(id='argos-mdm',name='Argos <script>alert(1)</script>',version='1.1.7',
+    return dict(id='sample-app',name='Argos <script>alert(1)</script>',version='1.1.7',
                 product_code=GUID,installer='ArgosMDMSetup.msi',enrollment=True,**kw)
 
 
@@ -46,12 +46,12 @@ def upload(c,metadata=None,data=None):
 
 
 def publish(c,enabled=True,reviewed=True):
-    return c.put('/api/admin/applications/argos-mdm/1.1.7',headers=auth(ADMIN),json={'published':enabled,'reviewed':reviewed})
+    return c.put('/api/admin/applications/sample-app/1.1.7',headers=auth(ADMIN),json={'published':enabled,'reviewed':reviewed})
 
 
 def enqueue(c,keys,request_id=None):
     return c.post('/api/client/application-jobs',headers=auth(keys['client_token']),
-        json={'request_id':request_id or str(uuid4()),'applications':[{'id':'argos-mdm','version':'1.1.7'}]})
+        json={'request_id':request_id or str(uuid4()),'applications':[{'id':'sample-app','version':'1.1.7'}]})
 
 
 def result(**kw):
@@ -82,7 +82,7 @@ def test_draft_publish_protocol_snapshot_and_result_scope(api):
     plan=c.get(base+'/application-plan',headers=auth(keys['agent_token'])).json()
     assert plan['applications'][0]['version']=='1.1.7'
     assert publish(c,False).status_code==200 # in-flight job retains its frozen plan
-    endpoint=base+'/applications/argos-mdm/package'
+    endpoint=base+'/applications/sample-app/package'
     assert c.get(endpoint,headers=auth(keys['agent_token'])).content==package()
     ranged=c.get(endpoint,headers=dict(auth(keys['agent_token']),Range='bytes=0-9'))
     assert ranged.status_code==206 and ranged.content==package()[:10]
@@ -91,7 +91,7 @@ def test_draft_publish_protocol_snapshot_and_result_scope(api):
     assert c.get(base+'/applications/other/package',headers=auth(keys['agent_token'])).status_code==404
     done={'state':'succeeded','exit_code':0}
     assert c.post(base,headers=auth(keys['agent_token']),json=done).status_code==409
-    endpoint=base+'/applications/argos-mdm/result'
+    endpoint=base+'/applications/sample-app/result'
     invalid=result();invalid['enrollment']='not_required'
     assert c.post(endpoint,headers=auth(keys['agent_token']),json=invalid).status_code==422
     invalid=result();invalid['verified']=False
@@ -136,3 +136,34 @@ def test_pending_pc_and_unauthorized_upload(api):
     joined=api.post('/api/agent/join',json={'device_id':str(uuid4()),'hostname':'PENDING'}).json()
     assert api.get('/api/client/applications',headers=auth(joined['client_token'])).status_code==403
     assert api.post('/api/admin/applications',data={'manifest':json.dumps(manifest())},files={'package':('x.zip',package())}).status_code==401
+
+
+def test_mdm_download_only_and_explicit_registration_reveal(api,tmp_path):
+    c=api;keys=register(c)
+    data=manifest();data['id']='argos-mdm'
+    assert upload(c,metadata=data).status_code==200
+    url='/api/client/mdm/1.1.7/package'
+    assert c.get(url).status_code==401
+    assert c.get(url,headers=auth(keys['client_token'])).status_code==404
+    assert c.put('/api/admin/applications/argos-mdm/1.1.7',headers=auth(ADMIN),
+                 json={'published':True,'reviewed':True}).status_code==200
+    response=c.get(url,headers=auth(keys['client_token']))
+    assert response.content==package() and response.headers['cache-control']=='no-store'
+    c.post('/api/agent/claim',headers=auth(keys['agent_token']),json={'protocol_version':2})
+    response=c.post('/api/client/application-jobs',headers=auth(keys['client_token']),
+        json={'request_id':str(uuid4()),'applications':[{'id':'argos-mdm','version':'1.1.7'}]})
+    assert response.status_code==409 and 'download-only' in response.text
+    private=tmp_path/'media/Config/ArgosEnrollment.json';private.parent.mkdir(parents=True)
+    private.write_text(json.dumps(dict(server_url='https://mdm.example',username='school',password='TEST-ONLY')))
+    private.chmod(0o600)
+    url='/api/client/mdm/registration'
+    assert c.get(url).status_code==401
+    response=c.get(url,headers=auth(keys['client_token']))
+    assert response.json()['password']=='TEST-ONLY'
+    assert response.headers['cache-control']=='no-store'
+    assert 'TEST-ONLY' not in c.get('/api/client/applications',headers=auth(keys['client_token'])).text
+    pending=c.post('/api/agent/join',json={'device_id':str(uuid4()),'hostname':'PENDING'}).json()
+    assert c.get(url,headers=auth(pending['client_token'])).status_code==403
+    assert c.get('/api/client/mdm/1.1.7/package',headers=auth(pending['client_token'])).status_code==403
+    private.chmod(0o644)
+    assert c.get(url,headers=auth(keys['client_token'])).json()=={'configured':False}

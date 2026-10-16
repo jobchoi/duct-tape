@@ -35,13 +35,19 @@
   function renderApps(){
     el('app-list').replaceChildren();el('empty').textContent=list.length?'':'아직 공개된 설치 앱이 없습니다.';
     for(const app of list){
-      const key=app.id+'@'+app.version,row=document.createElement('tr'),choice=document.createElement('input');choice.type='checkbox';choice.disabled=!app.published;choice.checked=selected.has(key);
+      const key=app.id+'@'+app.version,row=document.createElement('tr'),choice=document.createElement('input');choice.type='checkbox';choice.disabled=!app.published||app.id==='argos-mdm';choice.checked=selected.has(key);
       choice.setAttribute('aria-label',app.name+' '+app.version+' 선택');
       choice.addEventListener('change',()=>{choice.checked?selected.add(key):selected.delete(key);updateStart();});
       const cell=document.createElement('td');cell.append(choice);row.append(cell);
       for(const value of [app.name+(app.enrollment?' · 사용자 등록 필요':''),app.version,(app.size/1048576).toFixed(1)+' MB',app.published?'공개':'초안'])row.append(text('td',value));
+      if(app.id==='argos-mdm'&&app.published){cell.append(button('MDM ZIP 다운로드',async()=>{
+        const headers={'X-Duct-Tape-Request':'1'};if(!admin){const key=sessionStorage.getItem('duct-client-key');if(mode==='development')headers['X-Duct-Device-ID']=sessionStorage.getItem('duct-client-device')||'';else if(key)headers.Authorization='Bearer '+key;}
+        const response=await fetch(prefix+'/mdm/'+encodeURIComponent(app.version)+'/package',{headers,credentials:'same-origin',cache:'no-store'});
+        if(!response.ok)throw new Error('다운로드 권한과 PC 승인 상태를 확인하세요.');
+        const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download='ArgosMDM-'+app.version+'.zip';link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      }));}
       if(admin){const tools=document.createElement('td');tools.append(button(app.published?'비공개로 전환':'검토 후 공개',async()=>{
-        if(!app.published&&!confirm('MSI 단독 무인 설치와 필수 구성요소를 검증했나요? 공개 후 승인된 PC가 설치할 수 있습니다.'))return;
+        if(!app.published&&!confirm(app.id==='argos-mdm'?'MDM 원본을 검토했나요? 승인된 PC에 수동 설치용 ZIP을 공개합니다.':'MSI 단독 무인 설치와 필수 구성요소를 검증했나요?'))return;
         await api('/api/admin/applications/'+encodeURIComponent(app.id)+'/'+encodeURIComponent(app.version),{published:!app.published,reviewed:true},'PUT');
       }));row.append(tools);}el('app-list').append(row);
     }
@@ -51,7 +57,7 @@
   async function refresh(){
     const data=await api(prefix+'/applications');list=data.applications;renderApps();
     if(admin){
-      el('secret-state').textContent=data.enrollment_config.configured?'등록 설정 파일 준비됨 · 자동 등록은 미지원':'등록 설정 파일 미설정 · 설치와 수동 등록 안내는 사용 가능';
+      el('secret-state').textContent=data.enrollment_config.configured?'등록 정보 준비됨 · 버튼으로 확인 가능':'등록 정보 미설정 · MDM 다운로드는 사용 가능';
       agents=(await api('/api/admin/agents')).agents;
       const previous=el('pc').value;el('pc').replaceChildren();
       for(const agent of agents.filter(a=>a.approved)){const option=text('option',agent.hostname);option.value=agent.device_id;el('pc').append(option);}if(agents.some(a=>a.device_id===previous))el('pc').value=previous;
@@ -75,6 +81,17 @@
     }
     if(!visible.length)el('jobs').append(text('p','선택 앱 설치 작업이 없습니다.'));
   }
+  function hideRegistration(){el('registration-details').replaceChildren();el('registration-details').hidden=true;}
+  let revealTimer;
+  el('hide-registration').addEventListener('click',hideRegistration);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)hideRegistration();});
+  el('show-registration').addEventListener('click',()=>run(async()=>{
+    const details=await api(prefix+'/mdm/registration');hideRegistration();
+    const box=el('registration-details');box.hidden=false;
+    if(!details.configured){box.append(text('p','서버의 Config/ArgosEnrollment.json과 파일 권한(600)을 확인하세요.'));return;}
+    for(const [key,label] of [['server_url','등록 URL'],['email','이메일'],['username','계정'],['password','비밀번호']])box.append(text('p',label+': '+(details[key]||'미설정')));
+    clearTimeout(revealTimer);revealTimer=setTimeout(hideRegistration,60000);
+  }));
   el('pc').addEventListener('change',updateStart);
   el('install').addEventListener('click',()=>run(async()=>{
     const device=admin?el('pc').value:null;
@@ -91,7 +108,7 @@
     el('upload-state').textContent='업로드·원본 검사 중…';
     try{await api('/api/admin/applications',body,'POST');el('upload-state').textContent='초안 등록 완료';}catch(e){el('upload-state').textContent='등록 실패';throw e;}
   });});
-  el('import-argos').addEventListener('click',()=>run(async()=>{await api('/api/admin/applications/import-argos',{},'POST');el('message').textContent='Argos 초안 등록 완료. MSI 단독 설치 검증 후 공개하세요.';}));
+  el('import-argos').addEventListener('click',()=>run(async()=>{await api('/api/admin/applications/import-argos',{},'POST');el('message').textContent='Argos 초안 등록 완료. 원본 검토 후 수동 다운로드용으로 공개하세요.';}));
   try{mode=(await api('/api/config')).auth_mode;await refresh();el('message').textContent='연결됨 · v2 시험 기능';}catch(e){el('message').textContent=e.message;}
   setInterval(async()=>{if(busy||refreshing)return;refreshing=true;try{await refresh();}catch(e){el('message').textContent=e.message;}finally{refreshing=false;}},5000);
 })();

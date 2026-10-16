@@ -73,6 +73,27 @@ def test_app_registration_publish_client_selection_and_results(tmp_path):
                 page.screenshot(path='/tmp/duct-v2-admin.png',full_page=True)
                 page.set_viewport_size({'width':390,'height':844})
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
+                # MDM is a manual download, with explicit short-lived credential reveal.
+                metadata=dict(id='argos-mdm',name='Argos MDM',version='1.1.7',installer='ArgosMDMSetup.msi',
+                              product_code='A23A2428-0549-4AF0-8C9B-85F60CBE9AE7',enrollment=True)
+                assert client.post('/api/admin/applications',headers={'X-Duct-Tape-Request':'1'},
+                    data={'manifest':json.dumps(metadata)},files={'package':('mdm.zip',package())}).status_code==200
+                assert client.put('/api/admin/applications/argos-mdm/1.1.7',headers={'X-Duct-Tape-Request':'1'},
+                    json={'published':True,'reviewed':True}).status_code==200
+                private=tmp_path/'media/Config/ArgosEnrollment.json';private.parent.mkdir(parents=True,exist_ok=True)
+                private.write_text(json.dumps({'server_url':'https://mdm.example','username':'school','password':'TEST-ONLY'}));private.chmod(0o600)
+                page.goto(url+'/client/apps')
+                row=page.locator('#app-list tr').filter(has_text='Argos MDM')
+                expect(row.locator('input')).to_be_disabled()
+                with page.expect_download() as download:
+                    row.get_by_role('button',name='MDM ZIP 다운로드').click()
+                assert download.value.suggested_filename=='ArgosMDM-1.1.7.zip'
+                expect(page.locator('#registration-details')).to_be_hidden()
+                page.get_by_role('button',name='등록 URL·계정 확인').click()
+                expect(page.locator('#registration-details')).to_contain_text('https://mdm.example')
+                expect(page.locator('#registration-details')).to_contain_text('TEST-ONLY')
+                page.get_by_role('button',name='정보 숨기기',exact=True).click()
+                expect(page.locator('#registration-details')).to_be_hidden()
                 assert not errors,errors
                 browser.close()
     finally:
