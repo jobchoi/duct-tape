@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape · PC 관리</title><link rel="stylesheet" href="/dashboard.css"><script src="/portal.js" defer></script></head>
 <body data-role="admin"><main class="admin-console">
-<header class="console-header"><div><p class="eyebrow">DUCT-TAPE / ADMIN</p><h1>PC 관리</h1><p class="muted">기기 연결부터 환경 셋업까지 한곳에서 확인합니다.</p></div><a class="download" href="/download/agent.zip">실행 도구 다운로드</a></header>
+<header class="console-header"><div><p class="eyebrow">DUCT-TAPE / ADMIN</p><h1>PC 관리</h1><p class="muted">기기 연결부터 환경 셋업까지 한곳에서 확인합니다.</p></div><a href="/admin/apps">v2 앱 관리</a><a class="download" href="/download/agent.zip">실행 도구 다운로드</a></header>
 <form id="access" class="panel login-panel" hidden><label for="access-token">관리자 인증 키</label><input id="access-token" type="password" required autocomplete="off"><button id="login-button">로그인</button><button id="disconnect" class="secondary" type="button">로그아웃</button><small>로그인은 최대 8시간 유지됩니다.</small></form>
 <div class="connection-bar"><p id="auth-status" role="status">서버 연결 확인 중…</p><p id="notice" role="status">관리자 로그인 후 상태를 확인하세요.</p></div>
 <div id="admin-content" hidden>

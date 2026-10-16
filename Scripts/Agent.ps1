@@ -28,7 +28,7 @@ while (Test-Path $activePath) {
 }
 while ($true) {
     try {
-        $claim = Invoke-AgentApi '/api/agent/claim' @{setup_ready=(Test-AgentSetupReady -Root $root)}
+        $claim = Invoke-AgentApi '/api/agent/claim' @{setup_ready=(Test-AgentSetupReady -Root $root);protocol_version=2}
         if ($null -eq $claim.job) { Start-Sleep -Seconds 5; continue }
         $job = $claim.job
         $jobId = ([guid]$job.id).ToString()

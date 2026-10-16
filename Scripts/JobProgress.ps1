@@ -1,5 +1,5 @@
 ﻿function Write-JobProgress {
-    param([string]$Phase,[string]$Status,[string]$Module,[Nullable[long]]$Current,[Nullable[long]]$Total,[string]$Unit)
+    param([string]$Phase,[string]$Status,[string]$Module,[Nullable[long]]$Current,[Nullable[long]]$Total,[string]$Unit,[string]$ApplicationId)
     if (-not $env:DUCT_JOB_ID) {return}
     try {
         $id=([guid]$env:DUCT_JOB_ID).ToString()
@@ -8,6 +8,7 @@
         New-Item -ItemType Directory $directory -Force | Out-Null
         $event=[ordered]@{phase=$Phase;status=$Status}
         if ($Module) {$event.module=$Module}
+        if ($ApplicationId) {$event.application_id=$ApplicationId}
         if ($null -ne $Current) {$event.current=[long]$Current}
         if ($null -ne $Total -and $Total -gt 0) {$event.total=[long]$Total}
         if ($Unit) {$event.unit=$Unit}

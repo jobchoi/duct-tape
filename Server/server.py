@@ -21,6 +21,7 @@ from Server.models.agent_jobs import JobStore
 from Server.models.admin_sessions import AdminSessions
 from Server.security import SecurityPolicy
 from Server.models.deployment_media import DeploymentMedia
+from Server.models.managed_applications import ManagedApplications
 from Server.controllers.agent_jobs import router as agent_router
 from Server.controllers.monitoring import router as monitoring_router
 from Server.models.monitoring import Report
@@ -40,6 +41,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
     jobs = JobStore(database)
     sessions = AdminSessions()
     media = DeploymentMedia(media_root or os.environ.get('DUCT_MEDIA_ROOT', ROOT.parent))
+    applications = ManagedApplications(jobs, media.root)
     registry = load_schools() if schools is None else schools
     queue = Outbox(database, relay if relay is not None else GasRelay(registry),
                    int(os.environ.get('DUCT_SENT_RETENTION_DAYS', '30')))
@@ -70,6 +72,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         database.parent.mkdir(parents=True, exist_ok=True)
         initialize(database)
         jobs.initialize()
+        applications.initialize()
         recovery = asyncio.create_task(asyncio.to_thread(queue.drain))
         try:
             yield
@@ -138,7 +141,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
         return response
 
     app.include_router(monitoring_router(queue, connect, registry, require_writer, require_reader, reporting_device))
-    app.include_router(agent_router(jobs, administrator, sessions, policy, ROOT.parent, media))
+    app.include_router(agent_router(jobs, administrator, sessions, policy, ROOT.parent, media, applications))
     app.include_router(artifact_router(ROOT.parent / "uploads", administrator))
     (ROOT.parent / "downloads").mkdir(exist_ok=True)
     app.mount("/files", StaticFiles(directory=ROOT.parent / "downloads"), name="files")

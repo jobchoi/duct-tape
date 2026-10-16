@@ -13,7 +13,7 @@ from Server.models.agent_package import build as build_agent_package
 
 
 
-def router(store, admin_token, sessions, policy, root, media):
+def router(store, admin_token, sessions, policy, root, media, applications=None):
     routes = APIRouter()
     bearer = HTTPBearer(auto_error=False)
 
@@ -177,7 +177,7 @@ def router(store, admin_token, sessions, policy, root, media):
 
     @routes.post('/api/agent/claim')
     def claim(body: AgentHeartbeat = AgentHeartbeat(), device_id=Depends(agent)):
-        return {'job': store.claim(device_id, body.setup_ready)}
+        return {'job': store.claim(device_id, body.setup_ready, body.protocol_version)}
 
     @routes.post('/api/agent/jobs/{job_id}/progress')
     def report_progress(job_id: UUID, body: ProgressBatch, device_id=Depends(agent)):
@@ -242,4 +242,7 @@ def router(store, admin_token, sessions, policy, root, media):
     def javascript():
         return FileResponse(views / 'portal.js', media_type='text/javascript')
 
+    if applications is not None:
+        from Server.controllers.applications import router as application_router
+        routes.include_router(application_router(store, applications, admin, client, agent, root))
     return routes

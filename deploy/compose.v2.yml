@@ -1,0 +1,31 @@
+# Copy to the parent directory as compose.duct-tape-v2.yml.
+# Requires a separate feature/v2-mdm-ui checkout at ./duct-tape-v2 and its private .env.
+services:
+  duct-tape-v2:
+    build:
+      context: ./duct-tape-v2
+    env_file:
+      - ./duct-tape-v2/.env
+    environment:
+      DUCT_AUTH_MODE: secure
+      DUCT_DB_PATH: /data/monitoring.sqlite3
+      DUCT_MEDIA_ROOT: /media
+      TMPDIR: /work
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - ./duct-v2-data:/data
+      - ./deployment-v2:/media:ro
+      - ./duct-v2-temp:/work
+      - ./duct-v2-uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config', timeout=3).close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

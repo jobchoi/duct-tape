@@ -2,7 +2,9 @@
 # 통합 제어기: start(백그라운드) | run [인자...](포그라운드) | stop | restart | status | logs | rotate
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REAL_BASE_DIR="$(cd "$BASE_DIR" && pwd -P)"
-if [ "${1:-}" = "docker" ]; then
+if [ "${1:-}" = "docker" ] || [ "${1:-}" = "docker-v2" ]; then
+    export DUCT_DOCKER_PROFILE=v1
+    [ "$1" = docker-v2 ] && export DUCT_DOCKER_PROFILE=v2
     shift
     exec bash "$BASE_DIR/scripts/manage_docker.sh" "$@"
 fi
@@ -191,6 +193,7 @@ case "${1:-}" in
     *)
         echo "사용법: ./manage.sh {start|run|stop|restart|status|logs|rotate}"
         echo "Docker: ./manage.sh docker {start|stop|restart|status|logs|build|check}"
+        echo "V2 시험: ./manage.sh docker-v2 {start|stop|restart|status|logs|build|check}"
         exit 1
         ;;
 esac

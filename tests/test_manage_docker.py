@@ -52,3 +52,19 @@ def test_docker_dispatch_is_scoped_and_preserves_exit_codes(tmp_path):
     result = subprocess.run(['bash', str(ROOT/'manage.sh'), 'docker', 'start'],
                             env=env, capture_output=True)
     assert result.returncode == 1
+
+
+def test_v2_profile_never_targets_v1_service(tmp_path):
+    compose=tmp_path/'compose.duct-tape-v2.yml';compose.write_text('services: {}')
+    for name in ('docker','curl'):
+        tool=tmp_path/name
+        tool.write_text('#!/usr/bin/env python3\nimport json,sys\nprint(json.dumps(sys.argv[1:]))\n')
+        tool.chmod(0o755)
+    env=dict(os.environ,PATH=str(tmp_path)+os.pathsep+os.environ['PATH'],DUCT_COMPOSE_FILE=str(compose))
+    for action,tail in [('restart',['restart','duct-tape-v2']),('build',['up','-d','--build','duct-tape-v2'])]:
+        r=subprocess.run(['bash',str(ROOT/'manage.sh'),'docker-v2',action],env=env,capture_output=True,text=True)
+        assert r.returncode==0,r.stderr
+        assert json.loads(r.stdout.splitlines()[-1])==['compose','-f',str(compose),*tail]
+    r=subprocess.run(['bash',str(ROOT/'manage.sh'),'docker-v2','check'],env=env,capture_output=True,text=True)
+    assert r.returncode==0
+    assert json.loads(r.stdout.splitlines()[-1])[-1]=='http://127.0.0.1:8001/api/config'

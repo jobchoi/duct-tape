@@ -227,3 +227,15 @@
 - 문서 검증을 수행했다. 운영 서버나 클라이언트·기관 MDM 서버에 변경을 실행하지 않았다.
 - 사용자 후속 답변의 ArgosMDMSetup_v1.1.7_야탑을 대상 원본명으로 기록했다. 확장자·무인 설치·등록 방식은 미확인이고 Tools에서 해당 원본을 찾지 못했다. 제품명만으로 실행 명령을 만들지 않았다.
 - 후속 확인: setup.exe/MSI 중 setup.exe를 사용했고, Windows 장치 관리에만 등록에서 전자메일과 공통 계정 하나로 등록했다. 설치/등록 상태 분리 및 공식 무인 등록 지원 확인 필요를 V2_MDM_START.md에 기록했다. 실제 계정·URL·비밀번호 수집이나 설치/등록 실행은 하지 않았다.
+
+## 2026-10-16 v2 앱 UI 및 Argos MSI 어댑터 기반 구현
+
+- 브랜치: feature/v2-mdm-ui. v1 main/v1.0.0-rc.1은 그대로 보존한다.
+- 실제 Tools/ArgosMDM 원본의 MSI를 Windows Installer COM 읽기 전용으로 분석해 ArgosMDMAgent 1.1.7/DKI/ProductCode를 확인했다. setup.exe와 MSI 단독 설치의 동등성은 미확인이다.
+- 관리자 /admin/apps에 ZIP·앱 메타데이터 초안 등록/검사/공개 및 Argos 원본 초안 가져오기, 클라이언트 /client/apps에 앱/버전 선택 설치, 관리자 PC 지정 요청과 PC별 최근 앱 결과·진행을 구현했다. 기존 관리자·클라이언트 화면에서 연결한다.
+- Model/Controller/View를 분리하고 msi-v1 어댑터 규약, 버전/해시 고정 작업, 재사용 패키지/클라이언트 캐시, 등록/공개 감사 기록을 추가했다. v2 프로토콜을 보고한 PC만 새 작업을 받으며 v1/v2 동일 PC 활성 작업은 하나로 제한한다.
+- 서버와 클라이언트에서 ZIP 경로·확장자·중복·크기를 검증하고 에이전트에서 MSI ProductCode/버전을 실행 전에 확인한다. 설치 후 등록 버전 확인 없이는 성공 처리하지 않는다. 계정 인증/MDM 등록은 설치 결과와 분리해 사용자 등록 필요로 유지한다.
+- ArgosEnrollment.json.example과 서버 전용 설정 준비 여부 조회를 추가했다. 실제 비밀 파일/설치 원본은 Git 제외이며 값은 UI·공개 ZIP·로그·클라이언트로 전송하지 않는다. 이 파일의 비밀번호를 자동 등록에 사용하거나 암호화 저장을 구현한 것은 아니다.
+- 별도 v2 Compose/데이터/포트와 manage.sh docker-v2를 추가해 v1 운영 명령과 구분했다. 서버·클라이언트를 실제 업데이트하거나 공개 Funnel을 변경하지 않았다.
+- 검증: Python 관련 66개 통과/선택 환경 2개 제외, Docker 관리 2개 통과, 실제 Chromium 2개 통과, Windows PowerShell 5.1 테스트 6종 통과. 실제 Argos 초안 패키징 및 읽기 전용 버전 불일치 거부 확인. Python/JS/Bash 구문, YAML 문법, git diff --check 확인.
+- 테스트에서 모바일 폼 넘침과 처리 중 클릭 유실을 수정했다. 실제 Argos 설치기 실행·학교 계정 인증·MDM 등록·ARM64/Pi 배포는 미검증이다. 상세 사용/한계/후속 작업은 V2_APPLICATIONS.md에 기록했다.

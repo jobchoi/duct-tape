@@ -58,6 +58,9 @@ __pycache__/
 /downloads/
 /uploads/
 /logs/
+/packages/
+/application-results/
+/app-stage-*/
 
 # Application installation sources (keep only guidance)
 /Tools/*
