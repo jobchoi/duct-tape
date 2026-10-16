@@ -102,7 +102,8 @@ const portal = (() => {
     for (const agent of agents) {
       const row=document.createElement('tr'), report=reports.find(r=>r.device_id===agent.device_id), latest=jobs.find(j=>j.device_id===agent.device_id);
       row.className=selected===agent.device_id ? 'is-selected':'';
-      const values=[agent.hostname, !agent.approved ? '연결 승인 대기' : Date.now()/1000-agent.last_seen<120 ? '연결됨':'연결 끊김', report ? `${report.office} / ${report.hancom}` : '아직 보고 없음', !agent.setup_ready && !serverMediaReady ? '설치 매체 준비 필요' : latest ? names[latest.state] || latest.state : '셋업 전'];
+      const serial=typeof report?.serial==='string' ? report.serial.trim() : '';
+      const values=[agent.hostname, serial || '확인 전', !agent.approved ? '연결 승인 대기' : Date.now()/1000-agent.last_seen<120 ? '연결됨':'연결 끊김', report ? `${report.office} / ${report.hancom}` : '아직 보고 없음', !agent.setup_ready && !serverMediaReady ? '설치 매체 준비 필요' : latest ? names[latest.state] || latest.state : '셋업 전'];
       for (const value of values) { const cell=document.createElement('td');cell.textContent=value;row.append(cell); }
       const cell=document.createElement('td'), button=document.createElement('button');button.type='button';
       button.textContent=agent.approved ? (selected===agent.device_id ? '선택됨':'선택') : '연결 승인';

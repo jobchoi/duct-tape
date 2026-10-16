@@ -211,3 +211,11 @@
 - manage.sh docker start/stop/restart/status/logs/build/check를 추가하고 실제 명령을 실행 직전에 출력한다. 기존 WSL 실행 기능은 유지하며 Docker 모드는 셸로 .env를 로드하지 않는다.
 - 상위 compose.duct-tape.yml을 저장소 위치 기준으로 찾고 duct-tape 서비스만 제어한다. 삭제/down/Funnel 자동 공개는 추가하지 않았다. PI_DOCKER.md에 사용 방법과 진행 작업 중 재시작 주의를 기록했다.
 - Bash 구문 검사 및 가짜 Docker/curl로 인자·공백 경로·오류 코드 전달·지원하지 않는 명령·파일 누락을 검증했다. 실제 Docker/Pi 서버는 이 작업에서 제어하지 않았다.
+
+## 2026-10-16 관리자 시리얼 및 v1 코드 보존
+
+- 브랜치: feat/admin-device-serial → develop → main. 사용자 요청으로 현재 코드를 main에 보존하고 v1.0.0-rc.1로 표시한다. 안정 운영 검증 완료를 뜻하지 않는다.
+- 관리자 목록에 기존 보고의 BIOS serial을 추가했다. PC 식별값으로 보고를 연결하고 빈 값은 확인 전으로 표시하며 textContent를 사용한다.
+- 관리자 선택/승인/작업 요청 회귀 테스트와 시리얼의 보고 연결·빈 값·HTML 문자열 안전 표시를 검증했다. V1_BASELINE.md에 알려진 오류와 Git 제외 운영 데이터의 별도 백업 필요를 기록했다.
+- MDM 제품/설치 명령은 질문 중이며 미구현이다. main 보존 후 v2 기능 브랜치에서 기획을 시작한다. 실제 Pi 배포·DB 백업·Windows 설치는 수행하지 않았다.
+- 최종 검증: 관리자 UI/인증 회귀 테스트 17개 및 git diff --check 통과. 실제 브라우저 화면과 Pi 적용은 미검증이다.

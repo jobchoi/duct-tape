@@ -56,7 +56,7 @@ def settle(ctx):
 
 
 def select(ctx):
-    ctx.eval('elements.devices.children[0].children[4].children[0].listeners.click()')
+    ctx.eval('elements.devices.children[0].children[5].children[0].listeners.click()')
     settle(ctx)
 
 
@@ -74,7 +74,7 @@ def test_real_pc_selection_persists_and_dummy_reports_are_excluded():
     select(ctx)
     assert ctx.eval('elements.start.disabled') is False
     ctx.eval('nextPoll()');settle(ctx)
-    assert ctx.eval('elements.devices.children[0].children[4].children[0].textContent') == '선택됨'
+    assert ctx.eval('elements.devices.children[0].children[5].children[0].textContent') == '선택됨'
     submit(ctx)
     calls=json.loads(ctx.eval('JSON.stringify(calls)'))
     body=json.loads(next(c['body'] for c in calls if c['path']=='/api/admin/jobs' and c['method']=='POST'))
@@ -85,7 +85,7 @@ def test_real_pc_selection_persists_and_dummy_reports_are_excluded():
 def test_pending_pc_is_approved_in_place():
     ctx=browser()
     ctx.eval('agentData[0].approved=0;nextPoll()');settle(ctx)
-    assert ctx.eval('elements.devices.children[0].children[4].children[0].textContent') == '연결 승인'
+    assert ctx.eval('elements.devices.children[0].children[5].children[0].textContent') == '연결 승인'
     assert ctx.eval('elements.start.disabled') is True
     select(ctx)
     assert ctx.eval('elements.start.disabled') is False
@@ -155,7 +155,7 @@ def test_local_admin_connects_without_login_and_media_gate_is_visible():
     select(ctx)
     ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
     assert ctx.eval('elements.start.disabled') is True
-    assert '매체' in ctx.eval('elements.devices.children[0].children[3].textContent')
+    assert '매체' in ctx.eval('elements.devices.children[0].children[4].textContent')
 
 
 def test_local_client_uses_identifier_without_bearer_token():
@@ -212,3 +212,14 @@ def test_actual_progress_counters_and_module_elapsed_are_rendered():
     assert '실행 단계' in ctx.eval("elements['progress-caption'].textContent")
     ctx.eval('elements.disconnect.listeners.click()');settle(ctx)
     assert ctx.eval("elements['progress-panel'].hidden") is True
+
+
+def test_serial_uses_matching_device_report_and_safe_text():
+    ctx = browser()
+    assert ctx.eval('elements.devices.children[0].children[1].textContent') == '확인 전'
+    ctx.eval("reportData.push({device_id:'device-1',serial:'  <img onerror=evil()>  ',office:'정상',hancom:'정상'});nextPoll()")
+    settle(ctx)
+    assert ctx.eval('elements.devices.children[0].children[1].textContent') == '<img onerror=evil()>'
+    ctx.eval("reportData[1].serial='   ';nextPoll()")
+    settle(ctx)
+    assert ctx.eval('elements.devices.children[0].children[1].textContent') == '확인 전'
