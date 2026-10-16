@@ -2,6 +2,10 @@
 # 통합 제어기: start(백그라운드) | run [인자...](포그라운드) | stop | restart | status | logs | rotate
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REAL_BASE_DIR="$(cd "$BASE_DIR" && pwd -P)"
+if [ "${1:-}" = "docker" ]; then
+    shift
+    exec bash "$BASE_DIR/scripts/manage_docker.sh" "$@"
+fi
 cd "$BASE_DIR" || exit 1
 
 # 환경설정 및 보안키 로드
@@ -186,6 +190,7 @@ case "${1:-}" in
     rotate)  rotate_log ;;
     *)
         echo "사용법: ./manage.sh {start|run|stop|restart|status|logs|rotate}"
+        echo "Docker: ./manage.sh docker {start|stop|restart|status|logs|build|check}"
         exit 1
         ;;
 esac

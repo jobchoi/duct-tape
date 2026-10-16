@@ -204,3 +204,10 @@
 - 브랜치: docs/v2-field-feedback → develop.
 - 사용자 요청으로 Windows 재부팅 후 복구·다운로드 이어받기, 두 PC 전송 지연, 패키지 캐시/분산 배포, PC별 모니터링을 V2_PLAN.md 논의 후보로 기록했다. 원인과 우선순위는 확정하지 않았다.
 - 문서만 변경했으며 git diff --check로 검증했다. 기능 구현·서버 재시작·원격 push는 수행하지 않았다.
+
+## 2026-10-16 Docker 서버 관리 명령
+
+- 브랜치: feat/docker-management-commands → develop.
+- manage.sh docker start/stop/restart/status/logs/build/check를 추가하고 실제 명령을 실행 직전에 출력한다. 기존 WSL 실행 기능은 유지하며 Docker 모드는 셸로 .env를 로드하지 않는다.
+- 상위 compose.duct-tape.yml을 저장소 위치 기준으로 찾고 duct-tape 서비스만 제어한다. 삭제/down/Funnel 자동 공개는 추가하지 않았다. PI_DOCKER.md에 사용 방법과 진행 작업 중 재시작 주의를 기록했다.
+- Bash 구문 검사 및 가짜 Docker/curl로 인자·공백 경로·오류 코드 전달·지원하지 않는 명령·파일 누락을 검증했다. 실제 Docker/Pi 서버는 이 작업에서 제어하지 않았다.
