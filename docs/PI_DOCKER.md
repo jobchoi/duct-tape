@@ -61,6 +61,22 @@ tailscale serve status
 
 ## 업데이트와 검증
 
+### 짧은 관리 명령
+
+Pi에서 `cd ~/my-server/duct-tape` 후 아래 명령을 사용한다. 실행 직전에 실제 Docker/curl 명령을 출력한다. 저장소 위치를 기준으로 상위 compose.duct-tape.yml을 찾으므로 호출한 터미널 위치에 의존하지 않는다. 다른 위치의 Compose는 DUCT_COMPOSE_FILE 환경 변수에 절대 경로를 지정한다.
+
+```bash
+./manage.sh docker start    # 서버 시작
+./manage.sh docker status   # duct-tape 컨테이너 상태
+./manage.sh docker logs     # 최근 80줄 + 실시간 로그, Ctrl+C로 조회 종료
+./manage.sh docker check    # localhost:8000 API 응답 확인
+./manage.sh docker stop     # 서버 중지
+./manage.sh docker restart  # 서버 재시작
+./manage.sh docker build    # 코드/환경 변경 후 재빌드·시작
+```
+
+`./manage.sh start`는 기존 WSL/Python 서버 명령이다. Pi의 Docker 서버는 반드시 docker 하위 명령을 사용한다. 중지/재시작/재빌드는 실행 중 설치·다운로드가 없는 때 수행한다. Nginx/File Browser 중지나 볼륨 삭제는 수행하지 않는다. .env를 화면에 출력하거나 셸로 불러오지 않고 Docker Compose가 읽도록 한다. Funnel은 자동 활성화하지 않으며 재부팅 후 접속 문제는 tailscale funnel status로 별도 확인한다. start 성공은 컨테이너 실행 요청 성공이므로 status/check로 앱 준비도 확인한다.
+
 업데이트는 설치 작업 종료 후 최신 코드를 반영하고 같은 Compose up -d --build를 실행한다. Git 제외 매체·환경·DB는 git pull로 전송되지 않는다. Docker DB 볼륨을 삭제하거나 down -v를 실행해 복구하려 하지 않는다.
 
 확인: healthcheck, HTTPS 화면/로그인, 새 에이전트 ZIP, PC 등록/승인, 관리자 요청→에이전트 실행→동일 작업 ID 완료 보고, UTF8 로그. 설치 후 앱 실행과 정품 인증은 별도로 확인한다. Docker 로그는 서버 로그이며 Windows 상세 로그는 클라이언트에 있다.
