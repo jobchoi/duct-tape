@@ -1,0 +1,3 @@
+*.bat text eol=crlf whitespace=cr-at-eol
+*.ps1 text eol=crlf
+*.md text eol=lf

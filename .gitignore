@@ -1,0 +1,67 @@
+# ==========================================
+# 학교 탭북 자동화 프로젝트 .gitignore
+# ==========================================
+
+# 1. 보안 및 라이선스 (가장 중요 🚨)
+/Config/*
+!/Config/*.example
+/Config/HancomKey.txt
+*.txt
+*.json
+# XML/JSON은 내용으로 키 유무를 판단할 수 없어 기본 제외
+*.xml
+# 비밀값 없는 템플릿만 허용
+!*.txt.example
+!*.json.example
+!*.xml.example
+
+# 2. 대용량 설치 파일 및 패키지
+Hancom/
+/Office/*
+!/Office/README.md
+*.exe
+*.msi
+*.cab
+*.iss
+
+# 3. 임시 파일 및 개발 환경 찌꺼기
+.vscode/
+*.log
+*.tmp
+
+/Logs/
+
+# Central monitoring runtime and Python environments
+/Server/data/
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+!requirements.txt
+!requirements-dev.txt
+
+!/GoogleAppsScript/appsscript.json
+
+# Local credentials and diagnostic fixtures (never publish)
+*.env
+/Config/schools.json
+/seed_dummy.py
+.clasprc.json
+.clasp.json
+
+# Agent deployment output and machine-bound portal shortcuts
+*.url
+/downloads/
+/uploads/
+/logs/
+
+# Application installation sources (keep only guidance)
+/Tools/*
+!/Tools/README.md
+
+# Reviewed application metadata contains paths only, never product keys
+!/Config/Applications.json
