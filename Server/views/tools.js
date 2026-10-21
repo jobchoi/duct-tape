@@ -30,17 +30,36 @@
     el('qr-value').value=invalid?'':serial;
     el('serial-status').textContent=invalid?'시리얼 확인 전 또는 기본값입니다. 직접 확인해 입력하세요.':'마지막 보고: '+(report.observed_at||'시각 미상')+' · 실제 기기와 대조하세요.';
   });
-  el('qr-value').addEventListener('input',clearImage);
+  el('admission-year').value=String(new Date().getFullYear());
+  function currentInput(){
+    const label=el('qr-format').value==='label',name=el('person').value.trim(),year=el('admission-year').value,serial=el('qr-value').value;
+    return {label,name,year,serial,value:label?year+'|'+name+'|'+serial:serial};
+  }
+  for(const id of ['qr-value','person','admission-year'])el(id).addEventListener('input',clearImage);
+  el('qr-format').addEventListener('change',()=>{
+    const label=el('qr-format').value==='label';el('person').required=label;el('admission-year').required=label;el('year-field').hidden=!label;
+    el('format-note').textContent=label?'QR 데이터: 입학년도|이름|S/N. 다운로드 이미지에도 세 항목을 표시합니다.':'입력값만 QR에 담습니다. 이름과 입학년도는 포함하지 않습니다.';clearImage();
+  });
   el('qr-form').addEventListener('submit',async event=>{
-    event.preventDefault();if(working)return;working=true;for(const check of el('features').querySelectorAll('input'))check.disabled=true;el('generate').disabled=true;clearImage();const value=el('qr-value').value;
+    event.preventDefault();if(working)return;working=true;for(const check of el('features').querySelectorAll('input'))check.disabled=true;el('generate').disabled=true;clearImage();const input=currentInput(),value=input.value;
     try{
+      if(input.label&&(!input.name||!input.serial.trim()||!/^(19|20|21)\d{2}$/.test(input.year)||[input.name,input.serial].some(x=>/[|\r\n]/.test(x))))throw new Error('이름·입학년도·S/N을 확인하세요. 이름과 S/N에는 | 또는 줄바꿈을 사용할 수 없습니다.');
       const response=await fetch('/api/admin/tools/qr',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'X-Duct-Tape-Request':'1','Content-Type':'application/json'},body:JSON.stringify({value}),signal:AbortSignal.timeout(15000)});
       if(!response.ok)throw new Error(response.status===409?'QR 기능이 비활성화됐습니다.':response.status===422?'공백이 아닌 값으로 UTF-8 기준 1024바이트 이내로 입력하세요.':'QR 생성 실패. 관리자 로그인 상태를 확인하세요.');
-      const {matrix}=await response.json();if(el('qr-value').value!==value)return;
-      const canvas=el('qr-canvas'),scale=Math.max(4,Math.floor(360/matrix.length));canvas.width=canvas.height=matrix.length*scale;
-      const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
+      const {matrix}=await response.json();if(currentInput().value!==value||currentInput().label!==input.label)return;
+      const canvas=el('qr-canvas'),scale=Math.max(4,Math.floor(360/matrix.length)),size=matrix.length*scale;
+      const context=canvas.getContext('2d'),lines=[];
+      context.font='16px sans-serif';
+      if(input.label){
+        for(const field of ['이름: '+input.name,'입학년도: '+input.year,'S/N: '+input.serial]){
+          let line='';for(const char of field){if(line&&context.measureText(line+char).width>size-24){lines.push(line);line='';}line+=char;}lines.push(line);
+        }
+      }
+      canvas.width=size;canvas.height=size+(lines.length?lines.length*24+16:0);
+      context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
       matrix.forEach((row,y)=>row.forEach((dark,x)=>{if(dark)context.fillRect(x*scale,y*scale,scale,scale);}));
-      hasImage=true;el('preview').hidden=false;el('qr-status').textContent='생성 완료 · 입력값만 포함했습니다.';
+      context.font='16px sans-serif';context.textBaseline='top';lines.forEach((line,index)=>context.fillText(line,12,size+index*24));
+      hasImage=true;el('preview').hidden=false;el('qr-status').textContent=input.label?'생성 완료 · 이름·입학년도·S/N을 QR과 이미지에 포함했습니다.':'생성 완료 · 입력값만 포함했습니다.';
     }catch(error){el('qr-status').textContent=error.message;}
     finally{working=false;el('generate').disabled=false;showSettings();}
   });

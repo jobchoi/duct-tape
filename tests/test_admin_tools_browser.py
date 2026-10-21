@@ -43,6 +43,7 @@ def test_serial_qr_download_and_feature_switches(tmp_path):
                 page.get_by_role('link',name='QR 만들기').click()
                 expect(page.locator('#qr-value')).to_have_value('00001234')
                 expect(page.locator('#serial-status')).to_contain_text('마지막 보고')
+                page.locator('#qr-format').select_option('text')
                 page.locator('#person').fill('비공개 사용자')
                 page.get_by_role('button',name='QR 생성',exact=True).click()
                 expect(page.locator('#preview')).to_be_visible()
@@ -58,6 +59,21 @@ def test_serial_qr_download_and_feature_switches(tmp_path):
                 with page.expect_download() as download:
                     page.get_by_role('button',name='PNG 다운로드').click()
                 assert zxingcpp.read_barcode(Image.open(download.value.path())).text=='한글|<script>|0009'
+                page.locator('#qr-format').select_option('label')
+                page.locator('#person').fill('홍길동')
+                page.locator('#admission-year').fill('2026')
+                page.locator('#qr-value').fill('00001234')
+                page.get_by_role('button',name='QR 생성',exact=True).click()
+                expect(page.locator('#preview')).to_be_visible()
+                with page.expect_download() as download:
+                    page.get_by_role('button',name='PNG 다운로드').click()
+                label_image=Image.open(download.value.path())
+                assert zxingcpp.read_barcode(label_image).text=='2026|홍길동|00001234'
+                assert label_image.height>label_image.width # printed metadata below QR
+                page.locator('#person').fill('홍|길동')
+                page.get_by_role('button',name='QR 생성',exact=True).click()
+                expect(page.locator('#qr-status')).to_contain_text('사용할 수 없습니다')
+                expect(page.locator('#preview')).to_be_hidden()
                 toggle=page.locator('[data-feature="qr"]')
                 toggle.uncheck()
                 expect(page.locator('#qr-panel')).to_be_hidden()
