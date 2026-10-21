@@ -69,3 +69,10 @@ __pycache__/
 
 # Reviewed application metadata contains paths only, never product keys
 !/Config/Applications.json
+
+# Standalone publishing environment and OAuth files
+/.venv-blog/
+/client_secret*.json
+/token.json
+/tools/blogger/client_secret*.json
+/tools/blogger/token.json

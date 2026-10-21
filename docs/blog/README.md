@@ -22,7 +22,7 @@
 - [Blogger 일지](blogger/mdm-manual-workflow.md)
 - [티스토리 매뉴얼](tistory/mdm-manual-setup.md)
 
-[BLOGGER_SETUP.md](BLOGGER_SETUP.md)는 Google Cloud/OAuth 최초 설정 안내다. 계정 연결·자동 업로드 도구는 아직 구현하지 않았고 외부 업로드도 수행하지 않았다. 티스토리는 공식 Open API 종료로 편집기 수동 입력을 우선한다.
+[BLOGGER_SETUP.md](BLOGGER_SETUP.md)는 Google Cloud/OAuth 최초 설정 안내다. 2026-10-21 초안 업로드 도구와 간편 설치 스크립트를 추가했다. 실제 계정 연결·시험 업로드 상태는 작업 기록을 따른다. 티스토리는 공식 Open API 종료로 편집기 수동 입력을 우선한다.
 
 ## QR·기능 관리 구현 기록 — 2026-10-21
 
