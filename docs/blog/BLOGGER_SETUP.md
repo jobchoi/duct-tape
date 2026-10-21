@@ -25,3 +25,11 @@ Google Cloud의 API 키만으로는 글쓰기 권한을 얻을 수 없다. 블�
 공식 안내:
 - https://developers.google.com/blogger/docs/3.0/using
 - https://developers.google.com/identity/protocols/oauth2/native-app
+
+## 여러 PC·Raspberry Pi에서의 간편 설치 계획 — 2026-10-21
+
+사용자 요청에 따라 업로드 도구는 DuctTape 웹 서버와 분리한 개발 도구로 구성한다. Linux/WSL·Raspberry Pi에서는 설치 스크립트가 전용 가상환경 및 고정된 의존성을 준비하고, 실제 수행 명령을 출력하는 방식을 목표로 한다. Windows 네이티브는 PowerShell 진입점을 별도로 제공하는 범위로 둔다. OS Python이나 DuctTape 서버의 의존성을 덮어쓰지 않는다.
+
+설치 자동화와 Google 계정 인증은 별개다. 소스 복제/설치만으로 다른 PC에 블로그 권한이 생기지 않는다. 각 PC에서 별도 인증하거나 보호된 방식으로 인증 정보를 이전해야 한다. 브라우저 없는 Pi는 PC에서 최초 인증 후 토큰을 안전하게 이전하거나 SSH 터널을 이용한 loopback 인증 방식을 검증한다. Google 계정 비밀번호를 설치 스크립트에 넣지 않는다.
+
+향후 명령은 설치/연결/초안 미리보기/초안 업로드로 구분하고 설치 시 자동 게시하지 않는다. 실제 명령 이름은 도구 구현 시 확정한다. 현재 설치 스크립트나 업로드 실행기는 없으므로 이 절차를 실행 가능한 명령으로 안내하지 않는다. 계정 인증 전에도 오프라인 초안 검증과 모의 업로드 테스트는 가능하도록 설계한다.
