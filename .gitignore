@@ -43,6 +43,7 @@ __pycache__/
 .pytest_cache/
 !requirements.txt
 !requirements-dev.txt
+!/Server/requirements-browser.txt
 
 !/GoogleAppsScript/appsscript.json
 

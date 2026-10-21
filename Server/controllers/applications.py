@@ -39,7 +39,7 @@ class AppResult(BaseModel):
     error_code: Literal['','INSTALL_FAILED','VERIFY_FAILED','PACKAGE_INVALID','APP_OPERATION_FAILED'] = ''
 
 
-def router(store, catalogue, admin, client, agent, root):
+def router(store, catalogue, admin, client, agent, root, features=None):
     routes=APIRouter()
 
     @routes.get('/admin/apps')
@@ -57,7 +57,7 @@ def router(store, catalogue, admin, client, agent, root):
 
     @routes.get('/api/admin/applications',dependencies=[Depends(admin)])
     def admin_list():
-        return {'applications':catalogue.list(), 'enrollment_config':catalogue.secret_status()}
+        return {'applications':catalogue.list(), 'enrollment_config':catalogue.secret_status(), 'features':features.list() if features else {}}
 
     @routes.post('/api/admin/applications',dependencies=[Depends(admin)])
     def import_app(manifest: str = Form(...), package: UploadFile = File(...)):
@@ -134,22 +134,29 @@ def router(store, catalogue, admin, client, agent, root):
     def client_list(device_id=Depends(client)):
         if not store.info(device_id)['approved']:
             raise HTTPException(403,'Administrator approval required')
-        return {'applications':catalogue.list(public=True)}
+        return {'applications':[app for app in catalogue.list(public=True) if app['id']!='argos-mdm' or features is None or features.enabled('mdm_download')], 'features':features.list() if features else {}}
 
     def allowed_client(device_id):
         if not store.info(device_id)['approved']:
             raise HTTPException(403,'Administrator approval required')
 
+    def mdm_enabled():
+        if features is not None and not features.enabled('mdm_download'):
+            raise HTTPException(409, 'MDM downloads and registration guidance are disabled')
+
     @routes.get('/api/admin/mdm/registration',dependencies=[Depends(admin)])
     def admin_registration():
+        mdm_enabled()
         return JSONResponse(catalogue.registration_details(),headers={'Cache-Control':'no-store'})
 
     @routes.get('/api/client/mdm/registration')
     def client_registration(device_id=Depends(client)):
+        mdm_enabled()
         allowed_client(device_id)
         return JSONResponse(catalogue.registration_details(),headers={'Cache-Control':'no-store'})
 
     def manual_package(app_id,version):
+        mdm_enabled()
         try:
             app=catalogue.get(app_id,version)
         except LookupError:

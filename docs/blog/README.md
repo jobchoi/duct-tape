@@ -23,3 +23,9 @@
 - [티스토리 매뉴얼](tistory/mdm-manual-setup.md)
 
 [BLOGGER_SETUP.md](BLOGGER_SETUP.md)는 Google Cloud/OAuth 최초 설정 안내다. 계정 연결·자동 업로드 도구는 아직 구현하지 않았고 외부 업로드도 수행하지 않았다. 티스토리는 공식 Open API 종료로 편집기 수동 입력을 우선한다.
+
+## QR·기능 관리 구현 기록 — 2026-10-21
+
+- [Blogger 구현 일지](blogger/qr-tools-implementation.md): 계획 문서와 구분해 실제 구현·검증·남은 확인을 기록했다.
+- [티스토리 사용 절차](tistory/qr-tools.md): QR 생성과 기능 설정 방법을 정리했다.
+- 두 글 모두 로컬 초안이다. Google API 계정 연결과 외부 업로드는 아직 수행하지 않았다.

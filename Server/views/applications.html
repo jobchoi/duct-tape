@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape v2 · 앱 설치</title><link rel="stylesheet" href="/dashboard.css"><link rel="stylesheet" href="/applications.css"><script src="/applications.js" defer></script></head>
 <body><main class="admin-console">
-<header class="console-header"><div><p class="eyebrow">DUCT-TAPE / V2</p><h1 id="title">앱 설치</h1><p class="muted">앱 설치와 MDM 계정 등록은 별도로 확인합니다.</p></div><a id="back" href="/client">기존 화면</a></header>
+<header class="console-header"><div><p class="eyebrow">DUCT-TAPE / V2</p><h1 id="title">앱 설치</h1><p class="muted">앱 설치와 MDM 계정 등록은 별도로 확인합니다.</p></div><a href="/admin/tools" id="tools-link">도구·기능 관리</a><a id="back" href="/client">기존 화면</a></header>
 <p id="message" role="status">연결 확인 중…</p>
 <section id="admin-tools" class="panel" hidden><h2>설치 앱 등록</h2><p>검토된 MSI 어댑터를 사용합니다. setup.exe의 선행 구성요소와 일반 앱은 MSI 단독 설치를 검증한 뒤 공개하세요. Argos MDM은 다운로드 후 수동 설치·등록합니다. 등록 시에는 초안으로 보관됩니다.</p>
 <button id="import-argos" type="button">서버의 Argos 1.1.7 원본을 초안으로 등록</button>
@@ -17,5 +17,5 @@
 <section class="panel"><h2>설치 앱 목록</h2><p id="empty" class="muted"></p><div class="table-wrap"><table><thead><tr><th>선택</th><th>앱</th><th>버전</th><th>크기</th><th>공개 상태</th><th id="manage-head">관리</th></tr></thead><tbody id="app-list"></tbody></table></div>
 <p id="pc-picker" hidden><label>설치 대상 PC <select id="pc"></select></label></p><button id="install" type="button" disabled>선택 앱 설치</button><p id="install-reason" class="muted" role="status"></p><p class="muted">최신 v2 에이전트와 관리자 승인이 필요합니다. 기존 전체 셋업과 동시에 실행하지 않습니다.</p></section>
 <section class="panel"><h2>PC별 작업 현황</h2><p>각 작업에 선택 앱과 패키지 버전을 고정합니다. 다운로드 진행은 실제 전송량입니다.</p><div id="jobs"></div></section>
-<section class="panel"><h2>MDM 수동 설치·기기 등록</h2><p>목록에서 MDM ZIP을 다운로드하고 압축을 푼 뒤 setup.exe를 실행하세요. 자동 설치·등록 작업은 생성하지 않습니다.</p><button id="show-registration" type="button">등록 URL·계정 확인</button> <button id="hide-registration" type="button">정보 숨기기</button><div id="registration-details" hidden></div><p>설치 후 Windows 설정 → 계정 → 회사 또는 학교 액세스 → 장치 관리에만 등록에서 승인된 계정으로 진행하세요. 등록 정보는 위 버튼을 눌렀을 때만 표시됩니다. 자리를 비우기 전에 숨겨 주세요.</p></section>
+<section class="panel" id="mdm-panel"><h2>MDM 수동 설치·기기 등록</h2><p>목록에서 MDM ZIP을 다운로드하고 압축을 푼 뒤 setup.exe를 실행하세요. 자동 설치·등록 작업은 생성하지 않습니다.</p><button id="show-registration" type="button">등록 URL·계정 확인</button> <button id="hide-registration" type="button">정보 숨기기</button><div id="registration-details" hidden></div><p>설치 후 Windows 설정 → 계정 → 회사 또는 학교 액세스 → 장치 관리에만 등록에서 승인된 계정으로 진행하세요. 등록 정보는 위 버튼을 눌렀을 때만 표시됩니다. 자리를 비우기 전에 숨겨 주세요.</p></section>
 </main></body></html>

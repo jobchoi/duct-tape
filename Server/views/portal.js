@@ -109,7 +109,9 @@ const portal = (() => {
       button.textContent=agent.approved ? (selected===agent.device_id ? '선택됨':'선택') : '연결 승인';
       button.className=selected===agent.device_id ? 'selected':'secondary';
       button.addEventListener('click',()=> { if (current!==version) return; if (!agent.approved) { approve(agent.device_id,current); return; } selected=agent.device_id;renderAdmin(reports,current); });
-      cell.append(button);row.append(cell);el('devices').append(row);
+      cell.append(button);row.append(cell);
+      const qrCell=document.createElement('td'),qrLink=document.createElement('a');qrLink.href='/admin/tools/qr?device_id='+encodeURIComponent(agent.device_id);qrLink.textContent='QR 만들기';qrCell.append(qrLink);row.append(qrCell);
+      el('devices').append(row);
     }
     updateSelection();
   }

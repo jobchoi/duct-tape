@@ -2,8 +2,10 @@
 (async () => {
   const admin=location.pathname.startsWith('/admin'), prefix=admin?'/api/admin':'/api/client';
   const el=id=>document.getElementById(id), selected=new Set(), progressCache=new Map();
+  let mdmEnabled=true;
   let mode='secure', busy=false, refreshing=false, list=[], agents=[], lastJobs=[];
   el('title').textContent=admin?'앱 관리 · v2':'선택 앱 설치 · v2';
+  el('tools-link').hidden=!admin;
   el('back').href=admin?'/admin':'/client';
   el('admin-tools').hidden=!admin;el('pc-picker').hidden=!admin;el('manage-head').hidden=!admin;
   const phases={queued:'대기',running:'실행 중',succeeded:'설치 작업 완료',failed:'실패',interrupted:'중단 확인 필요',cancelled:'취소'};
@@ -40,7 +42,7 @@
       choice.addEventListener('change',()=>{choice.checked?selected.add(key):selected.delete(key);updateStart();});
       const cell=document.createElement('td');cell.append(choice);row.append(cell);
       for(const value of [app.name+(app.enrollment?' · 사용자 등록 필요':''),app.version,(app.size/1048576).toFixed(1)+' MB',app.published?'공개':'초안'])row.append(text('td',value));
-      if(app.id==='argos-mdm'&&app.published){cell.append(button('MDM ZIP 다운로드',async()=>{
+      if(app.id==='argos-mdm'&&app.published&&mdmEnabled){cell.append(button('MDM ZIP 다운로드',async()=>{
         const headers={'X-Duct-Tape-Request':'1'};if(!admin){const key=sessionStorage.getItem('duct-client-key');if(mode==='development')headers['X-Duct-Device-ID']=sessionStorage.getItem('duct-client-device')||'';else if(key)headers.Authorization='Bearer '+key;}
         const response=await fetch(prefix+'/mdm/'+encodeURIComponent(app.version)+'/package',{headers,credentials:'same-origin',cache:'no-store'});
         if(!response.ok)throw new Error('다운로드 권한과 PC 승인 상태를 확인하세요.');
@@ -55,7 +57,7 @@
     updateStart();
   }
   async function refresh(){
-    const data=await api(prefix+'/applications');list=data.applications;renderApps();
+    const data=await api(prefix+'/applications');mdmEnabled=data.features?.mdm_download!==false;el('mdm-panel').hidden=!mdmEnabled;if(!mdmEnabled)hideRegistration();list=data.applications;renderApps();
     if(admin){
       el('secret-state').textContent=data.enrollment_config.configured?'등록 정보 준비됨 · 버튼으로 확인 가능':'등록 정보 미설정 · MDM 다운로드는 사용 가능';
       agents=(await api('/api/admin/agents')).agents;

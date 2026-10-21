@@ -1,0 +1,12 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>duct-tape · 관리자 도구</title><link rel="stylesheet" href="/dashboard.css"><script src="/tools.js" defer></script></head>
+<body><main class="admin-console"><header class="console-header"><div><p class="eyebrow">DUCT-TAPE / TOOLS</p><h1>도구·기능 관리</h1></div><a href="/admin">PC 관리</a><a href="/admin/apps">앱 관리</a></header>
+<p id="message" role="status">관리자 연결 확인 중…</p>
+<section class="panel" id="feature-panel" hidden><h2>사용할 기능</h2><p>끄면 새 요청을 차단합니다. 진행 중인 작업이나 이미 저장한 파일은 취소·삭제하지 않습니다.</p><div id="features"></div></section>
+<section class="panel" id="qr-panel" hidden><h2>QR 생성</h2><p>시리얼·URL·텍스트를 그대로 QR에 담습니다. 입력한 URL에 서버가 접속하지 않습니다.</p>
+<form id="qr-form"><p><label for="pc">시리얼을 가져올 PC</label> <select id="pc"><option value="">직접 입력</option></select></p><p id="serial-status" class="muted"></p>
+<p><label for="qr-value">QR에 넣을 값</label></p><textarea id="qr-value" rows="4" maxlength="1024" required style="width:100%;box-sizing:border-box"></textarea>
+<p><label for="person">사용자 이름 — 화면 메모용, QR·다운로드에는 포함하지 않음</label> <input id="person" maxlength="80" autocomplete="off"></p>
+<button type="submit" id="generate">QR 생성</button></form><p id="qr-status" role="status"></p>
+<div id="preview" hidden><canvas id="qr-canvas" aria-label="생성한 QR 미리보기" style="max-width:100%;height:auto"></canvas><p><button id="download" type="button">PNG 다운로드</button></p></div>
+<p class="muted">이름·입력값·생성 이미지는 서버에 저장하지 않습니다. 내려받은 QR은 휴대폰으로 읽어 값을 확인하세요.</p></section>
+</main></body></html>

@@ -13,7 +13,7 @@ from Server.models.agent_package import build as build_agent_package
 
 
 
-def router(store, admin_token, sessions, policy, root, media, applications=None):
+def router(store, admin_token, sessions, policy, root, media, applications=None, features=None):
     routes = APIRouter()
     bearer = HTTPBearer(auto_error=False)
 
@@ -244,5 +244,8 @@ def router(store, admin_token, sessions, policy, root, media, applications=None)
 
     if applications is not None:
         from Server.controllers.applications import router as application_router
-        routes.include_router(application_router(store, applications, admin, client, agent, root))
+        routes.include_router(application_router(store, applications, admin, client, agent, root, features))
+    if features is not None:
+        from Server.controllers.tools import router as tools_router
+        routes.include_router(tools_router(features, admin, root))
     return routes
