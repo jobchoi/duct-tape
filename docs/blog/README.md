@@ -16,7 +16,7 @@
 
 ## 블로그별 작성 기준 — 2026-10-21
 
-[PUBLISHING_POLICY.md](PUBLISHING_POLICY.md)에 두 블로그의 역할과 기록 헌장을 정리했다. Blogger는 시행착오 일지, 티스토리는 실행 절차 중심 매뉴얼로 작성한다.
+[PUBLISHING_POLICY.md](PUBLISHING_POLICY.md)에 두 블로그의 역할과 DuctTape 게시 적용 기준을 정리했다. 공통 헌장은 [별도 QTP 영역](../../editorial/qtp/README.md)으로 분리했다. Blogger는 시행착오 일지, 티스토리는 실행 절차 중심 매뉴얼로 작성한다.
 
 최근 MDM 변경을 같은 근거에서 각각 작성한 검토용 초안:
 - [Blogger 일지](blogger/mdm-manual-workflow.md)
