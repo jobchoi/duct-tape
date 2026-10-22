@@ -32,3 +32,7 @@ Blogger는 OAuth 인증 후 공식 API의 posts.insert(isDraft=true)로 초안�
 - Blogger API: https://developers.google.com/blogger/docs/3.0/reference/posts/insert
 - OAuth: https://developers.google.com/identity/protocols/oauth2/native-app
 - 티스토리 종료 안내: https://notice.tistory.com/2664
+
+## 2026-10-22 주제 범위 조정
+
+사용자 요청에 따라 현재 게시 작업은 Office·Excel 설치 관련 내용에 집중한다. 앞서 업로드한 MDM 초안은 시험 업로드 기록으로 남겨 두며 이번 요청으로 서버 MDM 기능을 삭제하거나 기존 원격 초안을 삭제하지 않는다. 이후 글 작성에 MDM 내용을 기본 포함하지 않는다.

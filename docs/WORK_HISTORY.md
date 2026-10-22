@@ -312,3 +312,9 @@
 - 검토된 docs/blog/blogger/mdm-manual-workflow.md 한 편을 isDraft=true로 전송했다. 글 제목은 ‘DuctTape 개발 일지 — MDM 설치와 기기 등록을 나눠 생각하게 됐다’, 게시 ID는 8600372603031219592다.
 - posts.get으로 실제 원격 상태 DRAFT 및 제목·HTML 본문 일치를 확인했다. 동일 원고 upload를 재실행했을 때 기존 게시 ID를 반환하여 중복 글을 만들지 않았다. 공개 발행·다른 원고 일괄 업로드는 수행하지 않았다.
 - 문서 링크·변경 형식을 확인하고 NEXT_SESSION/BLOGGER_SETUP의 연동 상태를 갱신했다. 업로드 DB·토큰이 다른 PC로 Git 동기화되지 않으므로 기존 원고 재업로드 전 원격 초안을 확인하도록 기록했다.
+
+## 2026-10-22 — Office·Excel 작업 일지 초안 업로드
+
+- 사용자가 블로그 초안을 확인한 뒤 MDM 대신 Office·Excel 작업에 집중하도록 요청했다. 서버 기능 삭제로 해석하지 않고 게시 주제를 조정했다.
+- office-excel-deployment.md에 현재 Office LTSC Professional Plus 2024 제품군 설정, Excel 단품과의 구분, 별도 키 파일·임시 PIDKEY XML, 확인/제거/설치 모듈, Git 제외 원본 전달과 검증 한계를 기록했다. 실제 키는 읽거나 포함하지 않았다.
+- Blogger에 새 비공개 초안 4921912984833653339를 생성했다. API 재조회로 DRAFT·제목·HTML 본문 일치를 확인했다. 기존 MDM 시험 초안은 변경/삭제하지 않았고 공개하지 않았다.
