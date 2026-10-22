@@ -29,3 +29,14 @@
 - [Blogger 구현 일지](blogger/qr-tools-implementation.md): 계획 문서와 구분해 실제 구현·검증·남은 확인을 기록했다.
 - [티스토리 사용 절차](tistory/qr-tools.md): QR 생성과 기능 설정 방법을 정리했다.
 - 두 글 모두 로컬 초안이다. Google API 계정 연결과 외부 업로드는 아직 수행하지 않았다.
+
+## 추가 배포·전송 일지 — 2026-10-22
+
+사용자가 블로그에서 수정한 Office 글의 구체적 용어·문장 흐름을 확인하고 참고했다. 기존 게시글은 덮어쓰지 않았다.
+
+- [서버 실행과 설치 원본 준비](blogger/pi-office-media-readiness.md): healthy와 media.ready를 구분한 배포 기록.
+- [두 PC 다운로드 지연 확인](blogger/parallel-download-investigation.md): running 상태와 실제 전송량을 구분한 조사 기록. 원인은 미확정이다.
+
+두 글을 Blogger 비공개 초안으로 업로드했다. MDM·QR·일반 모듈 기획 초안은 앞서 정한 Office 설치·배포 중심 범위에 맞춰 이번 일괄 업로드에서 제외했다.
+
+블로그 도구 UI는 선행 게시 작업 뒤 별도 도구/프로젝트로 검토한다. 코드 리뷰·테스트 결과를 포스팅으로 남기는 후속 계획은 [별도 로드맵](../../editorial/publishing/ROADMAP.md)을 따른다.
