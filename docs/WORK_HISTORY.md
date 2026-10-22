@@ -344,3 +344,9 @@
 - 사용자 추가 요청으로 tailscale-funnel-access.md를 작성했다. 서버는 Pi의 DuctTape이고 Tailscale은 접속 경로라는 역할 구분, Serve와 Funnel, 실제 연결 명령, 일부 외부 기기 접속 실패 시 API/Funnel/DNS 구간을 확인한 과정을 정리했다.
 - 공개 DNS 조회 실패 후 망 변경 없이 접속이 복구된 원인은 미확정으로 남겼다. Funnel의 대역폭 제한은 공식 문서로 확인했지만 현장 전송 지연의 확정 원인으로 쓰지 않았다. 실제 도메인·내부 IP·계정을 본문에서 제외했다. 이번 작업에서 서버 네트워크를 변경하거나 장애를 재현하지 않았다.
 - Blogger 비공개 초안 6122701540170964346을 생성하고 P-DuctTape/개발일지/Tailscale/raspberrypi/트러블슈팅 라벨을 적용했다. API 재조회로 DRAFT·제목·HTML·라벨 일치를 확인했다. 로컬 HTML 미리보기와 git diff 검사 완료. 공개 발행 없음.
+
+## 2026-10-22 — 별도 Blogger Search Console 리디렉션 진단
+
+- 사용자 별도 요청으로 공개 글의 DNS/TLS/HTTP·모바일 UA·canonical·robots·사이트맵·피드·내부 링크를 읽기 전용 점검했다. 결과와 후속 사용자 확인은 editorial/publishing/diagnostics/2026-10-22-blogger-redirect.md로 분리 기록했다.
+- 기본 HTTPS/모바일 ?m=1/HTTP 전환/피드는 정상 응답하고 m. 호스트는 TLS 이름 불일치로 실패했다. 상단 검사 URL과 Search Console 실제 URL 테스트 결과는 미확인이다. 참조 페이지 목록과 검사 URL을 구분했다.
+- 설정/테마/본문 변경·검색 색인 요청·블로그 게시 없음. 오류 원인 확정/해결 완료로 기록하지 않았다. 문서 diff 형식을 점검했다.
