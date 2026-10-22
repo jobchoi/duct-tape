@@ -40,3 +40,8 @@
 두 글을 Blogger 비공개 초안으로 업로드했다. MDM·QR·일반 모듈 기획 초안은 앞서 정한 Office 설치·배포 중심 범위에 맞춰 이번 일괄 업로드에서 제외했다.
 
 블로그 도구 UI는 선행 게시 작업 뒤 별도 도구/프로젝트로 검토한다. 코드 리뷰·테스트 결과를 포스팅으로 남기는 후속 계획은 [별도 로드맵](../../editorial/publishing/ROADMAP.md)을 따른다.
+
+## Tailscale 외부 접속 일지 — 2026-10-22
+
+- [클라이언트 Tailscale 없이 접속하기](blogger/tailscale-funnel-access.md): Pi 웹 서버와 접속 경로의 역할, Serve/Funnel, 로컬/API/공개 DNS/HTTPS 확인을 구분한다. 외부 접속 복구의 원인이나 다운로드 병목을 확정하지 않는다.
+- 사용자 추가 요청으로 설치·배포 관련 Tailscale 운영 경험을 별도 초안으로 업로드했다. 공개는 하지 않았다.

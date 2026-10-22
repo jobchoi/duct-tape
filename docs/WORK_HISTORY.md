@@ -338,3 +338,9 @@
 - Office 설치·배포 중심 범위를 유지해 pi-office-media-readiness.md와 parallel-download-investigation.md를 작성했다. 기존 종합 초안·현장 보고·V2_PLAN의 전송 측정을 근거로 하며 새 장애 원인이나 해결 결과를 만들지 않았다. MDM·QR·범용 모듈 기획 원고는 이번 업로드에서 제외했다.
 - Blogger 초안 17496706680690547(서버 실행/원본 준비) 및 6577274975547700139(두 PC 다운로드 조사)를 생성했다. 기본 프로젝트/일지 라벨과 주제별 라벨을 적용했다. API 재조회로 두 글의 DRAFT·제목·HTML·라벨을 확인했고 공개하지 않았다. 로컬 미리보기 생성과 diff 형식 확인.
 - 후속 블로그 UI·코드 리뷰·검증 과정의 일지/매뉴얼 작성을 editorial/publishing/ROADMAP.md에 기록했다. PC 설치와 편집 도구를 분리하며 선행 게시 후 진행한다. UI 구현·새 코드 리뷰·새 테스트를 완료한 것으로 기록하지 않는다.
+
+## 2026-10-22 — Tailscale Funnel 운영 일지 추가
+
+- 사용자 추가 요청으로 tailscale-funnel-access.md를 작성했다. 서버는 Pi의 DuctTape이고 Tailscale은 접속 경로라는 역할 구분, Serve와 Funnel, 실제 연결 명령, 일부 외부 기기 접속 실패 시 API/Funnel/DNS 구간을 확인한 과정을 정리했다.
+- 공개 DNS 조회 실패 후 망 변경 없이 접속이 복구된 원인은 미확정으로 남겼다. Funnel의 대역폭 제한은 공식 문서로 확인했지만 현장 전송 지연의 확정 원인으로 쓰지 않았다. 실제 도메인·내부 IP·계정을 본문에서 제외했다. 이번 작업에서 서버 네트워크를 변경하거나 장애를 재현하지 않았다.
+- Blogger 비공개 초안 6122701540170964346을 생성하고 P-DuctTape/개발일지/Tailscale/raspberrypi/트러블슈팅 라벨을 적용했다. API 재조회로 DRAFT·제목·HTML·라벨 일치를 확인했다. 로컬 HTML 미리보기와 git diff 검사 완료. 공개 발행 없음.
