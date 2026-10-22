@@ -61,6 +61,7 @@ class BloggerTests(unittest.TestCase):
         posts=[c for c in client.calls if c[0]=='POST']
         self.assertEqual(len(posts),1);self.assertEqual(posts[0][2]['params'],{'isDraft':'true'})
         self.assertEqual(posts[0][2]['json']['content'],draft['content'])
+        self.assertEqual(posts[0][2]['json']['labels'],['P-DuctTape','개발일지'])
         self.assertFalse(any('publish' in c[1] for c in client.calls))
 
     def test_definite_rejection_can_be_retried_after_fix(self):
@@ -80,6 +81,13 @@ class BloggerTests(unittest.TestCase):
         reconcile=Client([BLOG,Response({'items':[{'id':'456','status':'DRAFT','labels':[marker]}]})])
         with contextlib.redirect_stdout(io.StringIO()):cli.reconcile(reconcile,self.home,draft)
         with contextlib.redirect_stdout(io.StringIO()):cli.upload(Client([BLOG]),self.home,draft)
+
+    def test_reconcile_without_technical_labels_uses_exact_content(self):
+        draft=cli.render(self.file)
+        with self.assertRaises(cli.BlogError):cli.upload(Client([BLOG,TimeoutError()]),self.home,draft)
+        post={'id':'456','status':'DRAFT','title':draft['title'],'content':draft['content'],'labels':['開発']}
+        with contextlib.redirect_stdout(io.StringIO()):cli.reconcile(Client([BLOG,Response({'items':[post]})]),self.home,draft)
+        self.assertFalse(cli.matches_remote(draft,dict(post,content='Changed')))
 
     def test_changed_source_is_not_automatically_reuploaded(self):
         draft=cli.render(self.file)

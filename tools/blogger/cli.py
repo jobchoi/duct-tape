@@ -165,10 +165,9 @@ def upload(client, home, draft):
         db.execute('INSERT INTO uploads VALUES (?,?,?,?,?)',(bid,draft['source'],draft['sha256'],'pending',''))
         db.commit()
         # Persist before POST: unknown outcomes must be reconciled, never automatically retried.
-        marker = 'duct-draft-'+draft['sha256'][:24]
         try:
             post = request(client,'POST','/blogs/'+bid+'/posts',params={'isDraft':'true'},
-                           json={'kind':'blogger#post','title':draft['title'],'content':draft['content'],'labels':['DuctTape',marker]})
+                           json={'kind':'blogger#post','title':draft['title'],'content':draft['content'],'labels':['P-DuctTape','개발일지']})
         except ApiError as error:
             if error.status in (400,401,403,404,405,413,422,429):
                 # Google explicitly rejected this request; retry only on a later user command.
@@ -183,6 +182,15 @@ def upload(client, home, draft):
     print('Review in Blogger: https://www.blogger.com/blog/posts/'+bid)
 
 
+def matches_remote(draft, post):
+    # Exact title/body fingerprint avoids exposing implementation labels to readers.
+    if isinstance(post.get('title'),str) and isinstance(post.get('content'),str):
+        digest=hashlib.sha256((post['title']+'\n'+post['content']).encode()).hexdigest()
+        if digest==draft['sha256']:
+            return True
+    return 'duct-draft-'+draft['sha256'][:24] in post.get('labels',[])
+
+
 def reconcile(client, home, draft):
     bid = blog(client)
     with closing(ledger(home)) as db:
@@ -191,13 +199,12 @@ def reconcile(client, home, draft):
             raise BlogError('No local upload record exists for this source.')
         if previous[0] != draft['sha256']:
             raise BlogError('Restore the uploaded version before reconciliation. Source changed.')
-        marker = 'duct-draft-'+draft['sha256'][:24]
         posts=[];page=None
         while True:
             params={'status':['draft','live','scheduled'],'view':'AUTHOR','maxResults':100}
             if page:params['pageToken']=page
             result=request(client,'GET','/blogs/'+bid+'/posts',params=params)
-            posts.extend(p for p in result.get('items',[]) if marker in p.get('labels',[]))
+            posts.extend(p for p in result.get('items',[]) if matches_remote(draft,p))
             page=result.get('nextPageToken')
             if not page:break
         if len(posts)!=1:
