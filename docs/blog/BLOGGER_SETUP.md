@@ -54,3 +54,9 @@ Google Cloud의 API 키만으로는 글쓰기 권한을 얻을 수 없다. 블�
 반대로 DuctTape 관리자 웹 화면에서 Google 계정 연결을 제공하고 서버의 HTTPS 콜백이 로그인을 처리하는 방식으로 바꾸면 **웹 애플리케이션** 유형과 서버용 리디렉션 URI를 별도 구성해야 한다. 브라우저 없는 Pi의 인증은 준비된 토큰의 안전한 이전 또는 SSH 터널 등 앞서 계획한 방식으로 검증하며, 원격 Pi loopback에 PC 브라우저가 자동 연결된다고 가정하지 않는다.
 
 확인 근거: https://developers.google.com/identity/protocols/oauth2/native-app 및 https://developers.google.com/identity/protocols/oauth2/web-server
+
+## 실제 연동 시험 완료 — 2026-10-22
+
+현재 WSL 환경에서 Google 사용자 동의와 토큰 저장, 대상 블로그 작성자/관리자 접근 확인을 완료했다. `mdm-manual-workflow.md` 한 편을 비공개 초안으로 올렸고 API로 DRAFT 상태·제목·HTML 본문 일치를 재확인했다. 같은 원고 재실행 시 기존 게시 ID를 반환하고 중복 생성하지 않는 것도 확인했다. 공개는 하지 않았다.
+
+인증 JSON·토큰·업로드 기록은 저장소 밖 사용자 전용 디렉터리에 있다. 다른 PC에서 Git만 받으면 이 기록이 없으므로 기존 글을 다시 업로드하지 말고 Blogger 초안을 먼저 확인한다. 상세 결과는 WORK_HISTORY.md를 따른다.

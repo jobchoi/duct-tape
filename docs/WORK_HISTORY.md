@@ -304,3 +304,11 @@
 - NEXT_SESSION.md에 브랜치·현재 구현·미완료 OAuth/시험 업로드와 새 환경 준비 순서를 기록했다. 인증 토큰 미생성 상태를 확인했다.
 - 사용자 QR 참고 원본 두 파일을 refernces/ 경로 그대로 버전 관리에 포함했다. Python 구문 검사만 수행했고 원본은 실행/변경하지 않았다.
 - 인증 JSON·키·환경 설정·가상환경·생성물은 푸시에 포함하지 않았다. 문서 및 diff 형식을 확인했다.
+
+
+## 2026-10-22 — Blogger 실제 인증·초안 업로드 검증 완료
+
+- 사용자 Google 동의 후 저장소 밖 token.json 생성 완료. check로 lealnspire.blogspot.com에 대한 작성자/관리자 접근을 확인했다. 인증 비밀값을 코드·문서·Git에 넣지 않았다.
+- 검토된 docs/blog/blogger/mdm-manual-workflow.md 한 편을 isDraft=true로 전송했다. 글 제목은 ‘DuctTape 개발 일지 — MDM 설치와 기기 등록을 나눠 생각하게 됐다’, 게시 ID는 8600372603031219592다.
+- posts.get으로 실제 원격 상태 DRAFT 및 제목·HTML 본문 일치를 확인했다. 동일 원고 upload를 재실행했을 때 기존 게시 ID를 반환하여 중복 글을 만들지 않았다. 공개 발행·다른 원고 일괄 업로드는 수행하지 않았다.
+- 문서 링크·변경 형식을 확인하고 NEXT_SESSION/BLOGGER_SETUP의 연동 상태를 갱신했다. 업로드 DB·토큰이 다른 PC로 Git 동기화되지 않으므로 기존 원고 재업로드 전 원격 초안을 확인하도록 기록했다.

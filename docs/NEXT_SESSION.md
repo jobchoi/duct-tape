@@ -1,12 +1,12 @@
 # 다음 환경에서 이어가기
 
-기준: 2026-10-21. 작업 브랜치 `feature/v2-mdm-ui`.
+기준: 2026-10-22. 작업 브랜치 `feature/v2-mdm-ui`.
 
 ## 현재 상태
 
 - QR 이름·입학년도·S/N 라벨, 관리자 QR/MDM 기능 토글 구현·테스트 완료. 라즈베리 운영 서버 배포는 별도다.
 - QTP 헌장/운영은 editorial/qtp, DuctTape 개발/운영은 docs, 게시 초안은 docs/blog로 분리했다.
-- Blogger 도구 구현과 오프라인 테스트 13개 완료. 실제 OAuth 토큰은 아직 없고 시험 초안 업로드/공개는 수행하지 않았다.
+- Blogger 도구 구현과 오프라인 테스트 13개 완료. 2026-10-22 현재 환경에서 OAuth 연결·작성 권한 확인·초안 1편 업로드·원격 DRAFT/제목/HTML 일치·중복 방지 시험을 완료했다. 공개는 수행하지 않았다. 토큰과 업로드 기록은 저장소 밖에 있어 다른 환경에 자동 복사되지 않는다.
 - 사용자가 제공한 QR 참고 원본은 refernces/에 그대로 보존했다. 원본의 폰트/입력 파일·의존성은 통합 QR 웹 기능과 별개다. 원본은 구문만 검사했고 실행하지 않았다.
 
 ## 다른 PC에서 준비
@@ -28,6 +28,6 @@ OAuth JSON은 Git에 포함하지 않았다. 새 PC에서도 저장소 밖 `~/.c
 ./blog.sh upload docs/blog/blogger/mdm-manual-workflow.md --reviewed
 ```
 
-새 환경에서 auth를 다시 실행한다. 이전 PC의 진행 중 OAuth 링크/localhost 콜백은 재사용하지 않는다. 실제 블로그 관리 계정 동의가 필요하다. --reviewed는 현재 원고를 검토한 후 사용한다. 시험 업로드는 한 편의 비공개 초안으로 진행하고 게시 결과를 확인한다. 이후 결과는 WORK_HISTORY.md에 기록한다.
+새 환경에서 auth를 다시 실행한다. 이전 PC의 진행 중 OAuth 링크/localhost 콜백은 재사용하지 않는다. 실제 블로그 관리 계정 동의가 필요하다. --reviewed는 현재 원고를 검토한 후 사용한다. 현재 MDM 일지 한 편은 이미 Blogger에 초안으로 존재한다. 다른 환경에서는 로컬 업로드 기록이 없으므로 같은 글을 다시 upload하지 말고 기존 초안부터 확인한다. 신규 시험은 별도 검토된 원고로 진행한다. 이후 결과는 WORK_HISTORY.md에 기록한다.
 
 도구 상세/WSL·Pi의 인증/오류 복구는 tools/blogger/README.md, Google 설정은 docs/blog/BLOGGER_SETUP.md를 따른다. .env, 설치 원본·제품 키, 인증 JSON·토큰, 가상환경·로컬 생성물은 별도 준비 대상이며 Git clone으로 복사되지 않는다.
