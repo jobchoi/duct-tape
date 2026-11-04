@@ -1,5 +1,7 @@
 # 블로그 작업 UI 후속 계획
 
+> 현재 기준: [초기 기획 0.3](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/INITIAL_PROJECT_PLAN.md). WSL 개발·서버형 웹서비스·본인과 지인 소수 테스트를 우선한다. 로컬 설치형 제안은 이전 검토 이력이다. [AI 실행 지침](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/AI_EXECUTION_PLAN.md)과 [블로그 기록 계획](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/BLOG_RECORDING_PLAN.md)을 함께 가져간다.
+
 2026-10-22 사용자 의견을 기록한다. 선행 작업인 기존 글 검토·남은 글 업로드를 먼저 마무리한다. 이번에 UI 구현이나 코드 리뷰를 수행한 것은 아니다.
 
 ## 분리 방향
@@ -30,4 +32,4 @@ AI 집필과 예약 공개는 초기 필수 기능으로 넣지 않는다. 새 G
 
 새 저장소·새 채팅에서 시작할 때는 [독립 인수인계 문서](NEW_PROJECT_HANDOFF.md)를 먼저 따른다. 현재 구현과 제안을 구분해 정리했다.
 
-2026-10-23: WSL/Windows/Pi 역할, 별도 서비스 운영, 단계별 완료 조건은 [초기 기획서](INITIAL_PROJECT_PLAN.md)를 따른다.
+2026-10-23: WSL/Windows/Pi 역할, 별도 서비스 운영, 단계별 완료 조건은 [초기 기획서](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/INITIAL_PROJECT_PLAN.md)를 따른다.

@@ -1,13 +1,17 @@
 # 여러 프로젝트에서 재사용할 블로그 도구 — 새 프로젝트 시작 문서
 
+> 현재 기준: [초기 기획 0.3](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/INITIAL_PROJECT_PLAN.md). WSL 개발·서버형 웹서비스·본인과 지인 소수 테스트를 우선한다. 로컬 설치형 제안은 이전 검토 이력이다. [AI 실행 지침](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/AI_EXECUTION_PLAN.md)과 [블로그 기록 계획](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/BLOG_RECORDING_PLAN.md)을 함께 가져간다.
+
 작성일: 2026-10-23
+
+2026-11-04 확인: 초기 기획서·AI 실행 지침·블로그 기록 계획은 별도 저장소 [toyproject-HowToEasy](https://github.com/jobchoi/toyproject-HowToEasy)로 이동했다. 로컬 위치는 `/home/mormot/workspace/utilProject/toyproject-HowToEasy`이며 이 저장소의 기획서 삭제는 이관 이력으로 보존한다. 아래 내용은 분리 착수 당시의 인수인계 기록이다.
 상태: 기존 구현 인수인계와 새 프로젝트 설계 제안. 별도 저장소 생성이나 UI 구현을 완료한 문서는 아니다.
 
 이 파일을 새 프로젝트에 복사해 기획·코드 리뷰의 출발점으로 사용한다. 기존 대화 전체를 복사하지 않아도 목적·구현 범위·남은 작업을 이해할 수 있도록 작성했다.
 
 ## 개발·운영 환경을 포함한 초기 기획
 
-WSL 개발, Windows 브라우저 확인, 여분 Raspberry Pi 시험 배포와 기존 서버에 함께 운영할 때의 격리 기준은 [초기 기획서](INITIAL_PROJECT_PLAN.md)에 정리했다. 새 프로젝트에는 이 문서와 초기 기획서를 함께 복사한다. 아직 보드·접속 방식이 확정되지 않았으며 Pi 배포가 끝난 상태는 아니다.
+WSL 개발과 서버형 웹서비스의 소수 사용자 테스트, 선택적 Raspberry Pi 배포 기준은 [초기 기획서](https://github.com/jobchoi/toyproject-HowToEasy/blob/develop/INITIAL_PROJECT_PLAN.md)에 정리했다. 새 프로젝트에는 이 문서·기획서·AI 실행 지침·블로그 기록 계획을 함께 복사한다. 새 프로젝트 경로·보드·접속 방식은 아직 확정되지 않았으며 Pi 배포가 끝난 상태는 아니다.
 
 ## 1. 목적과 프로젝트 경계
 
