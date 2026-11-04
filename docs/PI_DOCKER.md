@@ -1,5 +1,38 @@
 # Pi 5 Docker 배포
 
+## 현재 운영 구조 — 2026-11-04 통합
+
+운영 루트는 `/home/jobchoi/web-server`이며 프로젝트별 `repo/`, `data/`, `backups/`, `compose.yaml`을 사용한다. 아래 과거 구축 절차의 `my-server` 경로로 새 서비스를 만들지 않는다. 통합 결과와 복구 기준은 [점검·이관 기록](PI_STATUS_2026-11-04.md)에 기록한다.
+
+```text
+web-server/
+  duct-tape/
+    repo/            # Git 코드와 서버 전용 .env(미추적)
+    data/db/         # SQLite
+    data/media/      # Office, Hancom, Config
+    data/temp/
+    data/uploads/
+    backups/
+    compose.yaml     # 단일 운영 정의
+  nginx/
+  filebrowser/
+  posting-automation/
+```
+
+대상 프로젝트만 확인·재시작하는 명령:
+
+```bash
+cd /home/jobchoi/web-server/duct-tape
+docker compose -p duct-tape -f compose.yaml ps
+docker compose -p duct-tape -f compose.yaml restart duct-tape
+curl -f http://127.0.0.1:8000/api/config
+```
+
+운영 Compose에는 현재 검증된 이미지가 고정되어 있다. 코드 업데이트 시 build만으로 실행 이미지가 바뀐다고 가정하지 말고 운영 정의의 이미지 정책을 확인한다. Git pull은 코드만 갱신하며 데이터·Compose를 자동 변경하지 않는다. `repo/manage.sh docker`는 과거 레이아웃을 전제로 할 수 있으므로 위의 명시적 Compose 명령을 사용한다.
+
+## 과거 최초 구축 기록
+
+
 기준: 2026-10-15. Pi 호스트에 Tailscale을 설치하고 Serve로 HTTPS를 제공한다. Nginx 정적 페이지·File Browser와 별도로 FastAPI 앱을 실행한다. Windows 설치기는 Pi에서 실행하지 않는다.
 
 ## 기존 Compose 수정
@@ -61,7 +94,7 @@ tailscale serve status
 
 ## 업데이트와 검증
 
-### 짧은 관리 명령
+### 과거 레이아웃의 짧은 관리 명령
 
 Pi에서 `cd ~/my-server/duct-tape` 후 아래 명령을 사용한다. 실행 직전에 실제 Docker/curl 명령을 출력한다. 저장소 위치를 기준으로 상위 compose.duct-tape.yml을 찾으므로 호출한 터미널 위치에 의존하지 않는다. 다른 위치의 Compose는 DUCT_COMPOSE_FILE 환경 변수에 절대 경로를 지정한다.
 
@@ -84,4 +117,16 @@ Pi에서 `cd ~/my-server/duct-tape` 후 아래 명령을 사용한다. 실행 �
 현재 작업 환경에는 Docker CLI가 없어 이미지 빌드/Compose 실행/Pi ARM64 실장 시험은 수행하지 못했다. 로컬 서버/API 및 패키지 검증 결과와 실제 Pi 검증을 구분한다.
 로컬 검증: 앱 원본/작업 큐 Python 회귀 테스트 14개 통과. Dockerfile 복사 구조로 에이전트 ZIP을 생성하고 필수 파일·HTTPS 주소·키 제외를 확인했다.
 
-공식 참고: [Compose version](https://docs.docker.com/reference/compose-file/version-and-name/), [File Browser Docker 포트/볼륨](https://github.com/filebrowser/filebrowser/blob/master/docs/installation.md).
+과거 구축 참고: [Compose version](https://docs.docker.com/reference/compose-file/version-and-name/), [File Browser Docker 포트/볼륨](https://github.com/filebrowser/filebrowser/blob/master/docs/installation.md).
+
+## 2026-11-04 경로 변경·SSH 진단
+
+운영 상위 경로는 `/home/jobchoi/web-server`다. 프로젝트별 디렉터리 분리를 유지한다. Compose 상대 경로는 부모 Compose 파일 위치를 기준으로 하므로 파일 내용의 절대 경로·기존 컨테이너 마운트가 실제로 갱신됐는지는 별도 확인한다.
+
+저장소에서 다음 명령은 서버를 변경하지 않고 상태 보고서를 로컬에 저장한다. SSH 별칭은 자신의 설정에 맞춘다. 비밀번호는 명령 인자에 넣지 않는다.
+
+```bash
+ssh raspberry-posting 'bash -s -- /home/jobchoi/web-server' < Scripts/diagnostics/pi-status.sh > /tmp/duct-tape-pi-status.log
+```
+
+스크립트는 상위 디렉터리·Compose 파일 경로·Git 상태·디스크·컨테이너 상태/사용량·설치 원본 준비 여부만 수집한다. `.env`, 제품 키, OAuth 파일, 원시 애플리케이션 로그는 수집하지 않는다. 실패 로그가 필요하면 대상 컨테이너와 시간대를 좁히고 비밀값을 제거해 추가 수집한다.

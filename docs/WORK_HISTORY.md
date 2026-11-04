@@ -368,3 +368,16 @@
 
 - 사용자 요청으로 INITIAL_PROJECT_PLAN.md에 WSL 개발·Windows 브라우저·여분 Pi 시험 운영을 통합했다. MVP·공통/플랫폼/CLI/UI 구조·OAuth 구분·서비스 격리·원고/게시 상태·단계별 완료 조건과 검증 계획을 기록했다.
 - NEW_PROJECT_HANDOFF/ROADMAP에서 기획서로 연결했다. 보드/접속 방식은 미정이며 새 프로젝트 생성·코드 이식·UI/Pi 배포를 수행한 것은 아니다. 문서 링크와 diff 형식만 확인했다.
+
+## 2026-11-04 — Pi 경로 변경과 SSH 상태 진단
+
+- 사용자 지정 상위 경로 `/home/jobchoi/web-server`를 배포 안내·Compose 예제 주석에 반영했다. 읽기 전용 진단 스크립트를 추가하고 bash 구문·diff 형식을 확인했다.
+- 실제 SSH 실행으로 프로젝트별 디렉터리·정상 컨테이너·설치 원본 ready를 확인했다. Docker inspect에서는 DuctTape 영속 마운트가 이전 my-server 경로로 남아 있어 별도 점검 대상으로 기록했다. 상세는 PI_STATUS_2026-11-04.md 참고.
+- 원시 로그/비밀값 수집·운영 재시작·파일 이동·컨테이너 재생성은 수행하지 않았다.
+
+## 2026-11-04 — my-server 운영 경로를 web-server로 통합
+
+- 실제 운영 지침과 프로젝트 관리 등록을 확인하고 DuctTape/Nginx/File Browser를 서비스별로 정지·일관된 백업·복원 검증·파일 해시 비교 후 전환했다. 코드/데이터/백업/Compose를 프로젝트별로 배치하고 관리 등록과 원격 README/MIGRATION/이력을 갱신했다.
+- 새 컨테이너의 이전 경로 마운트 없음, DuctTape 설치 원본 준비·DB 무결성·관리자/클라이언트 HTTP, Nginx/File Browser HTTP와 상위 status/doctor를 확인했다. File Browser 공유 네트워크는 기존 관리 점검과 호환되도록 유지했다.
+- 기존 my-server 원본과 자동 시작을 해제한 복구 컨테이너는 보존했다. 포스팅 서비스·Tailscale 설정·설치 기능 버전은 변경하지 않았다. 실제 Windows 설치/외부 접속/서버 재부팅은 미시험이다. 상세와 복구 경로는 PI_STATUS_2026-11-04.md 참고.
+- 서버 밖 전체 백업 약 1.13 GB를 WSL의 보호된 저장소 밖 디렉터리에 보관했다. 원본 아카이브 7개 해시 일치와 전송본 SQLite 복원 무결성을 확인했다.
