@@ -403,3 +403,11 @@
 - ADMIN_TOOLS의 구현된 QR 라벨을 미구현으로 표현한 오래된 문장을 수정했다. 데스크톱 실기·실패 후 재시도·완료 후 앱 상태 표시·다운로드/재부팅 복구는 검증 또는 후속 대상으로 구분했다.
 - tests/test_admin_tools.py, test_managed_applications.py, test_application_catalog.py: 20 passed(35.10초). 제한 환경 실행이 진행되지 않아 중단하고 권한 확장 환경에서 시간 제한을 두어 재실행했다. FastAPI TestClient/httpx 사용 중단 예정 경고 1건이 있으며 의존성을 변경하지 않았다.
 - 문서 링크·git diff 형식 검사를 통과했다. main/develop 병합·브랜치 삭제·운영 배포·실제 Windows 설치·새 브라우저/ARM 시험은 수행하지 않았다.
+
+## 2026-11-05 — v2 후속 검증과 develop 통합
+
+- 사용자 요청·명시적 답변에 따라 feature/v2-mdm-ui를 develop에 병합하고 기능 브랜치를 삭제하는 방향으로 정리했다. 운영 main·v1 태그·Pi 실행 이미지는 변경하지 않는다.
+- 관리자 브라우저 시험에 완료→새 작업 실패→버튼 재활성화→등록 삭제 없이 재시도→새 작업 ID/활성 작업 하나→완료 검증을 추가했다. 시험 매체는 임시 경로를 사용한다. 기존 UI는 통과했으며 원인 미확정 현장 문제를 해결했다고 주장하지 않는다.
+- Chromium 3개 통과(85.08초), Blogger 별도 환경 unittest 14개 통과(23.380초). 전체 Python 123개는 Ubuntu Python 독립 환경에서 분할 확인해 통과 117/선택 건너뜀 6: 240초 제한까지 결과 116개(통과110/건너뜀6), 마지막 2개 중복 포함 나머지9개 모두 통과(27.96초). Blogger 시험은 중복이 있어 단순 합산하지 않는다.
+- 서버 환경의 Blogger 선택 의존성 누락과 Conda Python 3.13.12/SQLite 3.51.1 동시 종료 멈춤을 분리했다. 효과 없던 DB 캐시 실험은 되돌렸고 DB 코드 변경은 없다. Ubuntu Python 3.12.3/SQLite 3.45.1 비교 환경을 사용했으며 원인 일반화는 하지 않는다.
+- NEXT_SESSION/README/앱 문서/별도 v2 Compose 주석을 develop 후속 기준으로 갱신했다. 전체 결과·현장 미검증은 V2_INTEGRATION_2026-11-05.md에 남겼다. 사용 중단 예정 경고 1건, 실물 Windows 설치·외부 게시·Pi 배포는 이번에 수행하지 않았다.

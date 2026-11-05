@@ -1,5 +1,5 @@
 # Copy to the parent directory as compose.duct-tape-v2.yml.
-# Requires a separate feature/v2-mdm-ui checkout at ./duct-tape-v2 and its private .env.
+# Requires a separate develop checkout (after v2 integration) at ./duct-tape-v2 and its private .env.
 services:
   duct-tape-v2:
     build:

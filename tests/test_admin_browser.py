@@ -18,7 +18,7 @@ def test_admin_browser_acceptance():
        did=str(uuid4());payload={'device_id':did,'hostname':'LEGACY-TEST','office':'정상','hancom':'정상'}
        connection.execute('INSERT INTO devices VALUES (?,?,?,?,?,?)',('',did,str(uuid4()),'2026-10-08T00:00:00Z','2026-10-08T00:00:00Z',json.dumps(payload)))
      with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
-     env=os.environ|{'DUCT_AUTH_MODE':'development','DUCT_DB_PATH':str(db),'PLAYWRIGHT_BROWSERS_PATH':'/tmp/duct-browser'}
+     env=os.environ|{'DUCT_AUTH_MODE':'development','DUCT_DB_PATH':str(db),'DUCT_MEDIA_ROOT':str(Path(temp)/'media'),'PLAYWRIGHT_BROWSERS_PATH':'/tmp/duct-browser'}
      server=subprocess.Popen([sys.executable,'-m','uvicorn','Server.server:app','--host','127.0.0.1','--port',str(port)],env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
      try:
       import httpx
@@ -48,6 +48,24 @@ def test_admin_browser_acceptance():
        store.append_progress(identity,job['id'],[{'sequence':3,'phase':'module','status':'completed','module':'04_InstallOffice.ps1','current':4,'total':6,'unit':'steps'},{'sequence':4,'phase':'module','status':'completed','module':'06_InstallHancom.ps1','current':6,'total':6,'unit':'steps'}])
        store.update(identity,job['id'],'succeeded',0)
        expect(page.locator('#progress-state')).to_contain_text('셋업 완료')
+       # A failed terminal job must not leave the selected PC permanently busy.
+       expect(page.locator('#start')).to_be_enabled(timeout=10000)
+       page.locator('#start').click()
+       expect(page.locator('#devices')).to_contain_text('셋업 대기',timeout=10000)
+       failed=store.jobs(identity)[0]
+       assert failed['id']!=job['id']
+       assert store.claim(identity,True)['id']==failed['id']
+       store.update(identity,failed['id'],'failed',1)
+       expect(page.locator('#progress-state')).to_contain_text('셋업 실패',timeout=10000)
+       expect(page.locator('#start')).to_be_enabled(timeout=10000)
+       page.locator('#start').click()
+       expect(page.locator('#devices')).to_contain_text('셋업 대기',timeout=10000)
+       retried=store.jobs(identity)[0]
+       assert retried['id']!=failed['id']
+       assert sum(j['state'] in ('queued','running') for j in store.jobs(identity))==1
+       assert store.claim(identity,True)['id']==retried['id']
+       store.update(identity,retried['id'],'succeeded',0)
+       expect(page.locator('#progress-state')).to_contain_text('셋업 완료',timeout=10000)
        page.locator('.support-panel summary').click()
        resolve=page.locator('#resolve').bounding_box();revoke=page.locator('#revoke').bounding_box()
        assert revoke['x']-resolve['x']-resolve['width']>=11
@@ -56,7 +74,7 @@ def test_admin_browser_acceptance():
        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
        assert not errors,errors
        browser.close()
-       print('PASS: actual Chromium empty/legacy state, PC selection, queued action, desktop button gap, mobile overflow and JavaScript errors')
+       print('PASS: actual Chromium empty/legacy state, PC selection, queued action, failure/retry without registration reset, desktop button gap, mobile overflow and JavaScript errors')
      finally:
       server.terminate()
       try:server.wait(timeout=5)

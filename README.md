@@ -19,7 +19,7 @@
 
 백업 코드 주석의 키 의심 값은 Phase 1에서 제거했지만 Git 과거 이력은 그대로입니다. 기관 담당자의 유효성·교체 필요성 확인이 남아 있습니다. MSI 상세 로그 생성을 중단했으며 설치 인수와 키를 공통 로그에 기록하지 않습니다. OS 정책·패키지 자체 로그는 별도 확인합니다.
 
-main은 배포본, develop은 통합, feature/*는 Phase별 작업입니다. Phase 2까지 develop에 병합했고 현재 작업은 feature/phase-3-central-monitoring입니다. 다음 Phase는 승인 후 시작합니다.
+main은 운영 기준, develop은 개발 통합, feature/*는 작업 단위입니다. 2026-11-05 사용자 요청으로 v2 기능 브랜치를 검증 후 develop에 통합하고 종료합니다. 이후 작업은 develop에서 새 브랜치를 만듭니다. 이번 통합은 운영 main/Pi 배포나 v2 현장 검증 완료를 뜻하지 않습니다. 최신 범위·미완료 항목은 [다음 작업 인수인계](docs/NEXT_SESSION.md), 검증 결과는 [v2 통합 기록](docs/V2_INTEGRATION_2026-11-05.md)을 확인하세요.
 
 ## 문서 및 검증
 
