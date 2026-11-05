@@ -48,6 +48,10 @@ def test_download_contains_runnable_files_without_secrets(client):
         names=set(archive.namelist())
         assert { 'duct-tape-agent/'+name for name in FILES } <= names
         assert archive.read('duct-tape-agent/Config/ServerUrl.txt')==b'https://testserver'
+        assert 'duct-tape-agent/CollectDiagnostics.bat' in names
+        diagnostic=archive.read('duct-tape-agent/Scripts/diagnostics/Collect-ClientDiagnostics.ps1').decode('utf-8-sig')
+        assert 'function Invoke-ClientDiagnostics' in diagnostic
+        assert 'Start-Process' not in diagnostic and 'Register-ScheduledTask' not in diagnostic
         assert not any(name.endswith(('.env','Agent.json','HancomKey.txt','OfficeKey.txt','Monitoring.json')) for name in names)
         script=archive.read('duct-tape-agent/Scripts/InstallAgent.ps1').decode('utf-8-sig')
         assert 'Get-AgentRegistration' in script and 'CommonDesktopDirectory' in script

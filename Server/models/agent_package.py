@@ -4,6 +4,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from Server.models.application_catalog import module_paths
 
 FILES = (
+    'CollectDiagnostics.bat', 'Scripts/diagnostics/Collect-ClientDiagnostics.ps1',
     'Scripts/RunApplicationJob.ps1', 'Scripts/ManagedApplications.ps1',
     'InstallAgent.bat', 'Main.bat', 'Config/Applications.json', 'Scripts/ApplicationMedia.ps1', 'Scripts/InvokeApplications.ps1',
     'Scripts/Agent.ps1', 'Scripts/JobProgress.ps1', 'Scripts/ProgressDelivery.ps1', 'Scripts/AgentRegistration.ps1', 'Scripts/AgentActions.ps1', 'Scripts/ClientSetup.ps1',
@@ -21,5 +22,5 @@ def build(root, origin):
         for name in files:
             archive.writestr('duct-tape-agent/'+name, (root/name).read_bytes())
         archive.writestr('duct-tape-agent/Config/ServerUrl.txt', origin)
-        archive.writestr('duct-tape-agent/시작 안내.txt', 'InstallAgent.bat을 실행하세요. 설치 후 바탕화면 바로가기가 생성됩니다.\nOffice/한컴 매체와 라이선스는 별도로 준비하세요.\n')
+        archive.writestr('duct-tape-agent/시작 안내.txt', 'InstallAgent.bat을 실행하세요. 설치 후 바탕화면 바로가기가 생성됩니다.\nOffice/한컴 매체와 라이선스는 별도로 준비하세요.\n설치 없이 점검하려면 CollectDiagnostics.bat을 관리자 권한으로 실행하세요.\n')
     return stream.getvalue()

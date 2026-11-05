@@ -1,0 +1,34 @@
+# Copy once to /home/jobchoi/web-server/duct-tape-v2/compose.yaml.
+# Keep that operating file as the single source of truth; do not overwrite it on updates.
+name: duct-tape-v2
+services:
+  duct-tape-v2:
+    build:
+      context: ./repo
+    env_file:
+      - ./.env
+    environment:
+      DUCT_AUTH_MODE: secure
+      DUCT_DB_PATH: /data/monitoring.sqlite3
+      DUCT_MEDIA_ROOT: /media
+      TMPDIR: /work
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - ./data/db:/data
+      # Shared source is read-only; no production DB, credentials or uploads are mounted.
+      - ../duct-tape/data/media:/media:ro
+      - ./data/temp:/work
+      - ./data/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config', timeout=3).close()"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

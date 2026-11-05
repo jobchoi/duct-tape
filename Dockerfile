@@ -7,6 +7,6 @@ COPY Server /app/Server
 COPY Scripts /app/Scripts
 COPY Modules /app/Modules
 COPY Config/Applications.json /app/Config/Applications.json
-COPY Main.bat InstallAgent.bat /app/
+COPY Main.bat InstallAgent.bat CollectDiagnostics.bat /app/
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "Server.server:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]
