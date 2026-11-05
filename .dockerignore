@@ -16,6 +16,7 @@
 !Config/Applications.json
 !Main.bat
 !InstallAgent.bat
+!CollectDiagnostics.bat
 **/__pycache__/
 **/*.pyc
 **/data/
