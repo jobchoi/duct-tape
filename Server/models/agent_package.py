@@ -4,6 +4,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from Server.models.application_catalog import module_paths
 
 FILES = (
+    'Scripts/RunApplicationJob.ps1', 'Scripts/ManagedApplications.ps1',
     'InstallAgent.bat', 'Main.bat', 'Config/Applications.json', 'Scripts/ApplicationMedia.ps1', 'Scripts/InvokeApplications.ps1',
     'Scripts/Agent.ps1', 'Scripts/JobProgress.ps1', 'Scripts/ProgressDelivery.ps1', 'Scripts/AgentRegistration.ps1', 'Scripts/AgentActions.ps1', 'Scripts/ClientSetup.ps1',
     'Scripts/Common.ps1', 'Scripts/OfficeConfiguration.ps1', 'Scripts/InstallAgent.ps1', 'Scripts/ReportStatus.ps1',

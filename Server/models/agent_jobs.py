@@ -43,6 +43,8 @@ class JobStore:
             CREATE TABLE IF NOT EXISTS job_progress (
                 job_id TEXT NOT NULL, sequence INTEGER NOT NULL, payload TEXT NOT NULL,
                 received REAL NOT NULL, PRIMARY KEY(job_id,sequence));
+            CREATE TABLE IF NOT EXISTS application_plans (job_id TEXT PRIMARY KEY, plan TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS agent_capabilities (device_id TEXT PRIMARY KEY, protocol INTEGER NOT NULL);
             ''')
             columns = {row[1] for row in db.execute('PRAGMA table_info(agents)')}
             if 'approved' not in columns:
@@ -123,7 +125,9 @@ class JobStore:
             where, args = (' WHERE device_id=?', (device_id,)) if device_id else ('', ())
             return [dict(row) for row in db.execute('SELECT * FROM agent_jobs'+where+' ORDER BY created DESC LIMIT 100', args)]
 
-    def enqueue(self, device_id, action, request_id, server_media_ready=False):
+    def enqueue(self, device_id, action, request_id, server_media_ready=False, application_plan=None):
+        if action == 'install-apps' and not application_plan:
+            raise ValueError('Application plan required')
         with closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
@@ -132,12 +136,20 @@ class JobStore:
                 raise LookupError
             if not identity['approved']:
                 raise PermissionError
+            if action == 'install-apps':
+                capability = db.execute('SELECT protocol FROM agent_capabilities WHERE device_id=?',(device_id,)).fetchone()
+                if not capability or capability['protocol'] < 2:
+                    raise ValueError('Update this PC to the v2 agent first')
             if action == 'deploy' and not (identity['setup_ready'] or server_media_ready):
                 raise ValueError('Setup media missing')
             old = db.execute('SELECT * FROM agent_jobs WHERE device_id=? AND request_id=?', (device_id, request_id)).fetchone()
             if old:
                 if old['action'] != action:
                     raise FileExistsError
+                if application_plan is not None:
+                    saved=db.execute('SELECT plan FROM application_plans WHERE job_id=?',(old['id'],)).fetchone()
+                    if not saved or json.loads(saved['plan'])!=application_plan:
+                        raise FileExistsError
                 return dict(old)
             if db.execute("SELECT 1 FROM agent_jobs WHERE device_id=? AND state IN ('queued','running','interrupted')", (device_id,)).fetchone():
                 raise FileExistsError
@@ -145,19 +157,24 @@ class JobStore:
             db.execute('INSERT INTO agent_jobs VALUES (?,?,?,?,?,?,?,?)',
                        (job_id, device_id, action, 'queued', now, now, None, request_id))
             db.execute('INSERT INTO job_progress VALUES (?,?,?,?)', (job_id,0,json.dumps({'phase':'queued','status':'completed'}),now))
+            if application_plan is not None:
+                db.execute('INSERT INTO application_plans VALUES (?,?)',(job_id,json.dumps(application_plan)))
             return dict(db.execute('SELECT * FROM agent_jobs WHERE id=?', (job_id,)).fetchone())
 
-    def claim(self, device_id, setup_ready=None):
+    def claim(self, device_id, setup_ready=None, protocol_version=1):
         with closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
             if setup_ready is not None:
                 db.execute('UPDATE agents SET setup_ready=? WHERE device_id=?', (int(setup_ready), device_id))
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
+            db.execute('INSERT OR REPLACE INTO agent_capabilities VALUES (?,?)',(device_id,protocol_version))
             if not db.execute('SELECT 1 FROM agents WHERE device_id=? AND approved=1', (device_id,)).fetchone():
                 return None
             row = db.execute("SELECT * FROM agent_jobs WHERE device_id=? AND state='queued' ORDER BY created LIMIT 1", (device_id,)).fetchone()
             if not row:
+                return None
+            if row['action']=='install-apps' and protocol_version<2:
                 return None
             db.execute("UPDATE agent_jobs SET state='running', updated=? WHERE id=?", (time.time(), row['id']))
             return dict(row) | {'state': 'running'}
@@ -174,6 +191,12 @@ class JobStore:
                 return
             if row['state'] not in ('running', 'interrupted'):
                 raise FileExistsError
+            if row['action']=='install-apps' and state=='succeeded':
+                plan=db.execute('SELECT plan FROM application_plans WHERE job_id=?',(job_id,)).fetchone()
+                results=db.execute('SELECT app_id,result FROM application_results WHERE job_id=?',(job_id,)).fetchall()
+                verified={r['app_id'] for r in results if json.loads(r['result']).get('verified') and json.loads(r['result']).get('status') in ('installed','already_installed')}
+                if not plan or verified!={a['id'] for a in json.loads(plan['plan'])}:
+                    raise FileExistsError('Application verification is incomplete')
             db.execute('UPDATE agent_jobs SET state=?, updated=?, exit_code=? WHERE id=?', (state, time.time(), exit_code, job_id))
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
             if state in ('succeeded','failed'):
@@ -283,3 +306,4 @@ class JoinRequest(StrictModel):
 
 class AgentHeartbeat(StrictModel):
     setup_ready: bool | None = Field(default=None, strict=True)
+    protocol_version: int = Field(default=1,ge=1,le=2,strict=True)
