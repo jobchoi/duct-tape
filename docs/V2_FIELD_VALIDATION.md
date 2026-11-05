@@ -1,11 +1,11 @@
 # v2 서버·현장 검증 준비
 
-2026-11-05. 후속 작업 브랜치 `feat/v2-field-validation`.
+2026-11-05. 작업 이력: `feat/v2-field-validation` → `develop` 통합 기준.
 실물 PC는 아직 없으며 사용자 요청에 따라 서버·자동 검증부터 진행한다. 시험 서버 준비/실제 Windows 설치/사용자 기기 등록은 서로 다른 완료 조건이다.
 
 ## 시험 환경
 
-목표 위치: `/home/jobchoi/web-server/duct-tape-v2`.
+실제 위치: `/home/jobchoi/web-server/duct-tape-v2`.
 
 - repo/: 전용 Git 체크아웃. 운영 duct-tape/repo를 변경하지 않는다.
 - data/db, temp, uploads: 신규 시험 데이터. 운영 DB를 복사하거나 공유하지 않는다.
@@ -45,7 +45,59 @@
 
 - Windows PowerShell 5.1: 모의 레지스트리/CIM/예약 작업/HTTP와 임시 파일로 진단 스크립트 통과. 실제 설치기는 실행하지 않음.
 - 에이전트 ZIP/앱 규약 관련 Python: 20 passed(37.08초), 기존 TestClient 사용 중단 예정 경고 1건.
-- 실제 Pi 준비·자동 API 검증: 진행 후 기록.
+- Pi: commit `d4872b8`로 ARM64 이미지 빌드·healthy 확인. localhost8001 secure·media.ready=true, 운영 컨테이너 4개 ID 불변.
+- 실제 Pi HTTP 스모크 24개 통과: 익명 차단/운영과 인증키 분리, 페이지/ZIP 비밀 제외, QR, 앱 목록, 승인, 빈 시리얼, 다른 PC 보고 차단, 실패 재시도·새 작업 ID/중복 차단, 완료 후 두 앱 보고, 시험 컨테이너 재시작 후 등록/결과 보존, DB 백업 복원. 설치기는 실행하지 않았다.
+- 모의 등록/보고는 정리했고 종료된 시험 작업 이력은 보존했다. 상위 manage.sh doctor 통과.
+- HTTPS9443: SSH 계정의 Tailscale 설정 변경 권한 및 비대화식 sudo 권한이 없어 미설정. 기존443/8443/10000 설정은 동일하다.
 - 실제 Windows 설치·재부팅·현장 재시도: PC 미준비로 미수행.
 
 Tailscale HTTPS 방식은 [Serve 공식 안내](https://tailscale.com/docs/reference/tailscale-cli/serve)를 참고한다. Serve는 tailnet 내부 시험용으로 사용하고 기존 443/8443/10000 매핑은 유지한다.
+
+## 현재 접속·관리와 남은 1회 설정
+
+서버에서 다음을 실행한다. 명령은 실행 전에 출력된다.
+
+```bash
+cd /home/jobchoi/web-server/duct-tape-v2
+./manage.sh status
+./manage.sh check
+```
+
+현재 localhost8001을 SSH로 확인하려면 접속하는 PC에서 터널을 유지한다. 이 경로는 UI/API 확인용이다.
+
+```bash
+ssh -N -L 18001:127.0.0.1:8001 raspberry-posting
+```
+
+브라우저: `http://127.0.0.1:18001/admin`. 시험 관리자 키는 라즈의 `/home/jobchoi/web-server/duct-tape-v2/.env`의 DUCT_ADMIN_TOKEN이다. 운영 인증키를 사용하지 않는다.
+
+실제 에이전트 등록 전에는 라즈에서 관리자 권한으로 다음을 **한 번** 실행하고 확인한다. 비밀번호를 채팅에 보내지 않는다.
+
+```bash
+sudo tailscale serve --bg --https=9443 http://127.0.0.1:8001
+tailscale serve status
+curl -f https://raspberry-m5.tail1a38c1.ts.net:9443/api/config
+```
+
+예정 시험 주소: `https://raspberry-m5.tail1a38c1.ts.net:9443/admin`와 `/client`. 위 설정·접속 확인 전에는 활성 주소로 간주하지 않는다. tailnet에 연결된 PC만 사용한다. 기존 Funnel443·포스팅8443·파일10000은 건드리지 않는다. reset은 사용하지 않는다. 시험 경로만 해제할 때는 `sudo tailscale serve --https=9443 off`를 사용한다.
+
+**실제 등록용 ZIP은 HTTPS 주소에서 새로 다운로드한다.** 내부 HTTP/SSH 터널에서 받은 ZIP에는 HTTP 주소가 들어가므로 secure 에이전트 등록에는 사용하지 않는다. 그 ZIP의 읽기 전용 진단 도구는 사용할 수 있다.
+
+실패 PC에서 ActiveJob 상태만 추가 확인하려면 관리자 PowerShell에서 다음을 사용한다. 파일이 없다면 결과 확인 대기 파일이 없는 상태이며, 그것만으로 설치 성공을 뜻하지 않는다.
+
+```powershell
+$active = "$env:ProgramData\DuctTapeAgent\Config\ActiveJob.json"
+if (Test-Path $active) {
+    Get-Content $active -Raw -Encoding UTF8 | ConvertFrom-Json | Select-Object id,state,exit_code
+}
+```
+
+## 작업 기록·백업
+
+- 준비 이벤트: `/home/jobchoi/web-server/remote-runs/v2-prepare-20261105-101108/`.
+- 실제 시험 결과: `duct-tape-v2/smoke-result.json`, 환경 상태: `validation-status.json`. 파일은 점검 당시 스냅샷이며 현재 상태는 명령으로 다시 확인한다.
+- 서버 복구본: `duct-tape-v2/backups/smoke-20261105-101808/trial-recovery.tar.gz`. 시험 .env/Compose/SQLite/검증 결과를 포함한다.
+- 서버 밖 복구본: 현재 WSL `/home/mormot/.local/share/duct-tape-backups/20261105-v2-field/`. 원본 SHA-256 일치와 SQLite 추출 복원 integrity_check=ok 확인. 인증값이 포함되어 있어 Git/웹 공개 금지.
+- 스모크 스크립트의 최초 두 실행은 응답 형식 가정과 호스트 DB 쓰기 권한 문제로 중단됐다. 실제 응답은 사전이며 DB 정리는 컨테이너 안에서 해당 모의 GUID만 처리하도록 수정해 최종 24개를 통과했다. 앱 코드를 추측으로 수정하거나 DB 권한을 광범위하게 바꾸지 않았다.
+
+이후 실제 PC를 확보하면 이 문서의 실기 절차를 진행한다. 현재 결과는 Windows 설치/재부팅/인증의 실장 검증을 대체하지 않는다.

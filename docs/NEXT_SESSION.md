@@ -5,7 +5,7 @@
 
 ## 1. 브랜치와 프로젝트 경계
 
-- 사용자 요청으로 v2 기능 브랜치를 develop에 병합하고 삭제한다. 이후 develop에서 목적별 새 기능/수정 브랜치를 만든다. 운영 main·v1 태그·Pi 배포는 변경하지 않는다.
+- 사용자 요청으로 v2 기능 브랜치를 develop에 병합하고 삭제한다. 이후 develop에서 목적별 새 기능/수정 브랜치를 만든다. 운영 main·v1 태그·기존 Pi 운영 서비스는 유지한다. 별도 Pi v2 시험 서버는 아래 후속 기록을 따른다.
 - 블로그 웹서비스는 별도 저장소 [toyproject-HowToEasy](https://github.com/jobchoi/toyproject-HowToEasy)로 분리됐다. DuctTape에서 그 서비스 구현을 이어가지 않는다.
 - QTP 편집 원칙은 editorial/qtp, DuctTape 구현/운영 기록은 docs에 있다.
 
@@ -34,6 +34,12 @@
 상세: [Pi 이관/복구 기록](PI_STATUS_2026-11-04.md), [현재 배포 안내](PI_DOCKER.md). `deploy/compose.v2.yml`은 이전 부모/별도 체크아웃 레이아웃 예제다. 현재 운영 compose.yaml을 덮어쓰거나 기존 DB/포트에 v2를 연결하지 않는다. 별도 시험 DB·포트·자료·체크아웃을 준비하고 build/mount 경로부터 확인한다.
 
 SSH 별칭 `raspberry-posting`은 현재 PC 설정이다. 다른 PC에는 SSH 키·호스트 등록·Tailscale 접속이 자동 복사되지 않는다. 비밀번호나 개인키를 Git/채팅에 넣지 않는다.
+
+## 2026-11-05 후속 준비
+
+Pi에 `/home/jobchoi/web-server/duct-tape-v2`를 별도 배치했다. 신규 DB/인증키·localhost8001·읽기 전용 원본으로 ARM64 healthy와 실제 HTTP 모의 시험 24개를 확인했다. 실물 PC는 아직 없다. HTTPS9443은 SSH 계정 권한 부족으로 미설정이므로 관리자가 1회 명령을 실행해야 실제 에이전트를 등록할 수 있다. 접속·백업·진단 도구와 남은 절차는 [현장 검증 준비](V2_FIELD_VALIDATION.md)를 먼저 본다.
+
+기존 `deploy/compose.v2.yml`은 과거 레이아웃이며 새 프로젝트 구조의 최초 준비에는 `deploy/compose.v2.pi.yml`을 사용한다. 이미 배치된 운영 파일을 예제로 덮어쓰지 않는다.
 
 ## 4. 새 환경 준비
 
