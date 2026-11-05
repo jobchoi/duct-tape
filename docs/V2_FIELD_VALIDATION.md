@@ -48,12 +48,12 @@
 - Pi: commit `d4872b8`로 ARM64 이미지 빌드·healthy 확인. localhost8001 secure·media.ready=true, 운영 컨테이너 4개 ID 불변.
 - 실제 Pi HTTP 스모크 24개 통과: 익명 차단/운영과 인증키 분리, 페이지/ZIP 비밀 제외, QR, 앱 목록, 승인, 빈 시리얼, 다른 PC 보고 차단, 실패 재시도·새 작업 ID/중복 차단, 완료 후 두 앱 보고, 시험 컨테이너 재시작 후 등록/결과 보존, DB 백업 복원. 설치기는 실행하지 않았다.
 - 모의 등록/보고는 정리했고 종료된 시험 작업 이력은 보존했다. 상위 manage.sh doctor 통과.
-- HTTPS9443: SSH 계정의 Tailscale 설정 변경 권한 및 비대화식 sudo 권한이 없어 미설정. 기존443/8443/10000 설정은 동일하다.
+- HTTPS9443: 최초 자동 설정은 SSH 계정 권한 때문에 진행하지 못했으나 사용자가 sudo로 설정을 완료했다. 이후 HTTPS API 200·secure 모드·media.ready=true·ZIP의 HTTPS 서버 주소를 확인했다. 기존443/8443/10000 매핑 보존과9443의 tailnet 전용 설정도 확인했다.
 - 실제 Windows 설치·재부팅·현장 재시도: PC 미준비로 미수행.
 
 Tailscale HTTPS 방식은 [Serve 공식 안내](https://tailscale.com/docs/reference/tailscale-cli/serve)를 참고한다. Serve는 tailnet 내부 시험용으로 사용하고 기존 443/8443/10000 매핑은 유지한다.
 
-## 현재 접속·관리와 남은 1회 설정
+## 현재 접속·관리와 HTTPS 설정 기록
 
 서버에서 다음을 실행한다. 명령은 실행 전에 출력된다.
 
@@ -71,7 +71,7 @@ ssh -N -L 18001:127.0.0.1:8001 raspberry-posting
 
 브라우저: `http://127.0.0.1:18001/admin`. 시험 관리자 키는 라즈의 `/home/jobchoi/web-server/duct-tape-v2/.env`의 DUCT_ADMIN_TOKEN이다. 운영 인증키를 사용하지 않는다.
 
-실제 에이전트 등록 전에는 라즈에서 관리자 권한으로 다음을 **한 번** 실행하고 확인한다. 비밀번호를 채팅에 보내지 않는다.
+다음은 사용자가 실행해 검증까지 완료한 설정 명령이다. 현재 재실행할 필요는 없다. 비밀번호를 채팅에 보내지 않는다.
 
 ```bash
 sudo tailscale serve --bg --https=9443 http://127.0.0.1:8001
@@ -79,7 +79,7 @@ tailscale serve status
 curl -f https://raspberry-m5.tail1a38c1.ts.net:9443/api/config
 ```
 
-예정 시험 주소: `https://raspberry-m5.tail1a38c1.ts.net:9443/admin`와 `/client`. 위 설정·접속 확인 전에는 활성 주소로 간주하지 않는다. tailnet에 연결된 PC만 사용한다. 기존 Funnel443·포스팅8443·파일10000은 건드리지 않는다. reset은 사용하지 않는다. 시험 경로만 해제할 때는 `sudo tailscale serve --https=9443 off`를 사용한다.
+확인된 시험 주소: `https://raspberry-m5.tail1a38c1.ts.net:9443/admin`와 `/client`. tailnet에 연결된 PC만 사용한다. 기존 Funnel443·포스팅8443·파일10000은 건드리지 않는다. reset은 사용하지 않는다. 시험 경로만 해제할 때는 `sudo tailscale serve --https=9443 off`를 사용한다.
 
 **실제 등록용 ZIP은 HTTPS 주소에서 새로 다운로드한다.** 내부 HTTP/SSH 터널에서 받은 ZIP에는 HTTP 주소가 들어가므로 secure 에이전트 등록에는 사용하지 않는다. 그 ZIP의 읽기 전용 진단 도구는 사용할 수 있다.
 

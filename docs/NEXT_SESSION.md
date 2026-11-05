@@ -37,7 +37,7 @@ SSH 별칭 `raspberry-posting`은 현재 PC 설정이다. 다른 PC에는 SSH �
 
 ## 2026-11-05 후속 준비
 
-Pi에 `/home/jobchoi/web-server/duct-tape-v2`를 별도 배치했다. 신규 DB/인증키·localhost8001·읽기 전용 원본으로 ARM64 healthy와 실제 HTTP 모의 시험 24개를 확인했다. 실물 PC는 아직 없다. HTTPS9443은 SSH 계정 권한 부족으로 미설정이므로 관리자가 1회 명령을 실행해야 실제 에이전트를 등록할 수 있다. 접속·백업·진단 도구와 남은 절차는 [현장 검증 준비](V2_FIELD_VALIDATION.md)를 먼저 본다.
+Pi에 `/home/jobchoi/web-server/duct-tape-v2`를 별도 배치했다. 신규 DB/인증키·localhost8001·읽기 전용 원본으로 ARM64 healthy와 실제 HTTP 모의 시험 24개를 확인했다. 실물 PC는 아직 없다. 사용자가 HTTPS9443 Serve 설정을 완료했고 HTTPS API 200·설치 원본 ready·ZIP의 HTTPS 서버 주소·기존 매핑 보존을 확인했다. 시험 주소는 `https://raspberry-m5.tail1a38c1.ts.net:9443/admin`와 `/client`이며 Tailscale에 연결된 PC만 접속한다. 실제 등록용 ZIP은 이 HTTPS 주소에서 새로 받는다. 접속·백업·진단 도구와 남은 절차는 [현장 검증 준비](V2_FIELD_VALIDATION.md)를 먼저 본다.
 
 기존 `deploy/compose.v2.yml`은 과거 레이아웃이며 새 프로젝트 구조의 최초 준비에는 `deploy/compose.v2.pi.yml`을 사용한다. 이미 배치된 운영 파일을 예제로 덮어쓰지 않는다.
 
