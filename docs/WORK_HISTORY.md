@@ -431,3 +431,19 @@
 - 사용자가 Pi에서 HTTPS9443 Serve를 localhost8001로 설정했다. 이후 SSH를 통한 읽기 전용 검증으로 실제 HTTPS API 200·secure·설치 원본 ready·에이전트 ZIP의 HTTPS 서버 주소를 확인했다.
 - 기존443/8443/10000 매핑이 유지되고9443은 Funnel이 아닌 tailnet 전용임을 확인했다. NEXT_SESSION과 현장 검증 안내의 미설정 상태를 완료 상태로 갱신했다.
 - 다음 작업은 실제 Windows PC 확보 후 HTTPS에서 새 ZIP을 받아 등록·설치·실패 재시도·완료 앱 표시·재부팅을 검증하는 것이다. 이번 마감에서는 코드/운영 컨테이너 변경이나 실제 Windows 설치를 수행하지 않았다. 문서 변경의 diff 형식을 점검했다.
+
+## 2026-11-19 — 미니 PC Office 제거 실패 조사
+
+- SSH 읽기 전용 점검으로 기존 운영 서버의 미니 PC 작업이 11월 18일과 19일 모두 03_RemoveOffice.ps1에서 실패하고 최종 종료 코드 1을 보고했음을 확인했다. 최신 작업 ID는 6a81f03c-3cef-40e8-9952-84b5f08e9a98이다. v2 시험 서버 작업이 아니다.
+- 두 DuctTape 컨테이너는 healthy였고 최근 제한된 서버 로그 범위에서 예외 유형/HTTP 5xx가 확인되지 않았다. 별도 /api/report 422 기록은 이번 제거 실패와 인과관계가 확인되지 않았다.
+- 서버 진행 이벤트에는 설치기 원래 종료 코드와 상세 오류가 없어 미니 PC의 해당 작업 out/err 로그에서 PROCESS_EXIT 및 03 오류 신호를 추가 확인해야 한다. 종료 코드 1만으로 설치기 실패 원인을 단정하지 않는다. 코드·배포·등록·설치 상태는 변경하지 않았다.
+
+- 후속 첨부 Office 로그에서 `Downsell attempted without active ClickToRunSvc`, `Application3 Data.ExitCode=-1`을 확인했다. Office 설치기가 보고한 직접 실패 조건은 활성 ClickToRunSvc 부재이며 서비스 누락/중지/비활성화 여부는 아직 미확인이다. 서버 배포 원본 Office/remove.xml의 Remove All=TRUE 및 Add 없음은 읽기 전용 XML 검사로 확인했다. 클라이언트 서비스 상태와 실제 사용 XML은 추가 대조 대상이며 서비스 강제 생성·재설치·제거 성공 간주는 하지 않았다.
+
+## 2026-11-19 — Office 최초 설치 제거 분기 수정·검증
+
+- fix/office-empty-install에서 03 제거 필요 여부를 설치 필요 상태와 분리했다. 제품·구성·서비스가 모두 없을 때만 제거를 건너뛴다. MSI 제품·구성 잔존/서비스 누락·서비스 중지에는 명확한 고정 오류를 남기고 중단한다. 03의 한컴 키 검사는 제거했다.
+- Windows PowerShell 5.1: 제거 모의 시나리오 13개 및 새 오류 코드 보존, Common 구문/종료·재부팅 처리, OfficeConfiguration 키·XML/04 모의 설치, ClientDiagnostics 시험 통과. 실제 서비스·제품·레지스트리를 변경하지 않았다. 기존 OfficeConfiguration 시험 상태 파일이 기본 ANSI로 저장돼 STATE_INVALID였던 문제는 시험 파일을 UTF-8로 명시해 해결했다.
+- Python test_local_workflow: 3 passed(7.57초), 기존 TestClient 사용 중단 예정 경고 1건. diff 형식 검사 통과.
+- 운영 이미지 전체를 v2로 교체하지 않도록 기존 이미지에서 모듈/오류 허용 목록만 패치하는 배포를 준비했다. 실제 적용 결과는 후속 기록을 따른다.
+- 사실 기반 블로그 원고 office-first-install-removal-failure.md와 HTML 미리보기를 준비했다. Blogger 읽기 전용 check는 기존 OAuth 만료/취소 응답으로 실패해 업로드하지 않았다. 재인증 후 초안 업로드가 필요하다.
