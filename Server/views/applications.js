@@ -6,6 +6,10 @@
   let mode='secure', busy=false, refreshing=false, list=[], agents=[], lastJobs=[];
   el('title').textContent=admin?'앱 관리 · v2':'선택 앱 설치 · v2';
   el('tools-link').hidden=!admin;
+  el('admin-navigation').hidden=!admin;
+  el('breadcrumb-root').textContent=admin?'관리자':'클라이언트';
+  el('breadcrumb-root').href=admin?'/admin':'/client';
+  el('breadcrumb-current').textContent=admin?'앱 관리':'앱 설치';
   el('back').href=admin?'/admin':'/client';
   el('admin-tools').hidden=!admin;el('pc-picker').hidden=!admin;el('manage-head').hidden=!admin;
   const phases={queued:'대기',running:'실행 중',succeeded:'설치 작업 완료',failed:'실패',interrupted:'중단 확인 필요',cancelled:'취소'};

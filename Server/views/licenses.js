@@ -17,18 +17,25 @@
     }
     for(const revision of data.revisions){
       const row=document.createElement('tr');row.dataset.revision=revision.id;
-      for(const value of [names[revision.app],revision.label+(revision.note?' · '+revision.note:''),revision.masked,(revision.active?'현재 적용 · ':'')+states[revision.status],new Date(revision.created*1000).toLocaleString()])row.append(text('td',value));
-      const cell=document.createElement('td');
+      row.classList.toggle('is-active',revision.active);
+      row.append(text('td',names[revision.app]));
+      const labelCell=document.createElement('td'),label=text('span',revision.label);label.className='revision-label';labelCell.append(label);
+      if(revision.note){const note=text('span',revision.note);note.className='revision-note';labelCell.append(note);}row.append(labelCell);
+      const keyCell=text('td',revision.masked);keyCell.className='key-mask';row.append(keyCell);
+      const statusCell=document.createElement('td');
+      if(revision.active){const active=text('span','현재 적용');active.className='badge status-active';statusCell.append(active);}
+      const status=text('span',states[revision.status]);status.className='badge status-'+revision.status;statusCell.append(status);row.append(statusCell,text('td',new Date(revision.created*1000).toLocaleString()));
+      const cell=document.createElement('td'),group=document.createElement('div');group.className='action-group';cell.append(group);
       for(const [action,title] of [['apply','이 값 적용'],['verify','정상 확인'],['fail','문제 표시'],['restore','이전 정상 값으로 복구']]){
-        if((action==='apply'&&(revision.active||revision.status==='failed'))||(action==='restore'&&(revision.active||revision.status!=='verified'))||(action==='verify'&&revision.status==='verified')||(action==='fail'&&revision.status==='failed'))continue;
-        const button=text('button',title);button.type='button';button.disabled=busy;
+        if((action==='apply'&&(revision.active||revision.status==='failed'||revision.status==='verified'))||(action==='restore'&&(revision.active||revision.status!=='verified'))||(action==='verify'&&revision.status==='verified')||(action==='fail'&&revision.status==='failed'))continue;
+        const button=text('button',({apply:'적용',restore:'복구'})[action]||title);button.setAttribute('aria-label',title);button.className=action==='apply'?'':action==='fail'?'danger-secondary':'secondary';button.type='button';button.disabled=busy;
         button.addEventListener('click',async()=>{
           if(busy)return;
           const prompt=action==='verify'?'이 키로 실제 설치·인증을 확인했습니까?':action==='fail'?'문제 이력으로 표시할까요? 현재 적용 중이면 정상 키 복구 전까지 새 셋업을 막습니다.':`${revision.label}: ${title}할까요? 기존 PC의 키는 다음 셋업에서 갱신됩니다.`;
           if(!window.confirm(prompt))return;
           setBusy(true);
           try{render(await api(`/api/admin/licenses/${revision.app}/${revision.id}`,{action,confirmed:true}));el('message').textContent=title+' 완료';}catch(e){el('message').textContent=e.message;}finally{setBusy(false);}
-        });cell.append(button,document.createTextNode(' '));
+        });group.append(button);
       }
       row.append(cell);el('revisions').append(row);
     }
