@@ -76,3 +76,6 @@ __pycache__/
 /token.json
 /tools/blogger/client_secret*.json
 /tools/blogger/token.json
+
+# Runtime product-key encryption material
+**/license-vault/

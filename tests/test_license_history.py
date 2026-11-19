@@ -18,18 +18,19 @@ def setup(tmp_path):
 
 def test_encrypted_history_three_good_restore_and_restart(tmp_path):
     jobs,vault=setup(tmp_path)
-    ids=[]
+    ids=[];values=[]
     for n in range(5):
-        rev=vault.save('office',KEY,f'version-{n}','');ids.append(rev)
+        value=f'{n:05d}-FGHIJ-KLMNO-PQRST-UVWXY';values.append(value)
+        rev=vault.save('office',value,f'version-{n}','');ids.append(rev)
         vault.change('office',rev,'apply');vault.change('office',rev,'verify')
     vault.change('office',ids[-1],'fail')
     assert vault.snapshot()['office'] is None
     vault.change('office',ids[0],'restore')
-    assert vault.snapshot()['office']==KEY.encode()
+    assert vault.snapshot()['office']==values[0].encode()
     listing=LicenseHistory(jobs,tmp_path/'media').listing()
     assert len(listing['revisions'])==5 and sum(r['status']=='verified' for r in listing['revisions'])==4
     assert any(e['action']=='restore' and e['previous']==ids[-1] for e in listing['audit'])
-    assert KEY not in repr(listing) and KEY.encode() not in (tmp_path/'db').read_bytes()
+    assert all(value not in repr(listing) and value.encode() not in (tmp_path/'db').read_bytes() for value in values)
     assert (tmp_path/'license-vault/master.key').stat().st_mode & 0o777==0o600
     (tmp_path/'license-vault/master.key').unlink()
     with pytest.raises(RuntimeError):LicenseHistory(jobs,tmp_path/'media').listing()
@@ -70,6 +71,8 @@ def test_api_roles_masks_validation_and_agent_sync(tmp_path):
         assert c.post('/api/admin/licenses/office',headers=auth(ADMIN),json={'key':KEY,'label':'v1'}).status_code==403
         assert c.post('/api/admin/licenses/office',headers=auth(keys['client_token']),json={'key':KEY,'label':'v1'}).status_code==401
         assert c.post('/api/admin/licenses/office',headers=HEAD,json={'key':'secret!','label':'v1'}).status_code==422
+        invalid=c.post('/api/admin/licenses/office',headers=HEAD,json={'key':KEY,'label':''})
+        assert invalid.status_code==422 and KEY not in invalid.text
         rev=c.post('/api/admin/licenses/office',headers=HEAD,json={'key':KEY,'label':'v1'}).json()['id']
         assert KEY not in c.get('/api/admin/licenses',headers=auth(ADMIN)).text
         route='/api/admin/licenses/office/'+rev
