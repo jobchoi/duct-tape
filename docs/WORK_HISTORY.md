@@ -447,3 +447,11 @@
 - Python test_local_workflow: 3 passed(7.57초), 기존 TestClient 사용 중단 예정 경고 1건. diff 형식 검사 통과.
 - 운영 이미지 전체를 v2로 교체하지 않도록 기존 이미지에서 모듈/오류 허용 목록만 패치하는 배포를 준비했다. 실제 적용 결과는 후속 기록을 따른다.
 - 사실 기반 블로그 원고 office-first-install-removal-failure.md와 HTML 미리보기를 준비했다. Blogger 읽기 전용 check는 기존 OAuth 만료/취소 응답으로 실패해 업로드하지 않았다. 재인증 후 초안 업로드가 필요하다.
+
+## 2026-11-19 — Office 핫픽스 서버 반영 완료
+
+- d014654의 제거 모듈과 오류 허용 목록을 각 기존 이미지에 최소 패치했다. v2 먼저, 기존 운영 서버 다음으로 교체했다. 전체 v2 기능으로 운영 이미지를 바꾸거나 원격 repo를 일괄 갱신하지 않았다.
+- 각 교체 전 활성/대기/중단 작업 없음 확인, Compose·인증 설정·SQLite 스냅샷·원래 파일/이미지 ID를 backups/20261119-office-first-install에 보관했다. Git 제외 WSL downloads/operation-backups/20261119로 전송하고 해시·복원 DB 무결성 확인 후 적용했다.
+- 두 컨테이너 healthy·secure·media.ready=true. HTTP 및 실제 HTTPS API, 공개 ZIP의 수정 파일 해시와 서버 origin 일치 확인. 다른 컨테이너 ID·마운트·Serve/Funnel 설정은 보존했다. 각 프로젝트 README/MIGRATION·상위 WORK_HISTORY·projects.json에 핫픽스 정보를 기록했다.
+- 운영 Compose의 빌드 컨텍스트는 각 백업 디렉터리의 최소 핫픽스 컨텍스트로 고정했다. 이전 이미지와 복구 Compose는 보존했다. 세부 복구·기존 PC 에이전트 갱신은 incidents/2026-11-19-office-first-install.md 참고.
+- 블로그 원고/미리보기 준비, OAuth 재인증 필요로 업로드 미완료. 실제 NUCBOX_M8의 최신 에이전트 적용 후 설치 재시도는 사용자 현장 검증으로 남는다. 설치 성공으로 기록하지 않았다.

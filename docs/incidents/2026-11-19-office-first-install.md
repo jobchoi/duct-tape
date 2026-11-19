@@ -40,3 +40,16 @@
 5. 관리자에서 셋업을 재시도한다. 03의 OFFICE_REMOVE_SKIPPED_NO_PRODUCT와 04의 설치 결과를 확인한다.
 
 수정 후 미니 PC에서 실제 Office 설치 성공 여부는 현장 재시도 전까지 미검증이다.
+
+## 서버 반영 결과
+
+2026-11-19 v2 → 운영 순서로 핫픽스를 적용했다. 두 서버 모두 healthy, secure, media.ready=true이며 실제 HTTPS API와 ZIP 파일 해시·서버 origin 검증을 통과했다. 각 교체 시 다른 컨테이너 ID·마운트·Tailscale 매핑 보존을 확인했다.
+
+- 코드 수정: d014654. 기존 서버 이미지를 기반으로 필요한 파일만 변경했다. 원격 repo 전체를 새 버전으로 올린 배포가 아니다.
+- 운영 복구본: `/home/jobchoi/web-server/duct-tape/backups/20261119-office-first-install/recovery.tar.gz`.
+- v2 복구본: `/home/jobchoi/web-server/duct-tape-v2/backups/20261119-office-first-install/recovery.tar.gz`.
+- 같은 디렉터리에 원래 Compose·파일·이미지 ID, 빌드 컨텍스트, 준비/적용 스크립트와 deployment-result.json을 보관했다. 현재 Compose는 해당 핫픽스 빌드 컨텍스트를 가리킨다.
+- 서버 밖 사본: 이 WSL의 Git 제외 `downloads/operation-backups/20261119/`. 각각 SHA-256 일치·SQLite 추출 복원 integrity_check=ok. 인증 설정이 포함되어 공개하지 않는다.
+- 복구가 필요하면 백업의 Compose를 대상 프로젝트 루트에 복원하고 그 프로젝트에만 `docker compose -p <프로젝트> -f <경로>/compose.yaml up -d --no-build --no-deps <서비스>`를 실행한다. 현재 DB를 이전 스냅샷으로 무조건 덮어쓰지 않는다.
+
+블로그 원고는 준비했지만 Blogger OAuth 만료/취소로 업로드하지 못했다. `./blog.sh auth` 후 `./blog.sh upload docs/blog/blogger/office-first-install-removal-failure.md --reviewed`로 초안을 올릴 수 있다. 공개 발행은 Blogger에서 검토 후 진행한다.
