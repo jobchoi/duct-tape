@@ -2,6 +2,9 @@
 $root=Split-Path $PSScriptRoot -Parent
 . (Join-Path $root 'Scripts/PrepareAgentMedia.ps1')
 . (Join-Path $root 'Scripts/AgentActions.ps1')
+$script:SyncCount=0
+$script:LicenseResponse=[pscustomobject]@{keys=@()}
+function Invoke-RestMethod { param($Uri,$Headers,$TimeoutSec,$MaximumRedirection); $script:SyncCount++; return $script:LicenseResponse }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ('duct-media-test-'+[guid]::NewGuid().ToString('N'))
 function Receive-FixtureMedia {
@@ -24,6 +27,9 @@ try {
     Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc') -Download {param($uri,$headers,$path);Receive-FixtureMedia -Uri $uri -Headers $headers -OutFile $path}
     if (-not (Test-AgentSetupReady -Root (Join-Path $tempRoot 'pc'))) { throw 'Media not prepared' }
     if (@(Get-ChildItem (Join-Path $tempRoot 'pc') -Filter 'media-stage-*').Count) { throw 'Staging not cleaned' }
+    $script:LicenseResponse=[pscustomobject]@{keys=@([pscustomobject]@{app='office';key='ABCDE-FGHIJ-KLMNO-PQRST-UVWXY'})}
+    Initialize-AgentMedia -Root (Join-Path $tempRoot 'pc') -Download {throw 'Cached media should not be downloaded again'}
+    if ($script:SyncCount -ne 2 -or (Get-Content (Join-Path $tempRoot 'pc/Config/OfficeKey.txt') -Raw) -ne 'ABCDE-FGHIJ-KLMNO-PQRST-UVWXY') {throw 'Cached media key was not refreshed'}
     Remove-Item (Join-Path $tempRoot 'pc/Office/setup.exe')
     Remove-Item $script:Fixture
     $bad=[IO.Compression.ZipFile]::Open($script:Fixture,[IO.Compression.ZipArchiveMode]::Create)

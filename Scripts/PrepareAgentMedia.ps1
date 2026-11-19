@@ -1,11 +1,12 @@
 ﻿function Initialize-AgentMedia {
     param([string]$Root,[scriptblock]$Download)
     . (Join-Path $PSScriptRoot 'JobProgress.ps1')
+    . (Join-Path $PSScriptRoot 'LicenseKeys.ps1')
     Write-JobProgress -Phase media_ready -Status started
     . (Join-Path $PSScriptRoot 'AgentActions.ps1')
     . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
     $apps=(Get-ApplicationCatalog -Root $Root).applications
-    if (Test-AgentSetupReady -Root $Root) {Write-JobProgress -Phase media_ready -Status completed; return}
+    if (Test-AgentSetupReady -Root $Root) {Sync-AgentLicenseKeys -Root $Root;Write-JobProgress -Phase media_ready -Status completed; return}
     $agent = Get-Content (Join-Path $Root 'Config/Agent.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     $headers = if ($agent.AuthMode -eq 'development') { @{'X-Duct-Tape-Request'='1'; 'X-Duct-Device-ID'=$agent.DeviceId} } else { @{Authorization=('Bearer '+$agent.AgentToken)} }
     $work = Join-Path $Root ('media-stage-'+[guid]::NewGuid().ToString('N'))
@@ -53,6 +54,7 @@
             if ($app.key_file) {Copy-Item -LiteralPath (Join-Path $extract $app.key_file) -Destination (Join-Path $Root $app.key_file) -Force}
         }
         if (-not (Test-AgentSetupReady -Root $Root)) { throw '서버에서 받은 설치 매체가 완전하지 않습니다.' }
+        Sync-AgentLicenseKeys -Root $Root
         Write-JobProgress -Phase prepare -Status completed
         Write-JobProgress -Phase media_ready -Status completed
     } catch {Write-JobProgress -Phase $phase -Status failed;throw} finally { Remove-Item -LiteralPath $work -Recurse -Force }
