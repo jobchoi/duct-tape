@@ -52,4 +52,4 @@
 - 서버 밖 사본: 이 WSL의 Git 제외 `downloads/operation-backups/20261119/`. 각각 SHA-256 일치·SQLite 추출 복원 integrity_check=ok. 인증 설정이 포함되어 공개하지 않는다.
 - 복구가 필요하면 백업의 Compose를 대상 프로젝트 루트에 복원하고 그 프로젝트에만 `docker compose -p <프로젝트> -f <경로>/compose.yaml up -d --no-build --no-deps <서비스>`를 실행한다. 현재 DB를 이전 스냅샷으로 무조건 덮어쓰지 않는다.
 
-블로그 원고는 준비했지만 Blogger OAuth 만료/취소로 업로드하지 못했다. `./blog.sh auth` 후 `./blog.sh upload docs/blog/blogger/office-first-install-removal-failure.md --reviewed`로 초안을 올릴 수 있다. 공개 발행은 Blogger에서 검토 후 진행한다.
+Blogger 최초 업로드는 OAuth 만료/취소로 중단됐으나, 사용자 재동의와 토큰 저장·기존 블로그 접근 확인 후 초안 업로드를 완료했다. 게시 ID: `6212690371671406960`. API로 DRAFT 상태와 제목·HTML 본문 일치를 확인했다. 다른 블로그에는 업로드하지 않았다. 공개 발행은 Blogger에서 검토 후 진행한다.

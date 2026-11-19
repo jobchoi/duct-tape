@@ -455,3 +455,8 @@
 - 두 컨테이너 healthy·secure·media.ready=true. HTTP 및 실제 HTTPS API, 공개 ZIP의 수정 파일 해시와 서버 origin 일치 확인. 다른 컨테이너 ID·마운트·Serve/Funnel 설정은 보존했다. 각 프로젝트 README/MIGRATION·상위 WORK_HISTORY·projects.json에 핫픽스 정보를 기록했다.
 - 운영 Compose의 빌드 컨텍스트는 각 백업 디렉터리의 최소 핫픽스 컨텍스트로 고정했다. 이전 이미지와 복구 Compose는 보존했다. 세부 복구·기존 PC 에이전트 갱신은 incidents/2026-11-19-office-first-install.md 참고.
 - 블로그 원고/미리보기 준비, OAuth 재인증 필요로 업로드 미완료. 실제 NUCBOX_M8의 최신 에이전트 적용 후 설치 재시도는 사용자 현장 검증으로 남는다. 설치 성공으로 기록하지 않았다.
+
+## 2026-11-19 — Google Blogger 초안 업로드 완료
+
+- 사용자 요청으로 Google Blogger만 대상으로 진행했다. 최초 콜백 수신 화면 이후 토큰 저장이 완료되지 않은 상태를 별도로 확인했고, 새 로컬 콜백 연결을 브라우저에 직접 열어 사용자 재동의·토큰 저장을 완료했다. 인증값은 저장소 밖에 유지했다.
+- 기존 lealnspire 블로그 작성 권한 확인 후 office-first-install-removal-failure.md를 초안으로 업로드했다. 게시 ID 6212690371671406960. API로 DRAFT·제목·HTML 원고 일치를 재확인했다. 다른 플랫폼 업로드·공개 발행은 수행하지 않았다.
