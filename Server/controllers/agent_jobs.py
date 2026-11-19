@@ -248,4 +248,8 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
     if features is not None:
         from Server.controllers.tools import router as tools_router
         routes.include_router(tools_router(features, admin, root))
+    from Server.models.license_history import LicenseHistory
+    from Server.controllers.licenses import router as license_router
+    media.licenses = LicenseHistory(store, media.root)
+    routes.include_router(license_router(media.licenses, admin, agent, store, root))
     return routes
