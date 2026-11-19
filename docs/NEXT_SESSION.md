@@ -1,6 +1,6 @@
 # 다음 환경에서 v2 작업 이어가기
 
-갱신: 2026-11-05. 후속 개발 기준: `develop`. `feature/v2-mdm-ui`는 검증 후 develop에 통합하고 종료한다.
+갱신: 2026-11-19. 후속 개발 기준: `develop`. `feature/v2-mdm-ui`는 검증 후 develop에 통합하고 종료한다.
 이 문서가 다음 작업의 시작점이다. 과거 기획은 날짜별 이력이며 현재 운영 배포 결과와 구분한다.
 
 ## 1. 브랜치와 프로젝트 경계
@@ -67,6 +67,10 @@ SSH가 없으면 clone URL을 `https://github.com/jobchoi/duct-tape.git`으로 �
 ```
 
 주소는 `/admin`, `/admin/apps`, `/admin/tools`, `/client/apps`. 실제 Windows 작업 전 최신 에이전트 규약·등록 서버·승인 대상 PC를 확인한다. 한 PC의 v1/v2 에이전트를 동시에 별도 설치해도 된다고 가정하지 않는다.
+
+## 2026-11-19 최초 Office 설치 실패 수정
+
+NUCBOX_M8의 기존 운영 서버 작업이 03 Office 제거 단계에서 실패했다. Office가 없는 PC에도 제거를 실행하던 조건을 수정하고 Windows 모의 분기를 검증했다. 실제 설치 성공은 최신 에이전트 적용 후 현장 재시도로 확인한다. [원인·처리·갱신 절차](incidents/2026-11-19-office-first-install.md)를 먼저 확인한다. 서버 핫픽스 반영/복구 위치는 WORK_HISTORY의 최신 결과를 따른다. 기존 PC의 에이전트는 서버 재시작만으로 자동 갱신되지 않는다.
 
 ## 5. 다음 우선순위
 

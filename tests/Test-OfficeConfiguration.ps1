@@ -58,7 +58,7 @@ function Start-Process {param($FilePath,$ArgumentList,[switch]$Wait,[switch]$Pas
 '@
     Add-Content (Join-Path $fixture 'Scripts/Common.ps1') $stubs
     $statePath=Join-Path $fixture 'state.json'
-    @{OfficeState='설치 필요';HancomState='정상'} | ConvertTo-Json | Set-Content $statePath
+    @{OfficeState='설치 필요';HancomState='정상'} | ConvertTo-Json | Set-Content $statePath -Encoding UTF8
     $engine=(Get-Process -Id $PID).Path
     $output=& $engine -NoProfile -File (Join-Path $fixture 'Modules/04_InstallOffice.ps1') -StateFile $statePath
     if ($LASTEXITCODE -ne 0 -or ($output -join '') -match $key) {throw 'Module failed or printed key'}
