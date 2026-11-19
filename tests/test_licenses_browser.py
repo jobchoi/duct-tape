@@ -37,6 +37,21 @@ def test_license_ui(tmp_path):
             good=page.locator('#revisions tr').filter(has_text='good-0');good.get_by_role('button',name='이전 정상 값으로 복구',exact=True).click();expect(good).to_contain_text('현재 적용')
             assert 'ABCDE-FGHIJ-KLMNO-PQRST-UVWXY' not in page.locator('body').inner_text()
             expect(page.locator('#audit')).to_contain_text('복구');assert not errors
+            screenshots=tmp_path/'screenshots'
+            screenshots.mkdir()
+            for width,height in [(1280,900),(390,844)]:
+                page.set_viewport_size({'width':width,'height':height})
+                expect(page.get_by_role('navigation',name='현재 위치')).to_be_visible()
+                expect(page.get_by_role('navigation',name='관리자 메뉴')).to_be_visible()
+                assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Body overflows viewport'
+                for control in ['#label','#product-key','#note','#app']:
+                    box=page.locator(control).bounding_box()
+                    assert box and box['x']>=0 and box['x']+box['width']<=width
+                assert not page.locator('.license-audit').evaluate('(node)=>node.open')
+                if os.environ.get('DUCT_UI_SCREENSHOTS'):
+                    from pathlib import Path
+                    output=Path(os.environ['DUCT_UI_SCREENSHOTS']);output.mkdir(parents=True,exist_ok=True)
+                    page.screenshot(path=str(output/f'licenses-{width}.png'),full_page=True)
             browser.close()
     finally:
         server.terminate();server.wait(timeout=10)
