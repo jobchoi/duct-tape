@@ -17,7 +17,7 @@ def browser(role='admin', session=True, key='', mode='secure'):
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events']) elements[id]=new Element();
+    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','deploy-readiness','package-info','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
     const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
@@ -33,7 +33,8 @@ def browser(role='admin', session=True, key='', mode='secure'):
     async function fetch(path,options){
       calls.push({path,...options});
       if(path.includes('/progress?')) return {ok:true,json:async()=>progressData};
-      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,media:{ready:serverMedia,missing:serverMedia?[]:['Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe']}})};
+      if(path==='/api/admin/deploy-readiness') return {ok:true,json:async()=>({ready:true,reasons:[],minutes:2,active_agents:1})};
+      if(path==='/api/config') return {ok:true,json:async()=>({auth_mode:MODE,package_version:'a'.repeat(64),package_generated_at:'2026-11-23T00:00:00Z',media:{ready:serverMedia,missing:serverMedia?[]:['Hancom/Install/Hwp130.msi','Hancom/Install/VC_redist.x86.exe']}})};
       if(path==='/api/admin/session'){
         if(options.method==='POST') sessionValid=mode==='ok';
         if(options.method==='DELETE') sessionValid=false;
@@ -150,7 +151,7 @@ def test_local_admin_connects_without_login_and_media_gate_is_visible():
     ctx=browser(mode='development',session=False)
     assert ctx.eval('elements.access.hidden') is True
     assert '테스트' in ctx.eval("elements['auth-status'].textContent")
-    assert ctx.eval("elements['admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events'].hidden") is False
+    assert ctx.eval("elements['admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','deploy-readiness','package-info','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events'].hidden") is False
     assert not ctx.eval("calls.some(c=>c.path==='/api/admin/session' && c.method==='POST')")
     select(ctx)
     ctx.eval('agentData[0].setup_ready=0;nextPoll()');settle(ctx)
@@ -223,3 +224,15 @@ def test_serial_uses_matching_device_report_and_safe_text():
     ctx.eval("reportData[1].serial='   ';nextPoll()")
     settle(ctx)
     assert ctx.eval('elements.devices.children[0].children[1].textContent') == '확인 전'
+
+
+def test_package_versions_are_short_with_full_value_in_title():
+    ctx=browser('client')
+    assert '패키지 버전: aaaaaaaaaaaa ·' in ctx.eval("elements['package-info'].textContent")
+    assert ctx.eval("elements['package-info'].title").endswith('a'*64)
+    admin=browser()
+    admin.eval("agentData[0].package_version='a'.repeat(64);agentData[0].update_required=true;nextPoll()")
+    settle(admin)
+    assert '버전: aaaaaaaaaaaa' in admin.eval('elements.devices.children[0].children[3].textContent')
+    assert admin.eval('elements.devices.children[0].children[3].title').endswith('a'*64)
+    assert '2026-11-23 09:00' in ctx.eval("elements['package-info'].textContent")

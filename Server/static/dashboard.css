@@ -73,3 +73,16 @@
 #qr-form button{justify-self:start}
 @media(max-width:1050px){.license-layout{grid-template-columns:minmax(0,1fr)}.license-entry{position:static}#key-form{grid-template-columns:repeat(2,minmax(0,1fr))}#key-form button{align-self:end}.license-help,.license-audit{grid-column:auto}}
 @media(max-width:650px){.console-header{align-items:flex-start;gap:14px}.console-header h1{font-size:24px}.header-actions{width:100%}.console-tabs{gap:4px;margin-bottom:18px}.console-tabs a{font-size:12px;padding:8px 10px}.breadcrumbs{margin-bottom:16px}.admin-console .panel{padding:18px}.admin-console details.panel{padding:14px 18px}.license-history #summary,#key-form,#qr-form{grid-template-columns:minmax(0,1fr)}.license-layout{gap:16px}}
+
+/* Shared responsive header */
+.console-header{display:flex;flex-direction:row;align-items:center;gap:16px;flex-wrap:nowrap}
+.console-header>div:first-child{flex:0 1 auto}
+.console-header .console-tabs{order:1;flex:1;justify-content:center;flex-wrap:nowrap;border:0;margin:0;padding:0}
+.console-header .header-actions{order:2;justify-content:flex-end;flex-wrap:nowrap;width:auto}
+.console-header .console-tabs a,.console-header .header-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;white-space:nowrap}
+.client{max-width:1050px}
+@media(max-width:1024px){.console-header{flex-wrap:wrap}.console-header>div:first-child{flex:1}.console-header .console-tabs{order:3;flex-basis:100%;justify-content:flex-start;overflow-x:auto}.console-header .header-actions{margin-left:auto}}
+@media(max-width:768px){.console-header{gap:10px}.console-header h1{font-size:24px}.console-header .console-tabs{justify-content:flex-start}.console-header .console-tabs a{padding:8px 10px}}
+@media(max-width:480px){.console-header>div:first-child{flex-basis:100%}.console-header .header-actions{order:2;margin-left:0}.console-header .console-tabs{order:3}.console-header .header-actions a{padding:8px 12px}}
+
+#package-info,.inventory td{overflow-wrap:anywhere}

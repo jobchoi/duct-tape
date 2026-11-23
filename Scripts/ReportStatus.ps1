@@ -64,6 +64,11 @@ function Send-StatusReport {
             installer_exit_code = $InstallerExitCode; reboot_required = ($state.RebootRequired -eq $true)
             observed_at = [DateTime]::UtcNow.ToString('o')
         }
+        $versionPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Config/PackageVersion.txt'
+        if (Test-Path -LiteralPath $versionPath -PathType Leaf) {
+            $packageVersion = (Get-Content -LiteralPath $versionPath -Raw -Encoding UTF8).Trim()
+            if ($packageVersion -cmatch '^[0-9a-f]{64}$') { $payload.package_version = $packageVersion }
+        }
         if (($config.Grade -isnot [int] -and $config.Grade -isnot [long]) -or
             $config.Grade -lt 1 -or $config.Grade -gt 6) { throw 'REPORT_CONFIG' }
         $payload.grade = [int]$config.Grade
