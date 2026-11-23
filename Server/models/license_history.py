@@ -129,6 +129,33 @@ class LicenseHistory:
             if job:
                 db.execute('INSERT OR IGNORE INTO license_job_revisions SELECT ?,app,revision,? FROM license_active', (job[0], time.time()))
 
+    def key_reasons(self, applications, db=None):
+        """Resolve active revisions or, only without history, valid media files."""
+        self.ensure()
+        if db is None:
+            with closing(self.jobs.connect()) as connection:
+                return self.key_reasons(applications, connection)
+        reasons = []
+        for app in applications:
+            if not app.key_file:
+                continue
+            name = '한컴' if app.id == 'hancom' else 'Office' if app.id == 'office' else app.name
+            row = db.execute('SELECT r.status FROM license_active a JOIN license_revisions r ON r.id=a.revision WHERE a.app=?', (app.id,)).fetchone()
+            if row and row['status'] != 'failed':
+                continue
+            if row:
+                reasons.append(f'{name} 키 문제 표시 → 제품 키·이력 관리에서 정상 키 적용')
+                continue
+            history = db.execute('SELECT 1 FROM license_revisions WHERE app=? LIMIT 1', (app.id,)).fetchone()
+            path = self.media_root / app.key_file
+            try:
+                if history or not path.resolve().is_relative_to(self.media_root.resolve()):
+                    raise ValueError('Unavailable key')
+                normalize(app.id, path.read_text(encoding='utf-8-sig'))
+            except (ValueError, OSError, UnicodeError):
+                reasons.append(f'{name} 키 미등록 또는 미적용 → 제품 키·이력 관리에서 등록 및 적용')
+        return reasons
+
     def snapshot(self):
         self.ensure()
         with closing(self.jobs.connect()) as db:

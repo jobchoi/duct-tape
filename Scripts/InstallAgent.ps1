@@ -68,6 +68,9 @@ try {
         if (Test-Path $directory) {Copy-Item -LiteralPath $directory -Destination (Join-Path $target $app.media_folder) -Recurse -Force}
         if ($app.key_file -and (Test-Path (Join-Path $source $app.key_file))) {Copy-Item -LiteralPath (Join-Path $source $app.key_file) -Destination (Join-Path $target $app.key_file) -Force}
     }
+    $packageVersion = Join-Path $source 'Config/PackageVersion.txt'
+    if (Test-Path $packageVersion) { Copy-Item -LiteralPath $packageVersion -Destination (Join-Path $target 'Config/PackageVersion.txt') -Force }
+    else { Remove-Item (Join-Path $target 'Config/PackageVersion.txt') -Force -ErrorAction SilentlyContinue }
     Copy-Item -LiteralPath (Join-Path $source 'Config/Applications.json') -Destination (Join-Path $target 'Config/Applications.json') -Force
     if ($generatedConfig -or -not $monitor.ReportToken -or ($stored -and $monitor.ReportToken -eq $stored.AgentToken)) { $monitor.ReportToken = $registered.agent_token }
     if ($monitor -is [Collections.IDictionary]) { $monitor.AuthMode = $registered.auth_mode } else { $monitor | Add-Member -NotePropertyName AuthMode -NotePropertyValue $registered.auth_mode -Force }

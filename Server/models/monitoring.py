@@ -25,6 +25,7 @@ class Report(BaseModel):
     error_code: Annotated[str, Field(pattern=r'^[A-Z0-9_]{0,64}$')] = ''
     installer_exit_code: Annotated[int, Field(ge=0, le=4294967295)] | None = None
     reboot_required: bool = False
+    package_version: Annotated[str, Field(pattern=r'^[0-9a-f]{64}$')] | None = None
     observed_at: AwareDatetime
 
     @field_validator('observed_at')

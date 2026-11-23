@@ -15,9 +15,18 @@ function Invoke-AgentApi {
     Invoke-RestMethod -Uri ($config.ServerUrl+$Path) -Method Post -Headers $headers -ContentType 'application/json' -Body $json -TimeoutSec 10 -MaximumRedirection 0
 }
 
+$packageVersion = $null
+$versionPath = Join-Path $root 'Config/PackageVersion.txt'
+if (Test-Path $versionPath) { $packageVersion = (Get-Content $versionPath -Raw).Trim() }
+function Send-AgentHeartbeat([bool]$active) {
+    $body = @{setup_ready=(Test-AgentSetupReady -Root $root);protocol_version=2;active_job=$active}
+    if ($packageVersion -match '^[0-9a-f]{64}$') { $body.package_version = $packageVersion }
+    return Invoke-AgentApi '/api/agent/claim' $body
+}
 # A persisted claim is never automatically executed a second time.
 while (Test-Path $activePath) {
     try {
+        try { $null = Send-AgentHeartbeat $true } catch {}
         $active = Get-Content $activePath -Raw | ConvertFrom-Json
         $after=0
         try {do {$next=Send-AgentProgress -Root $root -JobId $active.id -After $after;$changed=$next -gt $after;$after=$next} while ($changed)} catch {}
@@ -28,7 +37,7 @@ while (Test-Path $activePath) {
 }
 while ($true) {
     try {
-        $claim = Invoke-AgentApi '/api/agent/claim' @{setup_ready=(Test-AgentSetupReady -Root $root);protocol_version=2}
+        $claim = Send-AgentHeartbeat $false
         if ($null -eq $claim.job) { Start-Sleep -Seconds 5; continue }
         $job = $claim.job
         $jobId = ([guid]$job.id).ToString()
@@ -57,6 +66,7 @@ while ($true) {
         @{id=$jobId; state=$state; exit_code=$exitCode} | ConvertTo-Json | Set-Content $activePath -Encoding UTF8
         while (Test-Path $activePath) {
             try {
+                try { $null = Send-AgentHeartbeat $true } catch {}
                 try {do {$next=Send-AgentProgress -Root $root -JobId $jobId -After $after;$changed=$next -gt $after;$after=$next} while ($changed)} catch {}
                 $null = Invoke-AgentApi ('/api/agent/jobs/'+$jobId) @{state=$state; exit_code=$exitCode}
                 Remove-Item $activePath

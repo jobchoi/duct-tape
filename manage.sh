@@ -171,6 +171,7 @@ do_status() {
 }
 
 case "${1:-}" in
+    deploy-check) python3 "$BASE_DIR/scripts/deploy_check.py" ;;
     start)   do_start ;;
     run)
         shift
@@ -191,7 +192,7 @@ case "${1:-}" in
     logs)    touch "$LOG_FILE"; tail -n 50 -f "$LOG_FILE" ;;
     rotate)  rotate_log ;;
     *)
-        echo "사용법: ./manage.sh {start|run|stop|restart|status|logs|rotate}"
+        echo "사용법: ./manage.sh {start|run|stop|restart|status|logs|rotate|deploy-check}"
         echo "Docker: ./manage.sh docker {start|stop|restart|status|logs|build|check}"
         echo "V2 시험: ./manage.sh docker-v2 {start|stop|restart|status|logs|build|check}"
         exit 1

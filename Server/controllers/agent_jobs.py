@@ -9,7 +9,8 @@ from starlette.background import BackgroundTask
 from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest, AgentHeartbeat
 from Server.models.admin_sessions import COOKIE, HEADER
 from Server.models.job_progress import ProgressBatch
-from Server.models.agent_package import build as build_agent_package
+from Server.models.agent_package import build as build_agent_package, package_version
+from datetime import datetime, timezone
 
 
 
@@ -48,17 +49,31 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
     def agent(request: Request, credentials=Depends(bearer)):
         return device('agent', credentials, request)
 
+    def key_reasons():
+        return media.licenses.key_reasons(media.applications)
+
     def enqueue(device_id, body):
         try:
-            return store.enqueue(device_id, body.action, str(body.request_id), media.manifest()['ready'])
-        except ValueError:
-            raise HTTPException(409, 'Prepare Office/Hancom media and license key') from None
+            job = store.enqueue(device_id, body.action, str(body.request_id), media.manifest()['ready'])
+            return job | {'key_reasons': key_reasons() if body.action == 'deploy' else []}
+        except ValueError as exc:
+            raise HTTPException(409, str(exc) if '키 ' in str(exc) else '설치 매체를 준비하세요: ' + str(exc)) from None
         except PermissionError:
             raise HTTPException(403, 'Administrator approval required') from None
         except LookupError:
             raise HTTPException(404, 'Unknown device') from None
         except FileExistsError:
             raise HTTPException(409, 'A job is already pending or request conflicts') from None
+
+    def visible_jobs(device_id=None):
+        jobs = store.jobs(device_id)
+        reasons = key_reasons()
+        if reasons:
+            readiness = {agent['device_id']: agent['setup_ready'] for agent in store.agents()}
+            for job in jobs:
+                if job['state'] == 'queued' and job['action'] == 'deploy' and not readiness.get(job['device_id'], False):
+                    job.update(state='blocked_key_missing', key_reasons=reasons)
+        return jobs
 
     @routes.post('/api/admin/session')
     def login(body: AdminLogin, request: Request, response: Response):
@@ -101,7 +116,7 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
 
     @routes.get('/api/config')
     def configuration():
-        return {'auth_mode': policy.mode, 'agent_download': '/download/agent.zip', 'media': media.manifest()}
+        return {'auth_mode': policy.mode, 'agent_download': '/download/agent.zip', 'media': media.manifest(), 'key_reasons': key_reasons(), 'package_version': package_version(root), 'package_generated_at': datetime.now(timezone.utc).isoformat()}
 
     @routes.get('/download/agent.zip')
     def download(request: Request):
@@ -145,11 +160,16 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
 
     @routes.get('/api/admin/agents', dependencies=[Depends(admin)])
     def agents():
-        return {'agents': store.agents()}
+        current = package_version(root)
+        return {'agents': [a | {'update_required': a['package_version'] != current} for a in store.agents()]}
+
+    @routes.get('/api/admin/deploy-readiness', dependencies=[Depends(admin)])
+    def deploy_readiness(minutes: int = Query(default=2, ge=1, le=1440)):
+        return store.readiness(minutes)
 
     @routes.get('/api/admin/jobs', dependencies=[Depends(admin)])
     def jobs():
-        return {'jobs': store.jobs()}
+        return {'jobs': visible_jobs()}
 
     @routes.post('/api/admin/jobs', dependencies=[Depends(admin)])
     def request(body: AdminJobRequest):
@@ -157,7 +177,7 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
 
     @routes.get('/api/client/jobs')
     def client_jobs(device_id=Depends(client)):
-        return store.info(device_id) | {'jobs': store.jobs(device_id)}
+        return store.info(device_id) | {'jobs': visible_jobs(device_id)}
 
     @routes.post('/api/client/jobs')
     def client_request(body: JobRequest, device_id=Depends(client)):
@@ -165,7 +185,7 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
 
     @routes.get('/api/agent/status')
     def agent_status(device_id=Depends(agent)):
-        return store.info(device_id) | {'jobs': store.jobs(device_id)}
+        return store.info(device_id) | {'jobs': visible_jobs(device_id)}
 
     @routes.post('/api/agent/reconnect')
     def reconnect(device_id=Depends(agent)):
@@ -177,7 +197,8 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
 
     @routes.post('/api/agent/claim')
     def claim(body: AgentHeartbeat = AgentHeartbeat(), device_id=Depends(agent)):
-        return {'job': store.claim(device_id, body.setup_ready, body.protocol_version)}
+        media.licenses.ensure()
+        return {'job': store.claim(device_id, body.setup_ready, body.protocol_version, body.package_version, body.active_job, lambda db: media.licenses.key_reasons(media.applications, db))}
 
     @routes.post('/api/agent/jobs/{job_id}/progress')
     def report_progress(job_id: UUID, body: ProgressBatch, device_id=Depends(agent)):

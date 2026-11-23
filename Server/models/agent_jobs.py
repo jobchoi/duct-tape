@@ -45,6 +45,7 @@ class JobStore:
                 received REAL NOT NULL, PRIMARY KEY(job_id,sequence));
             CREATE TABLE IF NOT EXISTS application_plans (job_id TEXT PRIMARY KEY, plan TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS agent_capabilities (device_id TEXT PRIMARY KEY, protocol INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS agent_package_status (device_id TEXT PRIMARY KEY, version TEXT, active_job INTEGER);
             ''')
             columns = {row[1] for row in db.execute('PRAGMA table_info(agents)')}
             if 'approved' not in columns:
@@ -117,7 +118,7 @@ class JobStore:
 
     def agents(self):
         with closing(self.connect()) as db:
-            return [dict(row) for row in db.execute('SELECT device_id, hostname, last_seen, approved, setup_ready FROM agents ORDER BY hostname')]
+            return [dict(row) for row in db.execute('SELECT a.device_id, a.hostname, a.last_seen, a.approved, a.setup_ready, s.version AS package_version FROM agents a LEFT JOIN agent_package_status s ON s.device_id=a.device_id ORDER BY a.hostname')]
 
     def jobs(self, device_id=None):
         with closing(self.connect()) as db, db:
@@ -125,7 +126,16 @@ class JobStore:
             where, args = (' WHERE device_id=?', (device_id,)) if device_id else ('', ())
             return [dict(row) for row in db.execute('SELECT * FROM agent_jobs'+where+' ORDER BY created DESC LIMIT 100', args)]
 
-    def enqueue(self, device_id, action, request_id, server_media_ready=False, application_plan=None):
+    def readiness(self, minutes=2):
+        with closing(self.connect()) as db, db:
+            counts = dict(db.execute("SELECT CASE WHEN state='running' AND updated < ? THEN 'interrupted' ELSE state END AS effective_state, COUNT(*) FROM agent_jobs WHERE state IN ('queued','running','interrupted') GROUP BY effective_state", (time.time()-120,)))
+            active = db.execute('SELECT COUNT(*) FROM agents WHERE last_seen >= ?', (time.time()-minutes*60,)).fetchone()[0]
+            marked = db.execute('SELECT COUNT(*) FROM agents a JOIN agent_package_status s ON s.device_id=a.device_id WHERE s.active_job=1').fetchone()[0]
+            unknown = db.execute('SELECT COUNT(*) FROM agents a LEFT JOIN agent_package_status s ON s.device_id=a.device_id WHERE s.active_job IS NULL OR a.last_seen < ?', (time.time()-minutes*60,)).fetchone()[0]
+        reasons = [f'{label} {number}건' for label, number in [('대기 작업', counts.get('queued',0)), ('진행 중 작업', counts.get('running',0)), ('복구 대기 작업', counts.get('interrupted',0)), ('ActiveJob PC', marked), ('ActiveJob 확인 불가 PC', unknown)] if number]
+        return {'queued': counts.get('queued',0), 'running': counts.get('running',0), 'interrupted': counts.get('interrupted',0), 'active_agents': active, 'active_job_agents': marked, 'unknown_active_job_agents': unknown, 'minutes': minutes, 'ready': not reasons, 'reasons': reasons}
+
+    def enqueue(self, device_id, action, request_id, server_media_ready=False, application_plan=None, required_keys=None, key_check=None):
         if action == 'install-apps' and not application_plan:
             raise ValueError('Application plan required')
         with closing(self.connect()) as db, db:
@@ -161,7 +171,7 @@ class JobStore:
                 db.execute('INSERT INTO application_plans VALUES (?,?)',(job_id,json.dumps(application_plan)))
             return dict(db.execute('SELECT * FROM agent_jobs WHERE id=?', (job_id,)).fetchone())
 
-    def claim(self, device_id, setup_ready=None, protocol_version=1):
+    def claim(self, device_id, setup_ready=None, protocol_version=1, package_version=None, active_job=None, key_check=None):
         with closing(self.connect()) as db, db:
             db.execute('BEGIN IMMEDIATE')
             self.expire(db)
@@ -169,10 +179,16 @@ class JobStore:
                 db.execute('UPDATE agents SET setup_ready=? WHERE device_id=?', (int(setup_ready), device_id))
             db.execute('UPDATE agents SET last_seen=? WHERE device_id=?', (time.time(), device_id))
             db.execute('INSERT OR REPLACE INTO agent_capabilities VALUES (?,?)',(device_id,protocol_version))
+            db.execute('INSERT OR REPLACE INTO agent_package_status VALUES (?,?,?)', (device_id, package_version, active_job))
+            if active_job:
+                return None
             if not db.execute('SELECT 1 FROM agents WHERE device_id=? AND approved=1', (device_id,)).fetchone():
                 return None
             row = db.execute("SELECT * FROM agent_jobs WHERE device_id=? AND state='queued' ORDER BY created LIMIT 1", (device_id,)).fetchone()
             if not row:
+                return None
+            ready = db.execute('SELECT setup_ready FROM agents WHERE device_id=?', (device_id,)).fetchone()['setup_ready']
+            if row['action'] == 'deploy' and not ready and key_check and key_check(db):
                 return None
             if row['action']=='install-apps' and protocol_version<2:
                 return None
@@ -307,3 +323,5 @@ class JoinRequest(StrictModel):
 class AgentHeartbeat(StrictModel):
     setup_ready: bool | None = Field(default=None, strict=True)
     protocol_version: int = Field(default=1,ge=1,le=2,strict=True)
+    package_version: str | None = Field(default=None, pattern=r'^[0-9a-f]{64}$')
+    active_job: bool | None = Field(default=None, strict=True)

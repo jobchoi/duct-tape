@@ -21,11 +21,15 @@ class DeploymentMedia:
         for app in self.applications:
             source=app.resolve(self.root)
             if app.key_file and app.id in managed and managed[app.id] is None:
-                missing.append(app.key_file)
+                if app.key_file not in missing:
+                    missing.append(app.key_file)
             for path in [*(source/name for name in app.required_files), *((self.root/app.key_file,) if app.key_file and app.id not in managed else ())]:
                 if not path.is_file() or not os.access(path, os.R_OK):
-                    missing.append(path.relative_to(self.root).as_posix())
-        return {'ready':not missing, 'missing':missing}
+                    relative = path.relative_to(self.root).as_posix()
+                    if relative not in missing:
+                        missing.append(relative)
+        reasons = self.licenses.key_reasons(self.applications) if self.licenses else []
+        return {'ready':not missing, 'missing':missing, 'keys_ready':not reasons, 'key_reasons':reasons}
 
     def build(self):
         if not self.manifest()['ready']:
