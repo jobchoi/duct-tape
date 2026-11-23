@@ -97,7 +97,7 @@ python -m Server.replay_outbox --retry-failed --limit 50
 - [ ] 실제 설치 없이 테스트 기기 1대, 서버 테스트 인스턴스와 테스트 시트만 사용한다.
 - [ ] Config/Monitoring.json을 예제로 준비한다: Enabled=true, SchoolCode=테스트 학교, Grade=정수, ServerUrl=테스트 HTTPS 원점, ReportToken=해당 학교 토큰. 기본 TimeoutSeconds=3, MaxAttempts=2, AllowHttp=false 유지.
 - [ ] 실제 값은 로컬 설정에만 입력한다. Windows 보고 모듈은 실제 hostname·MachineGuid·MAC을 수집하므로 가짜 UUID만 쓰는 앞 단계와 구분한다.
-- [ ] 다음과 같이 임시 상태 파일을 준비하고 **ReportStatus.ps1만** 실행한다. Main.bat/설치 모듈은 실행하지 않는다.
+- [ ] 다음과 같이 임시 상태 파일을 준비하고 **ReportStatus.ps1만** 실행한다. Scripts/RunSetup.bat/설치 모듈은 실행하지 않는다.
 
 ```powershell
 $testState = Join-Path $env:TEMP 'duct-tape-field-test.json'
@@ -111,7 +111,7 @@ Write-Host 'REPORT_CALL_RETURNED'
 - [ ] 테스트 서버를 중지하고 같은 보고 명령을 실행한다. REPORT_UNAVAILABLE 경고 후 REPORT_CALL_RETURNED까지 도달하는지 확인한다. 기본 HTTP 대기 예산 약 7초 외에 DNS·기기 조회 시간이 추가될 수 있으므로 소요 시간을 기록한다.
 - [ ] 서버 복구 후 보고를 다시 실행해 최신 상태가 갱신되는지 확인한다. 클라이언트에는 영속 재전송 큐가 없으므로 서버 다운 중 유실된 보고의 자동 복구를 기대하지 않는다.
 - [ ] 별도 시험으로 서버는 유지하고 GAS 경로만 실패시키면, 서버 DB/outbox에는 남아야 한다. 서버 다운과 GAS 다운을 서로 다른 장애로 기록한다.
-- [ ] 실제 Main.bat 설치 중 장애 격리 검증은 설치 매체·관리자 승인 확보 후 별도 수행한다. 이번 보고 전용 시험으로 실제 설치 인수 완료를 선언하지 않는다.
+- [ ] 실제 Scripts/RunSetup.bat 설치 중 장애 격리 검증은 설치 매체·관리자 승인 확보 후 별도 수행한다. 이번 보고 전용 시험으로 실제 설치 인수 완료를 선언하지 않는다.
 
 ## 6. 기록·종료
 

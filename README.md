@@ -1,6 +1,6 @@
 # duct-tape
 
-학교 Windows 기기 20~50대의 Office LTSC 2024·한컴오피스 2024 배포 자동화입니다. Main.bat과 PowerShell 01~06 모듈을 Scripts/Common.ps1 기반으로 공통화했습니다. FastAPI/SQLite 중앙 관제와 자동 상태 보고를 구현했습니다. Google Sheets 미러링은 Phase 4 예정입니다.
+학교 Windows 기기 20~50대의 Office LTSC 2024·한컴오피스 2024 배포 자동화입니다. Scripts/RunSetup.bat과 PowerShell 01~06 모듈을 Scripts/Common.ps1 기반으로 공통화했습니다. FastAPI/SQLite 중앙 관제와 자동 상태 보고를 구현했습니다. Google Sheets 미러링은 Phase 4 예정입니다.
 
 ## 요구사항과 빠른 시작
 
@@ -8,7 +8,7 @@
 2. Office/에 ODT setup.exe, install.xml, remove.xml 및 원본 매체를 배치합니다.
 3. Hancom/에 전체 원본 매체를 배치합니다. Install/Hwp130.msi, Install/VC_redist.x86.exe 및 LevelOption=1로 준비한 setup.ini가 필요합니다.
 4. Config/HancomKey.txt.example을 Config/HancomKey.txt로 복사하고 실제 키 한 줄을 입력합니다. 키는 영숫자·하이픈 형식이며 예제·공백·여러 줄은 거부합니다.
-5. 다른 설치가 없는 테스트 기기에서 Main.bat을 관리자 권한으로 실행합니다. 키 누락·검증 실패 시 설치 전에 종료합니다. UNC/로컬 구조를 유지하고 HTTP 배포는 매체를 로컬로 내려받아 실행합니다.
+5. 수동 설치 시 다른 설치가 없는 테스트 기기에서 내부 실행 도구 Scripts/RunSetup.bat을 관리자 권한으로 실행합니다. 키 누락·검증 실패 시 설치 전에 종료합니다. UNC/로컬 구조를 유지하고 HTTP 배포는 매체를 로컬로 내려받아 실행합니다.
 6. `%TEMP%\Tapbook_State.json` 및 `%TEMP%\duct-tape\Deployment.log`를 확인합니다. RebootRequired=true이면 재부팅하고 앱 실행과 정품 인증을 점검합니다.
 
 한컴 설치는 잔존 Install/setup/msiexec를 강제 종료하고 구버전을 제거합니다. 기기별 배포는 한 번에 하나만 실행합니다. 설치 안내 로딩바는 실제 설치 완료율이 아닙니다.

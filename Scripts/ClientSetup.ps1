@@ -80,7 +80,7 @@ try {
                     Test-ClientReporting
                     Write-Host '기존 Office/한컴 제거 및 설치가 진행될 수 있습니다. 설치 매체와 라이선스 키를 준비하세요.'
                     if ((Read-Host '배포를 실행하려면 Y 입력') -ieq 'Y') {
-                        & (Join-Path $root 'Main.bat')
+                        & (Join-Path $PSScriptRoot 'RunSetup.bat')
                         if ($LASTEXITCODE -ne 0) { throw '배포 실패. 화면 오류와 %TEMP%\duct-tape\Deployment.log를 확인하세요.' }
                     }
                 }

@@ -20,7 +20,7 @@
 ## Phase 1 당시 UNC 경로 유실
 
 - 현장 이력: `$MyInvocation` 대신 `$PSScriptRoot`의 부모를 DeployRoot로 계산해 대응했습니다.
-- 현재 코드: Main.bat은 pushd를 사용하고 상태 파일은 `%TEMP%\Tapbook_State.json`에 둡니다. 03과 백업 스크립트에는 이전 경로 계산이 남아 있습니다.
+- 현재 코드: Scripts/RunSetup.bat은 pushd를 사용하고 상태 파일은 `%TEMP%\Tapbook_State.json`에 둡니다. 03과 백업 스크립트에는 이전 경로 계산이 남아 있습니다.
 - 대응: 관리자 실행 계정의 공유 접근 권한, Office setup.exe/XML 및 한컴 MSI의 위치를 확인합니다. 공백 포함 경로는 따옴표로 감싸며 HTTP 주소를 실행 경로로 전달하지 않습니다.
 - Phase 2 검증: 로컬·USB·UNC 및 공백/한글 폴더에서 같은 루트를 계산하는지 확인하고 호출부와 모듈의 상태 파일 경로를 일치시킵니다.
 

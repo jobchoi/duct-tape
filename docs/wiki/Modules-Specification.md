@@ -4,7 +4,7 @@
 
 ## 공통 실행 계약
 
-Windows PowerShell 5.1을 목표로 합니다. 각 01~06 모듈은 필수 문자열 `-StateFile`을 받고 Scripts/Common.ps1을 dot-source합니다. Main.bat은 `%TEMP%\Tapbook_State.json`을 전달합니다. JSON 파일명은 고정 API가 아니며 단독 실행 시 원하는 경로를 지정할 수 있습니다. 성공은 종료 코드 0, 실패는 1입니다. Main은 05를 포함한 모든 단계의 실패를 확인합니다.
+Windows PowerShell 5.1을 목표로 합니다. 각 01~06 모듈은 필수 문자열 `-StateFile`을 받고 Scripts/Common.ps1을 dot-source합니다. Scripts/RunSetup.bat은 `%TEMP%\Tapbook_State.json`을 전달합니다. JSON 파일명은 고정 API가 아니며 단독 실행 시 원하는 경로를 지정할 수 있습니다. 성공은 종료 코드 0, 실패는 1입니다. Main은 05를 포함한 모든 단계의 실패를 확인합니다.
 
 배포 루트는 Common.ps1 자신의 `$PSScriptRoot` 부모입니다. 모듈의 짧은 bootstrap 경로 계산은 공통 파일을 찾기 위한 것이며 실제 배포 경로 변수는 Common에서만 정의합니다. `$MyInvocation` 경로 계산은 제거했습니다.
 

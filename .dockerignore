@@ -14,7 +14,6 @@
 !Modules/06_InstallHancom.ps1
 !Config/
 !Config/Applications.json
-!Main.bat
 !InstallAgent.bat
 !CollectDiagnostics.bat
 **/__pycache__/

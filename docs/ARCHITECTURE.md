@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TD
-    A[Main.bat 관리자 권한 및 pushd] --> K[키 파일 존재 및 사전 검증]
+    A[Scripts/RunSetup.bat 관리자 권한 및 pushd] --> K[키 파일 존재 및 사전 검증]
     K --> B[01 정보 수집 및 Unblock-File]
     B --> C[02 Office 판별]
     C --> D[03 Office 제거]
