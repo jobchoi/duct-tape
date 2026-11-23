@@ -16,6 +16,8 @@ try {
     if (-not $sent) { Write-JobProgress -Phase report -Status failed;exit 1 }
     Write-JobProgress -Phase report -Status completed
     if ($ReportOnly) { exit 0 }
-    & (Join-Path (Split-Path $PSScriptRoot -Parent) 'Main.bat') '--unattended'
+    $setup = Join-Path $PSScriptRoot 'RunSetup.bat'
+    if (-not (Test-Path -LiteralPath $setup)) { $setup = Join-Path (Split-Path $PSScriptRoot -Parent) 'Main.bat' }
+    & $setup '--unattended'
     exit $LASTEXITCODE
 } catch {Write-JobProgress -Phase error -Status failed;exit 1}

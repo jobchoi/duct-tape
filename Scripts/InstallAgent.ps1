@@ -36,7 +36,7 @@ try {
         $monitor.AllowHttp = $uri.Scheme -eq 'http'
     }
     $monitor.ServerUrl = $url.TrimEnd('/')
-    foreach ($name in @('Main.bat','Scripts','Modules','Config')) {
+    foreach ($name in @('Scripts/RunSetup.bat','Scripts','Modules','Config')) {
         if (-not (Test-Path (Join-Path $source $name))) { throw "필수 실행 도구 누락: $name" }
     }
     $id = ([guid](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Cryptography').MachineGuid).ToString()
@@ -52,11 +52,15 @@ try {
         & icacls.exe $target /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
         if ($LASTEXITCODE -ne 0) { throw '에이전트 폴더 접근 권한 설정에 실패했습니다.' }
     }
-    foreach ($name in @('Main.bat','Scripts','Modules')) {
+    foreach ($name in @('Scripts','Modules')) {
         if ([IO.Path]::GetFullPath($source) -ne [IO.Path]::GetFullPath($target)) {
             Copy-Item -LiteralPath (Join-Path $source $name) -Destination $target -Recurse -Force
         }
     }
+    $installedSetup = Join-Path $target 'Scripts/RunSetup.bat'
+    if (-not (Test-Path -LiteralPath $installedSetup -PathType Leaf)) { throw '설치된 실행 도구를 확인할 수 없습니다.' }
+    $legacySetup = Join-Path $target 'Main.bat'
+    if (Test-Path -LiteralPath $legacySetup -PathType Leaf) { Remove-Item -LiteralPath $legacySetup -Force }
     New-Item -ItemType Directory -Path (Join-Path $target 'Config') -Force | Out-Null
     . (Join-Path $PSScriptRoot 'ApplicationMedia.ps1')
     foreach ($app in (Get-ApplicationCatalog -Root $source).applications) {

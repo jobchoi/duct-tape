@@ -11,12 +11,12 @@ Tools는 고정 설치 경로가 아니라 원본을 참고하는 후보 위치�
 | Config/Applications.json | 앱 ID/표시 이름, 원본 후보, 필요한 파일, 키 파일 경로, 실행 모듈 순서. 실제 키 값 없음 |
 | application_catalog.py / ApplicationMedia.ps1 | 원본 경로 해석과 메타데이터 검증 |
 | DeploymentMedia | 앱 정의에서 준비 상태와 비공개 전송 ZIP 생성 |
-| Main.bat | 관리자 권한·공통 사전 검사·공통 실행기 진입 |
+| Scripts/RunSetup.bat | 관리자 권한·공통 사전 검사·공통 실행기 진입 |
 | InvokeApplications.ps1 | 공통 모듈 뒤에 앱별 모듈을 정의된 순서로 실행. 오류 시 중단 |
 | Modules/*.ps1 | 실제 앱별 탐지·제거·설치·상태 처리 |
 | OfficeConfiguration.ps1 등 | 앱별 키/설치 설정 라이브러리 |
 
-현재 순서는 정보 수집 → Office 확인/제거/설치 → 한컴 확인/설치로 유지했다. Main.bat에 앱별 실행 호출을 계속 늘리는 대신 등록한 모듈 목록을 사용한다. 실행 모듈은 검토한 Modules/의 PS1만 허용하고 경로 이동이나 임의 외부 명령을 받아 실행하지 않는다.
+현재 순서는 정보 수집 → Office 확인/제거/설치 → 한컴 확인/설치로 유지했다. Scripts/RunSetup.bat에 앱별 실행 호출을 계속 늘리는 대신 등록한 모듈 목록을 사용한다. 실행 모듈은 검토한 Modules/의 PS1만 허용하고 경로 이동이나 임의 외부 명령을 받아 실행하지 않는다.
 
 ## 원본 위치와 클라이언트 위치
 

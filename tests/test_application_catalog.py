@@ -66,3 +66,15 @@ def test_agent_package_includes_registered_extra_module_only(tmp_path):
     with ZipFile(BytesIO(build(tmp_path,'https://server.example'))) as z:
         assert 'duct-tape-agent/Modules/07_Sample.ps1' in z.namelist()
         assert 'duct-tape-agent/Config/OfficeKey.txt' not in z.namelist()
+
+
+def test_agent_package_top_level_files():
+    from io import BytesIO
+    from Server.models.agent_package import build
+    repo = Path(__file__).resolve().parents[1]
+    with ZipFile(BytesIO(build(repo, 'https://server.example'))) as archive:
+        names = set(archive.namelist())
+        prefix = 'duct-tape-agent/'
+        top_files = {name[len(prefix):] for name in names if name.startswith(prefix) and '/' not in name[len(prefix):]}
+        assert top_files == {'InstallAgent.bat', 'CollectDiagnostics.bat', '시작 안내.txt'}
+        assert prefix + 'Scripts/RunSetup.bat' in names

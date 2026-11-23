@@ -46,6 +46,9 @@ def test_download_contains_runnable_files_without_secrets(client):
     assert response.status_code==200 and 'attachment' in response.headers['content-disposition']
     with ZipFile(BytesIO(response.content)) as archive:
         names=set(archive.namelist())
+        top_files={name.removeprefix('duct-tape-agent/') for name in names if name.startswith('duct-tape-agent/') and '/' not in name.removeprefix('duct-tape-agent/')}
+        assert top_files == {'InstallAgent.bat', 'CollectDiagnostics.bat', '시작 안내.txt'}
+        assert 'duct-tape-agent/Scripts/RunSetup.bat' in names
         assert { 'duct-tape-agent/'+name for name in FILES } <= names
         assert archive.read('duct-tape-agent/Config/ServerUrl.txt')==b'https://testserver'
         assert 'duct-tape-agent/CollectDiagnostics.bat' in names

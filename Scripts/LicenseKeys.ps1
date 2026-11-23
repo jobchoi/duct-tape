@@ -1,5 +1,6 @@
 ﻿function Sync-AgentLicenseKeys {
     param([string]$Root, [scriptblock]$Request)
+    $env:DUCT_LICENSE_SYNC_LEGACY = $null
     try {
         $agent = Get-Content (Join-Path $Root 'Config/Agent.json') -Raw -Encoding UTF8 | ConvertFrom-Json
         $headers = if ($agent.AuthMode -eq 'development') { @{'X-Duct-Tape-Request'='1';'X-Duct-Device-ID'=$agent.DeviceId} } else { @{Authorization=('Bearer '+$agent.AgentToken)} }
@@ -10,7 +11,7 @@
             catch {
                 $status = 0
                 try { $status = [int]$_.Exception.Response.StatusCode } catch {}
-                if ($status -eq 404) { Write-Host 'LICENSE_SYNC_LEGACY_SERVER'; return }
+                if ($status -eq 404) { Write-Host 'LICENSE_SYNC_LEGACY_SERVER: 서버에서 키를 받지 못했습니다. /admin/licenses 등록 또는 서버·에이전트 갱신을 확인하세요.'; $env:DUCT_LICENSE_SYNC_LEGACY = '1'; return }
                 throw 'LICENSE_SYNC_FAILED'
             }
         }

@@ -5,7 +5,7 @@
 ## 준비
 
 - 관리자 권한 Windows 및 Windows PowerShell 5.1, 기관용 라이선스와 정식 설치 매체.
-- 배포 루트에 Main.bat, Modules/, Scripts/, Config/, Office/, Hancom/ 구조를 유지합니다.
+- 배포 루트에 Modules/, Scripts/ (내부 실행 도구 RunSetup.bat 포함), Config/, Office/, Hancom/ 구조를 유지합니다.
 - Office/setup.exe, Office/install.xml, Office/remove.xml과 설치 원본을 준비합니다.
 - Hancom/Install/Hwp130.msi, Hancom/Install/VC_redist.x86.exe와 나머지 원본 매체를 준비합니다.
 - 매체의 setup.ini에 LevelOption=1을 설정합니다. 클라이언트는 읽기만 하므로 읽기 전용 공유에서도 검증 가능합니다. Hancom 아래 발견한 모든 setup.ini의 해당 값이 1이어야 합니다.
@@ -14,8 +14,8 @@
 
 ## 실행
 
-1. 다른 설치가 진행 중이지 않은 테스트 기기에서 시작합니다. 한 기기에서 Main을 중복 실행하지 않습니다.
-2. Main.bat을 관리자 권한으로 실행합니다. 키 파일 존재 및 내용 검증이 모든 모듈보다 먼저 수행됩니다.
+1. 다른 설치가 진행 중이지 않은 테스트 기기에서 시작합니다. 한 기기에서 설치를 중복 실행하지 않습니다.
+2. 수동 설치 시 내부 실행 도구 Scripts/RunSetup.bat을 관리자 권한으로 실행합니다. 키 파일 존재 및 내용 검증이 모든 모듈보다 먼저 수행됩니다.
 3. UNC 공유는 pushd를 사용합니다. 관리자 계정의 공유 접근 권한을 확인합니다. HTTP 매체는 같은 구조로 로컬에 내려받은 후 실행합니다.
 4. Office 준비 로딩바 및 설치 안내를 확인합니다. 로딩바는 실제 설치 완료율을 의미하지 않습니다.
 5. `%TEMP%\Tapbook_State.json`과 `%TEMP%\duct-tape\Deployment.log`를 확인합니다. RebootRequired=true이면 재부팅하고 앱 실행·정품 인증을 별도로 확인합니다.
