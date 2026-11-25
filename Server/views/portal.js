@@ -124,7 +124,7 @@ const portal = (() => {
     updateSelection();
   }
   // Logged in: show only logout. Logged out: show only the key input and login button.
-  function authView(on) { if (!admin) return; el('access-fields').hidden=on; el('disconnect').hidden=!on; }
+  function authView(on) { if (!admin) return; el('access-fields').hidden=on; el('disconnect').hidden=!on; if (!on) el('auth-status').textContent='관리자 로그인이 필요합니다.'; }
   function disconnect() {
     version++;clearProgress();clearTimeout(timer);token='';authenticated=false;selected='';agents=[];jobs=[];clientApproved=false;deviceId='';el('start').disabled=true;
     if (admin) { authView(false);el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;el('legacy-reports').hidden=true;updateSelection(); }

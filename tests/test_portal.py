@@ -149,6 +149,7 @@ def test_admin_login_and_logout_restore_cookie_session():
     assert ctx.eval('sessionValid') is False
     assert ctx.eval("elements['access-fields'].hidden") is False
     assert ctx.eval('elements.disconnect.hidden') is True
+    assert ctx.eval("elements['auth-status'].textContent") == '관리자 로그인이 필요합니다.'
 
 
 def test_local_admin_connects_without_login_and_media_gate_is_visible():
