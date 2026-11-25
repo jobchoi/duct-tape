@@ -488,3 +488,13 @@
 - v2/운영 모두 화면 파일만 바꾼 이미지를 배포했다. 기존 운영의 PC 관리 본문·ID를 유지하고 브레드크럼/탭 헤더만 이식했으며, 지원하지 않는 앱·도구 링크를 숨겼다.
 - 각 서버 healthy, 실제 HTTPS 모든 변경 자산 해시, media.ready·제품 키 API를 확인했다. 기존 등록/작업/제품 키 이력 수·다른 서비스 ID·마운트·Tailscale 매핑을 보존했다. 제품 키 값·설치 기능은 변경하지 않았다.
 - backups/20261119-admin-readability의 기존 Compose·화면·이미지 정보·DB·master.key 복구본을 WSL downloads/operation-backups/20261119-ui로 전송해 해시·DB 복원·복호화를 확인했다. 운영 관리 등록과 원격 README/MIGRATION/상위 이력에 결과를 기록했다. 미리보기는 모두 가짜 데이터다.
+
+## 2026-11-25 — 11-23 후속 수정 v2 시험 서버 반영·develop 통합
+
+- `feature/develop-merge-20261123`(acc53b0: ZIP의 Main.bat 숨김·`Scripts/RunSetup.bat`, 제품 키 패널 겹침, `/api/admin/deploy-readiness`, 에이전트 패키지 버전, 셋업 claim 시 제품 키 확인, 공통 반응형 헤더)을 develop에 fast-forward로 통합했다.
+- 로컬 pytest 25개 파일 통과(Python 3.11.15/SQLite 3.52.0, 파일별 실행). 브라우저·PowerShell 통합 테스트는 실행 환경이 없어 skip.
+- Pi `duct-tape-v2`만 교체: 기존 이미지 위 파생 이미지 `duct-hotfix-followups:duct-tape-v2-20261125`. 반영 전 v2 이미지가 develop과 코드 동일함을 해시로 확인했고, 새 이미지 파일 69개가 acc53b0과 일치함을 확인했다. DB에는 `agent_package_status` 표만 추가된다.
+- 반영 후 healthy, media.ready, ZIP(RunSetup.bat 포함·Main.bat 없음·PackageVersion·HTTPS 서버 주소·비밀 파일 없음), deploy-readiness `ready: true`, 관리자 페이지·제품 키 API, DB 기록 수, 운영 포함 다른 컨테이너 4개 ID, 마운트, Tailscale 매핑 보존을 확인했다. Playwright 375px에서 `/client`, `/admin/licenses`(로그인 전) 렌더링 확인, 콘솔 오류는 favicon 404뿐.
+- 미검증: 로그인 후 제품 키 화면, 실제 Windows 설치.
+- 운영 `duct-tape`는 변경하지 않았다. v1 계보라 `agent_jobs`·`agent_package`·화면 파일이 develop과 달라 그대로 덧씌울 수 없다(결정 대기).
+- 복구본(compose·DB·license-vault): Pi `duct-tape-v2/backups/20261125-hotfix-followups/recovery.tar.gz`, 오프사이트 WSL 사본 해시 확인. 롤백은 백업 compose.yaml 복원 후 같은 프로젝트 `up -d --no-build --no-deps`, 현재 DB 유지.
