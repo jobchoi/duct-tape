@@ -525,3 +525,9 @@
 - 확인: healthy, media.ready, 제공 파일 해시, ZIP의 수정 모듈·서버 주소·비밀 파일 없음, 제품 키 API, DB 기록 수(agents 5·jobs 15·license 2), 다른 컨테이너 4개 ID, 마운트, Tailscale 보존. Playwright(운영 443, 임시 세션 후 로그아웃으로 폐기): 1280·375px 로그인 시 로그아웃만, 로그아웃 후 입력·로그인과 "로그인이 필요합니다" 표시, 가로 넘침 없음.
 - 기존 운영 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정 모듈을 쓴다.
 - 복구본(compose·DB·license-vault): Pi `duct-tape/backups/20261125-tested-fixes/recovery.tar.gz`, WSL 사본 해시·SQLite 무결성 확인. 롤백은 백업 compose.yaml 복원 후 `up -d --no-build --no-deps`, 현재 DB 유지.
+## 2026-11-25 — 같은 호스트 서버 간 관리자 세션 쿠키 분리
+
+- 문제: 운영(443)과 v2 시험(9443)이 같은 호스트라 브라우저가 `duct_admin_session` 쿠키를 공유해, 한쪽 로그인이 다른 쪽 로그인을 덮어썼다.
+- 수정: `DUCT_SESSION_COOKIE` 환경 변수로 인스턴스별 쿠키 이름 지정(기본값 유지, 형식 검증). 로그인·확인·로그아웃이 같은 이름을 쓴다.
+- 테스트: `test_admin_sessions.py`에 다른 이름 쿠키로는 인증 불가·지정 이름으로만 인증·로그아웃 삭제 쿠키 이름, 잘못된 이름 거부 시나리오 추가(6개 통과). 전체는 기존 실패 2개 파일(`test_blogger`, `test_claim_keys`) 외 통과.
+- 운영은 기본 이름 그대로, v2 시험 서버에만 `duct_admin_session_v2`를 지정한다.

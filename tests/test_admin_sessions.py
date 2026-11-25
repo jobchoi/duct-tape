@@ -51,6 +51,23 @@ def test_session_expiry_and_header_required():
     assert not sessions.authenticated(request)
 
 
+def test_instance_cookie_name_keeps_same_host_servers_apart(tmp_path, monkeypatch):
+    monkeypatch.setenv('DUCT_SESSION_COOKIE', 'duct_admin_session_v2')
+    with TestClient(create_app(tmp_path/'db.sqlite3', WRITE, READ, schools={}, admin_token=ADMIN, media_root=tmp_path/'missing-media'), base_url='https://testserver') as c:
+        response = c.post('/api/admin/session', json={'token':ADMIN}, headers=H)
+        assert response.headers['set-cookie'].startswith('duct_admin_session_v2=')
+        value = c.cookies.get('duct_admin_session_v2')
+        c.cookies.clear()
+        assert c.get('/api/admin/session', headers=H | {'Cookie':COOKIE+'='+value}).status_code == 401
+        assert c.get('/api/admin/session', headers=H | {'Cookie':'duct_admin_session_v2='+value}).status_code == 200
+        assert 'duct_admin_session_v2=' in c.delete('/api/admin/session', headers=H | {'Cookie':'duct_admin_session_v2='+value}).headers['set-cookie']
+
+
+def test_invalid_cookie_name_is_rejected():
+    with pytest.raises(ValueError):
+        AdminSessions('bad name;')
+
+
 def test_admin_page_has_one_login_and_actionable_enrollment(client):
     html=client.get('/admin').text
     assert html.count('id="access"') == 1

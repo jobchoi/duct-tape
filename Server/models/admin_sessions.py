@@ -1,5 +1,6 @@
 """Short-lived server-side sessions; raw credentials never enter browser storage."""
 import hashlib
+import re
 import secrets
 import threading
 import time
@@ -11,7 +12,11 @@ HEADER = 'X-Duct-Tape-Request'
 class AdminSessions:
     lifetime = 8 * 60 * 60
 
-    def __init__(self):
+    def __init__(self, cookie=None):
+        # Servers sharing one host on different ports share cookies, so each instance can use its own name.
+        self.cookie = cookie or COOKIE
+        if not re.fullmatch(r'[A-Za-z0-9_]{1,64}', self.cookie):
+            raise ValueError('DUCT_SESSION_COOKIE must be 1-64 letters, digits or underscores')
         self.entries = {}
         self.lock = threading.Lock()
 
@@ -31,7 +36,7 @@ class AdminSessions:
         # A cross-origin HTML form cannot supply this header. No CORS is enabled.
         if request.headers.get(HEADER) != '1':
             return False
-        value = request.cookies.get(COOKIE)
+        value = request.cookies.get(self.cookie)
         if not value:
             return False
         with self.lock:
@@ -39,7 +44,7 @@ class AdminSessions:
         return expires > time.time()
 
     def revoke(self, request):
-        value = request.cookies.get(COOKIE)
+        value = request.cookies.get(self.cookie)
         if value:
             with self.lock:
                 self.entries.pop(self.digest(value), None)
