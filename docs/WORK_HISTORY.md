@@ -507,3 +507,12 @@
 - 테스트: `test_portal.py` 로그인/로그아웃 시나리오에 표시 상태 검증 추가, 14개 통과. Playwright(시험 서버 9443, 임시 세션 후 로그아웃으로 폐기): 1280·375px 로그인 시 로그아웃만, 로그아웃·새로고침 후 입력·로그인만 표시 확인. 다른 파일은 위의 기존 실패 2개 파일 외 통과.
 - 참고(미수정): 운영(443)·시험(9443)이 같은 호스트라 같은 이름의 세션 쿠키를 서로 덮어쓴다. 세션은 서버 메모리라 컨테이너 재시작 시 풀린다.
 
+
+## 2026-11-25 — 테스트 완료 수정의 운영 서버 반영
+
+- 운영 `duct-tape`(v1 계보)만 교체: `duct-admin-ui:duct-tape-20261119` 위 파생 이미지 `duct-tested-fixes:duct-tape-20261125`. 운영 활성 작업 0건 확인 후 적용.
+- 포함: ① `Modules/03_RemoveOffice.ps1` C2R 부속 오탐 수정(운영 기존 파일이 수정 전 develop과 동일함을 확인, v2와 실제 PC에서 검증한 파일 그대로) ② 관리자 로그인 입력창 표시 수정 — 운영 화면은 10-08(0caa504) 계열이라 운영 `portal.js`·`admin.html`·`dashboard.css`에 같은 변경을 이식. 0caa504의 `test_portal.py`에 새 요소·로그인/로그아웃 표시 검증을 더해 12개 통과(수정 전 원본도 12개 통과).
+- 제외: 11-23 후속(배포 안전장치·ZIP 정리 등)은 v2 코드 전제라 운영에 미반영. 세션 쿠키 이름은 운영 기본값 유지(v2만 `duct_admin_session_v2`).
+- 확인: healthy, media.ready, 제공 파일 해시, ZIP의 수정 모듈·서버 주소·비밀 파일 없음, 제품 키 API, DB 기록 수(agents 5·jobs 15·license 2), 다른 컨테이너 4개 ID, 마운트, Tailscale 보존. Playwright(운영 443, 임시 세션 후 로그아웃으로 폐기): 1280·375px 로그인 시 로그아웃만, 로그아웃 후 입력·로그인과 "로그인이 필요합니다" 표시, 가로 넘침 없음.
+- 기존 운영 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정 모듈을 쓴다.
+- 복구본(compose·DB·license-vault): Pi `duct-tape/backups/20261125-tested-fixes/recovery.tar.gz`, WSL 사본 해시·SQLite 무결성 확인. 롤백은 백업 compose.yaml 복원 후 `up -d --no-build --no-deps`, 현재 DB 유지.
