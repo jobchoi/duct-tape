@@ -123,9 +123,11 @@ const portal = (() => {
     }
     updateSelection();
   }
+  // Logged in: show only logout. Logged out: show only the key input and login button.
+  function authView(on) { if (!admin) return; el('access-fields').hidden=on; el('disconnect').hidden=!on; if (!on) el('auth-status').textContent='관리자 로그인이 필요합니다.'; }
   function disconnect() {
     version++;clearProgress();clearTimeout(timer);token='';authenticated=false;selected='';agents=[];jobs=[];clientApproved=false;deviceId='';el('start').disabled=true;
-    if (admin) { el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;el('legacy-reports').hidden=true;updateSelection(); }
+    if (admin) { authView(false);el('access-token').value='';el('devices').replaceChildren();el('summary').textContent='';el('unmanaged').textContent='';el('empty').hidden=false;el('admin-content').hidden=true;el('legacy-reports').hidden=true;updateSelection(); }
     el('result').textContent='';el('notice').textContent=admin ? '관리자 로그인 후 PC 연결 상태를 확인할 수 있습니다.' : '처음이면 실행 도구를 다운로드해 설치하세요. 설치 후 바탕화면 바로가기가 생성됩니다.';
   }
   async function poll(current) {
@@ -136,7 +138,7 @@ const portal = (() => {
         const [devices,work,reports,readiness]=await Promise.all([api('/api/admin/agents'),api('/api/admin/jobs'),api('/api/devices'),api('/api/admin/deploy-readiness')]);
         el('deploy-readiness').textContent=`배포 가능 여부: ${readiness.ready ? '가능' : '대기 필요 · '+readiness.reasons.join(' / ')} · 최근 ${readiness.minutes}분 활동 PC ${readiness.active_agents}대`;
         if (current!==version) return;
-        el('admin-content').hidden=false;el('auth-status').textContent=mode==='development' ? '로컬 테스트 모드 · 인증 키 없이 연결됨' : '관리자 로그인 완료';agents=devices.agents;jobs=work.jobs;renderAdmin(reports.devices,current);el('notice').textContent='서버에 연결됨 · 5초마다 갱신';
+        el('admin-content').hidden=false;authView(true);el('auth-status').textContent=mode==='development' ? '로컬 테스트 모드 · 인증 키 없이 연결됨' : '관리자 로그인 완료';agents=devices.agents;jobs=work.jobs;renderAdmin(reports.devices,current);el('notice').textContent='서버에 연결됨 · 5초마다 갱신';
 
       } else {
         const data=await api('/api/client/jobs');if (current!==version) return;

@@ -17,7 +17,7 @@ def browser(role='admin', session=True, key='', mode='secure'):
       set innerHTML(_) {throw Error('Unsafe HTML');}
     }
     const elements={};
-    for (const id of ['access','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','deploy-readiness','package-info','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events']) elements[id]=new Element();
+    for (const id of ['access','access-fields','access-token','disconnect','devices','summary','empty','unmanaged','selected','request','start','result','notice','resolve','revoke','client-state','onboarding','auth-status','login-button','admin-content','media-status','start-reason','legacy-reports','legacy-count','metric-online','metric-pending','metric-media','deploy-readiness','package-info','progress-panel','progress-state','progress-meta','progress-caption','progress-bar','progress-warning','progress-events']) elements[id]=new Element();
     const document={body:{dataset:{role:ROLE}},getElementById:id=>elements[id],createElement:()=>new Element()};
     const location={hash:KEY ? (MODE==='development'?'#device=':'#key=')+KEY:'',pathname:ROLE==='admin'?'/admin':'/client'};
     const history={replaceState(){location.hash='';}};
@@ -140,11 +140,16 @@ def test_admin_login_and_logout_restore_cookie_session():
     ctx.eval("elements['access-token'].value='admin-key';elements.access.listeners.submit({preventDefault(){}})")
     settle(ctx)
     assert ctx.eval("elements['access-token'].value") == ''
+    assert ctx.eval("elements['access-fields'].hidden") is True
+    assert ctx.eval('elements.disconnect.hidden') is False
     select(ctx)
     assert ctx.eval('elements.start.disabled') is False
     ctx.eval('elements.disconnect.listeners.click()');settle(ctx)
     assert ctx.eval('elements.devices.children.length') == 0
     assert ctx.eval('sessionValid') is False
+    assert ctx.eval("elements['access-fields'].hidden") is False
+    assert ctx.eval('elements.disconnect.hidden') is True
+    assert ctx.eval("elements['auth-status'].textContent") == '관리자 로그인이 필요합니다.'
 
 
 def test_local_admin_connects_without_login_and_media_gate_is_visible():
