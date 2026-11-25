@@ -40,7 +40,7 @@ def create_app(db_path=None, report_token=None, read_token=None, schools=None, r
 
     administrator = admin_token if admin_token is not None else os.environ.get('DUCT_ADMIN_TOKEN', '')
     jobs = JobStore(database)
-    sessions = AdminSessions()
+    sessions = AdminSessions(os.environ.get('DUCT_SESSION_COOKIE'))
     media = DeploymentMedia(media_root or os.environ.get('DUCT_MEDIA_ROOT', ROOT.parent))
     applications = ManagedApplications(jobs, media.root)
     features = Features(jobs)

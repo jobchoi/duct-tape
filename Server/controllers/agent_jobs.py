@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.security import HTTPBearer
 from starlette.background import BackgroundTask
 from Server.models.agent_jobs import Enrollment, JobRequest, AdminJobRequest, JobUpdate, AdminLogin, JoinRequest, AgentHeartbeat
-from Server.models.admin_sessions import COOKIE, HEADER
+from Server.models.admin_sessions import HEADER
 from Server.models.job_progress import ProgressBatch
 from Server.models.agent_package import build as build_agent_package, package_version
 from datetime import datetime, timezone
@@ -84,7 +84,7 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
         if not secrets.compare_digest(body.token.encode(), admin_token.encode()):
             raise HTTPException(401, 'Unauthorized')
         sessions.revoke(request)
-        response.set_cookie(COOKIE, sessions.issue(), max_age=sessions.lifetime,
+        response.set_cookie(sessions.cookie, sessions.issue(), max_age=sessions.lifetime,
                             httponly=True, secure=request.url.scheme == 'https',
                             samesite='strict', path='/')
         return {'authenticated': True, 'expires_in': sessions.lifetime}
@@ -98,7 +98,7 @@ def router(store, admin_token, sessions, policy, root, media, applications=None,
         if request.headers.get(HEADER) != '1':
             raise HTTPException(403, 'Same-origin request required')
         sessions.revoke(request)
-        response.delete_cookie(COOKIE, path='/')
+        response.delete_cookie(sessions.cookie, path='/')
         return {'authenticated': False}
 
     @routes.post('/api/admin/enrollments', dependencies=[Depends(admin)])

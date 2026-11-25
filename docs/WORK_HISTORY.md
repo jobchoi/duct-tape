@@ -498,3 +498,10 @@
 - 미검증: 로그인 후 제품 키 화면, 실제 Windows 설치.
 - 운영 `duct-tape`는 변경하지 않았다. v1 계보라 `agent_jobs`·`agent_package`·화면 파일이 develop과 달라 그대로 덧씌울 수 없다(결정 대기).
 - 복구본(compose·DB·license-vault): Pi `duct-tape-v2/backups/20261125-hotfix-followups/recovery.tar.gz`, 오프사이트 WSL 사본 해시 확인. 롤백은 백업 compose.yaml 복원 후 같은 프로젝트 `up -d --no-build --no-deps`, 현재 DB 유지.
+
+## 2026-11-25 — 같은 호스트 서버 간 관리자 세션 쿠키 분리
+
+- 문제: 운영(443)과 v2 시험(9443)이 같은 호스트라 브라우저가 `duct_admin_session` 쿠키를 공유해, 한쪽 로그인이 다른 쪽 로그인을 덮어썼다.
+- 수정: `DUCT_SESSION_COOKIE` 환경 변수로 인스턴스별 쿠키 이름 지정(기본값 유지, 형식 검증). 로그인·확인·로그아웃이 같은 이름을 쓴다.
+- 테스트: `test_admin_sessions.py`에 다른 이름 쿠키로는 인증 불가·지정 이름으로만 인증·로그아웃 삭제 쿠키 이름, 잘못된 이름 거부 시나리오 추가(6개 통과). 전체는 기존 실패 2개 파일(`test_blogger`, `test_claim_keys`) 외 통과.
+- 운영은 기본 이름 그대로, v2 시험 서버에만 `duct_admin_session_v2`를 지정한다.
