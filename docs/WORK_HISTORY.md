@@ -506,3 +506,5 @@
 - 수정: MSI 판정에서 이름에 Click-to-Run이 들어간 부속 항목을 제외한다. 실제 MSI Office(2016 등)가 함께 있으면 여전히 중단한다.
 - 테스트: `tests/Test-OfficeRemoval.ps1`에 OEM 365+부속, 부속만·서비스 없음, 부속+MSI Office 3개 시나리오 추가. Windows PowerShell 5.1에서 16개 통과, 수정 전 코드에서는 새 OEM 시나리오가 실패함을 확인. 실제 설치기는 실행하지 않음.
 - 기존 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정된 모듈을 쓴다.
+- 수정본으로 재시도해 Office LTSC 2024(ProPlus2024Volume 16.0.17932, PerpetualVL2024) 설치·서버 키(J8J83) 인증을 확인했다.
+- PC에 이전 Office 2021 MAK 라이선스(GF7TK)가 남아 Excel 계정 화면에 2021로 표시됐다. remove.xml은 다른 제품 라이선스를 지우지 않는다. 관리자 권한 `OSPP.VBS /unpkey`로 수동 제거 후 2024만 남음을 확인했다. 셋업 중 비대상 라이선스 자동 정리는 결정 대기.
