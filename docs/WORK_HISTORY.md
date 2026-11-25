@@ -492,9 +492,17 @@
 ## 2026-11-25 — 11-23 후속 수정 v2 시험 서버 반영·develop 통합
 
 - `feature/develop-merge-20261123`(acc53b0: ZIP의 Main.bat 숨김·`Scripts/RunSetup.bat`, 제품 키 패널 겹침, `/api/admin/deploy-readiness`, 에이전트 패키지 버전, 셋업 claim 시 제품 키 확인, 공통 반응형 헤더)을 develop에 fast-forward로 통합했다.
-- 로컬 pytest 25개 파일 통과(Python 3.11.15/SQLite 3.52.0, 파일별 실행). 브라우저·PowerShell 통합 테스트는 실행 환경이 없어 skip.
+- 로컬 pytest(Python 3.11.15/SQLite 3.52.0, 파일별 실행): 처음엔 "25개 파일 통과"로 기록했으나 집계 필터 오류였다. 정정: `test_blogger.py` 11건 실패(블로거 CLI 의존성 미설치, 기존 문서상 별도 준비 필요), `test_claim_keys.py::test_valid_files_and_failed_active_key` 1건 실패(`FileExistsError: A setup job is pending`, develop acc53b0에서도 동일 — 원인 미조사). 나머지 통과, 브라우저·PowerShell 통합 테스트는 skip.
 - Pi `duct-tape-v2`만 교체: 기존 이미지 위 파생 이미지 `duct-hotfix-followups:duct-tape-v2-20261125`. 반영 전 v2 이미지가 develop과 코드 동일함을 해시로 확인했고, 새 이미지 파일 69개가 acc53b0과 일치함을 확인했다. DB에는 `agent_package_status` 표만 추가된다.
 - 반영 후 healthy, media.ready, ZIP(RunSetup.bat 포함·Main.bat 없음·PackageVersion·HTTPS 서버 주소·비밀 파일 없음), deploy-readiness `ready: true`, 관리자 페이지·제품 키 API, DB 기록 수, 운영 포함 다른 컨테이너 4개 ID, 마운트, Tailscale 매핑 보존을 확인했다. Playwright 375px에서 `/client`, `/admin/licenses`(로그인 전) 렌더링 확인, 콘솔 오류는 favicon 404뿐.
 - 미검증: 로그인 후 제품 키 화면, 실제 Windows 설치.
 - 운영 `duct-tape`는 변경하지 않았다. v1 계보라 `agent_jobs`·`agent_package`·화면 파일이 develop과 달라 그대로 덧씌울 수 없다(결정 대기).
 - 복구본(compose·DB·license-vault): Pi `duct-tape-v2/backups/20261125-hotfix-followups/recovery.tar.gz`, 오프사이트 WSL 사본 해시 확인. 롤백은 백업 compose.yaml 복원 후 같은 프로젝트 `up -d --no-build --no-deps`, 현재 DB 유지.
+
+## 2026-11-25 — 관리자 화면 로그인 후에도 로그인 입력창이 남던 문제 수정
+
+- 증상: `/admin`에서 로그인 완료 후에도 인증 키 입력·로그인 버튼이 계속 보이고, 로그인/로그아웃 버튼이 항상 함께 표시됐다. 폼을 숨기는 코드가 없었다(초기 `access.hidden=mode==='development'`만 설정).
+- 수정: 로그인 상태면 로그아웃만, 로그아웃 상태면 입력·로그인만 보이도록 `authView`로 전환. 401로 세션이 풀리면 기존 `disconnect()` 경로로 입력창이 다시 나온다.
+- 테스트: `test_portal.py` 로그인/로그아웃 시나리오에 표시 상태 검증 추가, 14개 통과. 다른 파일은 위의 기존 실패 2개 파일 외 통과.
+- 참고(미수정): 운영(443)·시험(9443)이 같은 호스트라 같은 이름의 세션 쿠키를 서로 덮어쓴다. 세션은 서버 메모리라 컨테이너 재시작 시 풀린다.
+
