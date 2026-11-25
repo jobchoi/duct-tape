@@ -24,7 +24,9 @@ try {
             Send-DeploymentEvent -StateFile $StateFile -Stage '03' -Status completed
             exit 0
         }
-        if (@($entries | Where-Object { $_.WindowsInstaller -eq 1 }).Count -gt 0) {
+        # Click-to-Run registers MSI helper components (Licensing/Extensibility/Localization).
+        # They belong to C2R and are removed with it, so they are not a standalone MSI Office.
+        if (@($entries | Where-Object { $_.WindowsInstaller -eq 1 -and $_.DisplayName -notmatch '(?i)Click-to-Run' }).Count -gt 0) {
             throw 'OFFICE_MSI_REMOVAL_REQUIRED'
         }
         if ($null -eq $service) { throw 'OFFICE_C2R_SERVICE_MISSING' }

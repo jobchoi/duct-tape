@@ -498,3 +498,11 @@
 - 미검증: 로그인 후 제품 키 화면, 실제 Windows 설치.
 - 운영 `duct-tape`는 변경하지 않았다. v1 계보라 `agent_jobs`·`agent_package`·화면 파일이 develop과 달라 그대로 덧씌울 수 없다(결정 대기).
 - 복구본(compose·DB·license-vault): Pi `duct-tape-v2/backups/20261125-hotfix-followups/recovery.tar.gz`, 오프사이트 WSL 사본 해시 확인. 롤백은 백업 compose.yaml 복원 후 같은 프로젝트 `up -d --no-build --no-deps`, 현재 DB 유지.
+
+## 2026-11-25 — Office 제거 단계 C2R 부속 MSI 오탐 수정
+
+- 현장: v2 시험 서버로 셋업한 WIN-ILSR3NCGDJE(OEM Microsoft 365 - ko-kr 16.0.15128)가 03 단계에서 `OFFICE_MSI_REMOVAL_REQUIRED`로 2회 실패.
+- 원인: Click-to-Run이 MSI로 등록하는 부속 항목(`Office 16 Click-to-Run Licensing/Extensibility/Localization Component`, WindowsInstaller=1)을 독립 MSI Office로 판정했다.
+- 수정: MSI 판정에서 이름에 Click-to-Run이 들어간 부속 항목을 제외한다. 실제 MSI Office(2016 등)가 함께 있으면 여전히 중단한다.
+- 테스트: `tests/Test-OfficeRemoval.ps1`에 OEM 365+부속, 부속만·서비스 없음, 부속+MSI Office 3개 시나리오 추가. Windows PowerShell 5.1에서 16개 통과, 수정 전 코드에서는 새 OEM 시나리오가 실패함을 확인. 실제 설치기는 실행하지 않음.
+- 기존 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정된 모듈을 쓴다.
