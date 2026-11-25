@@ -508,6 +508,7 @@
 - 기존 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정된 모듈을 쓴다.
 - 수정본으로 재시도해 Office LTSC 2024(ProPlus2024Volume 16.0.17932, PerpetualVL2024) 설치·서버 키(J8J83) 인증을 확인했다.
 - PC에 이전 Office 2021 MAK 라이선스(GF7TK)가 남아 Excel 계정 화면에 2021로 표시됐다. remove.xml은 다른 제품 라이선스를 지우지 않는다. 관리자 권한 `OSPP.VBS /unpkey`로 수동 제거 후 2024만 남음을 확인했다. 셋업 중 비대상 라이선스 자동 정리는 결정 대기.
+
 ## 2026-11-25 — 관리자 화면 로그인 후에도 로그인 입력창이 남던 문제 수정
 
 - 증상: `/admin`에서 로그인 완료 후에도 인증 키 입력·로그인 버튼이 계속 보이고, 로그인/로그아웃 버튼이 항상 함께 표시됐다. 폼을 숨기는 코드가 없었다(초기 `access.hidden=mode==='development'`만 설정).
@@ -525,6 +526,7 @@
 - 확인: healthy, media.ready, 제공 파일 해시, ZIP의 수정 모듈·서버 주소·비밀 파일 없음, 제품 키 API, DB 기록 수(agents 5·jobs 15·license 2), 다른 컨테이너 4개 ID, 마운트, Tailscale 보존. Playwright(운영 443, 임시 세션 후 로그아웃으로 폐기): 1280·375px 로그인 시 로그아웃만, 로그아웃 후 입력·로그인과 "로그인이 필요합니다" 표시, 가로 넘침 없음.
 - 기존 운영 PC는 새 ZIP으로 에이전트를 1회 갱신해야 수정 모듈을 쓴다.
 - 복구본(compose·DB·license-vault): Pi `duct-tape/backups/20261125-tested-fixes/recovery.tar.gz`, WSL 사본 해시·SQLite 무결성 확인. 롤백은 백업 compose.yaml 복원 후 `up -d --no-build --no-deps`, 현재 DB 유지.
+
 ## 2026-11-25 — 같은 호스트 서버 간 관리자 세션 쿠키 분리
 
 - 문제: 운영(443)과 v2 시험(9443)이 같은 호스트라 브라우저가 `duct_admin_session` 쿠키를 공유해, 한쪽 로그인이 다른 쪽 로그인을 덮어썼다.
