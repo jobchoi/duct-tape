@@ -118,6 +118,68 @@ class BloggerTests(unittest.TestCase):
         with patch.object(cli,'session') as session,contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cli.main(['upload',str(self.file)]),1);session.assert_not_called()
 
+    def test_external_sources_and_ledger_keys(self):
+        external=self.base/'external';external.mkdir()
+        nested=external/'series';nested.mkdir()
+        source=nested/'post.md';source.write_text('# External\n\nText')
+        cli.private_write(self.home/'sources.json',json.dumps({'series':str(external)}))
+        draft=cli.render(source,self.home)
+        self.assertEqual(draft['source'],'series:series/post.md')
+        self.assertEqual(cli.render(self.file,self.home)['source'],'docs/blog/blogger/draft.md')
+        client=Client([BLOG,Response({'id':'456','status':'DRAFT'})])
+        with contextlib.redirect_stdout(io.StringIO()):cli.upload(client,self.home,draft)
+        with contextlib.closing(cli.ledger(self.home)) as db:
+            self.assertEqual(db.execute('SELECT source FROM uploads').fetchone()[0],draft['source'])
+        outside=self.base/'outside.md';outside.write_text('# Outside')
+        with self.assertRaises(cli.BlogError):cli.render(external/'..'/'outside.md',self.home)
+        (external/'link.md').symlink_to(outside)
+        with self.assertRaises(cli.BlogError):cli.render(external/'link.md',self.home)
+        cli.private_write(self.home/'sources.json',json.dumps({'Bad_name':str(external)}))
+        with self.assertRaises(cli.BlogError):cli.render(source,self.home)
+        cli.private_write(self.home/'sources.json',json.dumps({'series':str(external)}))
+        (self.home/'sources.json').chmod(0o644)
+        with self.assertRaises(cli.BlogError):cli.render(source,self.home)
+
+    def test_front_matter_labels_title_and_post(self):
+        self.file.write_text('---\ntitle: "Hello"\nlabels: [one, 둘, one]\nstatus: reviewed\nsummary: ignored\n---\n\n# Hello\n\nBody')
+        draft=cli.render(self.file)
+        self.assertEqual(draft['title'],'Hello')
+        self.assertEqual(draft['labels'],['one','둘'])
+        self.assertNotIn('Hello',draft['content'])
+        client=Client([BLOG,Response({'id':'456','status':'DRAFT'})])
+        with contextlib.redirect_stdout(io.StringIO()):cli.upload(client,self.home,draft)
+        self.assertEqual(client.calls[1][2]['json']['labels'],['one','둘'])
+        self.file.write_text('---\ntitle: Hello\n---\nBody')
+        self.assertEqual(cli.render(self.file)['labels'],['P-DuctTape','개발일지'])
+
+    def test_front_matter_invalid_values(self):
+        cases=['title: Test\nstatus: published', 'title: Test\nlabels: scalar',
+               'title: Test\nlabels: ['+','.join(['x']*21)+']',
+               'title: Test\nlabels: ['+'x'*51+']', 'title: Test\nlabels: [a,,b]',
+               'title: Test\nsummary: |', 'title: Test\ntitle: Duplicate',
+               'title: "unterminated', 'title: Test\n bad: value', 'summary: value']
+        for case in cases:
+            with self.subTest(case=case):
+                self.file.write_text('---\n'+case+'\n---\nBody')
+                with self.assertRaises(cli.BlogError):cli.render(self.file)
+        self.file.write_text('---\ntitle: Test\nBody')
+        with self.assertRaises(cli.BlogError):cli.render(self.file)
+
+    def test_external_cli_preview_upload_and_reconcile(self):
+        external=self.base/'external';external.mkdir();source=external/'post.md'
+        source.write_text('---\ntitle: External\nstatus: draft\n---\nBody')
+        cli.private_write(self.home/'sources.json',json.dumps({'ext':str(external)}))
+        output=self.base/'preview.html'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(['--config-dir',str(self.home),'preview',str(source),'--output',str(output)]),0)
+        client=Client([BLOG,Response({'id':'456','status':'DRAFT'}),BLOG,Response({'items':[{'id':'456','status':'DRAFT','title':'External','content':'<p>Body</p>'}]})])
+        client.__enter__=lambda:client
+        from unittest.mock import MagicMock
+        session=MagicMock();session.return_value.__enter__.return_value=client
+        with patch.object(cli,'session',session),contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(['--config-dir',str(self.home),'upload',str(source),'--reviewed']),0)
+            self.assertEqual(cli.main(['--config-dir',str(self.home),'reconcile',str(source)]),0)
+
     def test_desktop_auth_uses_pkce_loopback_and_private_token(self):
         config={'installed':{'client_id':'TEST-CLIENT','client_secret':'TEST-ONLY',
             'auth_uri':'https://accounts.google.com/o/oauth2/auth','token_uri':'https://oauth2.googleapis.com/token'}}

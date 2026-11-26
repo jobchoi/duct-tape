@@ -533,3 +533,10 @@
 - 수정: `DUCT_SESSION_COOKIE` 환경 변수로 인스턴스별 쿠키 이름 지정(기본값 유지, 형식 검증). 로그인·확인·로그아웃이 같은 이름을 쓴다.
 - 테스트: `test_admin_sessions.py`에 다른 이름 쿠키로는 인증 불가·지정 이름으로만 인증·로그아웃 삭제 쿠키 이름, 잘못된 이름 거부 시나리오 추가(6개 통과). 전체는 기존 실패 2개 파일(`test_blogger`, `test_claim_keys`) 외 통과.
 - 운영은 기본 이름 그대로, v2 시험 서버에만 `duct_admin_session_v2`를 지정한다.
+
+## 2026-11-26 Blogger 초안 도구: 외부 저장소 원고·머리말 지원
+
+- 브랜치: `feature/blog-external-source`. 구현 Codex(지시서 docs/handoff/BLOG-external-source.md), QC Claude.
+- 설정 폴더의 `sources.json`(이름→절대 경로)에 등록한 폴더의 원고를 허용하고, 장부 키는 `<이름>:<상대 경로>`. 기존 docs/blog/blogger 원고 키와 해시 계산식은 그대로 둠.
+- YAML 머리말(title, labels, status) 최소 파서 추가(새 의존성 없음). 머리말 라벨을 업로드에 사용하고, 없으면 기존 `P-DuctTape`, `개발일지`. 초안만 올리는 구조는 그대로.
+- 검증(Claude 실행): `.venv-blog/bin/python -m unittest tests.test_blogger` 18개 통과. Lealnspire 연재 6편 preview 성공(제목 중복 제거, 라벨 확인). 실제 업로드는 하지 않음(사용자 승인 대기).

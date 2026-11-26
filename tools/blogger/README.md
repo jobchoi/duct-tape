@@ -1,6 +1,6 @@
 # Blogger 초안 도구
 
-서버와 분리된 로컬 도구다. 대상 블로그는 https://lealnspire.blogspot.com/ 로 고정한다. 공식 API로 초안만 만들며 공개/삭제/자동 수정 기능은 없다. 초안 글은 사람이 확인한 docs/blog/blogger/*.md를 입력으로 받는다. 원고 자동 집필이나 외부 AI 호출은 포함하지 않는다.
+서버와 분리된 로컬 도구다. 대상 블로그는 https://lealnspire.blogspot.com/ 로 고정한다. 공식 API로 초안만 만들며 공개/삭제/자동 수정 기능은 없다. 초안 글은 사람이 확인한 docs/blog/blogger/ 원고 또는 등록된 외부 폴더의 Markdown 원고를 입력으로 받는다. 원고 자동 집필이나 외부 AI 호출은 포함하지 않는다.
 
 ## Linux·WSL·Raspberry Pi
 
@@ -39,6 +39,40 @@ PowerShell 실행 정책에 막히면 조직의 정책을 확인한다. 시스�
 ```
 
 명령 옵션에 인증 JSON 내용이나 토큰을 직접 입력하지 않는다. 계정 연결과 도구 설치는 별개이며 다른 PC로 Git clone만 해서는 인증되지 않는다. 프록시 인증서 오류는 운영체제의 신뢰 저장소 설정으로 해결하며 TLS 검증을 끄지 않는다.
+
+## 외부 원고와 머리말
+
+설정 폴더의 `sources.json`에 이름과 절대 폴더 경로를 등록한다. 예시는 가상 경로이며 Unix에서 파일 권한은 600이어야 한다.
+
+```json
+{"series": "/example/project/docs/blog"}
+```
+
+이름은 영문 소문자, 숫자, 하이픈만 허용한다. 등록 폴더 아래의 `.md` 파일만 사용할 수 있으며 폴더 밖으로 나가는 심볼릭 링크는 거부한다. 같은 설정 폴더를 지정해 세 명령을 실행한다.
+
+```bash
+./blog.sh --config-dir /example/blog-config preview /example/project/docs/blog/post.md
+./blog.sh --config-dir /example/blog-config upload /example/project/docs/blog/post.md --reviewed
+./blog.sh --config-dir /example/blog-config reconcile /example/project/docs/blog/post.md
+```
+
+외부 원고의 기록 키는 `series:post.md`처럼 등록 이름과 폴더 기준 상대 경로를 사용한다. 기존 원고의 기록 키는 그대로 유지한다. 중첩 등록 폴더가 겹치면 가장 구체적인 폴더를 사용한다.
+
+원고 맨 앞에 선택적으로 다음 머리말을 넣는다. 지원 형식은 문자열 값과 `labels`의 단순 문자열 목록이다.
+
+```markdown
+---
+title: "원고 제목"
+labels: [연재, 개발일지]
+status: reviewed
+summary: 검토용 요약
+---
+# 원고 제목
+
+본문
+```
+
+`title`은 필수이고 동일한 첫 본문 제목은 제거한다. `labels`를 생략하면 기존 기본 라벨을 쓰며 최대 20개, 각 1~50자를 허용하고 중복을 제거한다. `status`는 생략하거나 `draft`, `reviewed`만 쓸 수 있다. 그 밖의 키는 업로드하지 않는다. 머리말이 없으면 기존처럼 첫 줄에 `# 제목`을 쓴다. `--reviewed` 확인은 머리말 상태와 별도로 필요하다.
 
 ## WSL·브라우저 없는 Pi
 

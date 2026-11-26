@@ -4,6 +4,7 @@ from contextlib import closing
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import sys
@@ -54,20 +55,99 @@ def private_write(path, value):
         Path(temporary).unlink(missing_ok=True)
 
 
-def render(source):
-    import bleach
-    import markdown
+def source_key(source, home):
     source = source.resolve()
     allowed = (ROOT/'docs/blog/blogger').resolve()
-    if source.suffix != '.md' or not source.is_relative_to(allowed) or not source.is_file():
-        raise BlogError('Choose a Markdown draft inside docs/blog/blogger/.')
+    if source.suffix != '.md' or not source.is_file():
+        raise BlogError('Choose an existing Markdown draft.')
+    if source.is_relative_to(allowed):
+        return str(source.relative_to(ROOT))
+    config = home/'sources.json' if home is not None else None
+    if config is not None and (config.exists() or config.is_symlink()):
+        sources = private_read(config)
+        if not isinstance(sources, dict):
+            raise BlogError('sources.json must contain a name-to-absolute-folder object.')
+        matches = []
+        for name, folder in sources.items():
+            if (not isinstance(name, str) or not re.fullmatch(r'[a-z0-9-]+', name)
+                    or not isinstance(folder, str) or not Path(folder).is_absolute()):
+                raise BlogError('Invalid source name or absolute folder in sources.json.')
+            directory = Path(folder).resolve()
+            if source.is_relative_to(directory):
+                matches.append((len(directory.parts), name, directory))
+        if matches:
+            _, name, directory = max(matches)
+            return name+':'+source.relative_to(directory).as_posix()
+    raise BlogError('Choose a Markdown draft inside an allowed source folder.')
+
+
+def front_matter(text):
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != '---':
+        return None, text
+    values = {}
+    for index in range(1, len(lines)):
+        line = lines[index].rstrip('\r\n')
+        if line == '---':
+            return values, ''.join(lines[index+1:])
+        match = re.fullmatch(r'([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)', line)
+        if not match or match.group(1) in values:
+            raise BlogError('Invalid or duplicate front matter key.')
+        key, value = match.groups()
+        if key == 'labels' and value.startswith('[') and value.endswith(']'):
+            inner = value[1:-1].strip()
+            value = [] if not inner else [item.strip() for item in inner.split(',')]
+            if any(not item or any(c in item for c in '[]{}\"\'') for item in value):
+                raise BlogError('Invalid front matter labels list.')
+        elif value.startswith('"'):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                raise BlogError('Invalid quoted front matter string.') from None
+            if not isinstance(value, str):
+                raise BlogError('Invalid front matter string.')
+        elif (not value or value != value.strip() or any(c in value for c in '[]{}\"\'')
+              or value.startswith(('|', '>', '&', '*', '!', '#', '-', '?', ':', '@', '`'))
+              or ': ' in value or ' #' in value):
+            raise BlogError('Unsupported front matter value.')
+        values[key] = value
+    raise BlogError('Front matter is missing its closing delimiter.')
+
+
+def render(source, home=None):
+    import bleach
+    import markdown
+    key = source_key(source, home)
     text = source.read_text(encoding='utf-8-sig')
     if len(text.encode('utf-8')) > 512000:
         raise BlogError('Draft is too large.')
-    first, _, body = text.partition('\n')
-    if not first.startswith('# ') or not first[2:].strip():
-        raise BlogError('Draft must begin with a level-one title.')
-    title = first[2:].strip()
+    metadata, body = front_matter(text)
+    labels = ['P-DuctTape', '개발일지']
+    if metadata is None:
+        first, _, body = body.partition('\n')
+        if not first.startswith('# ') or not first[2:].strip():
+            raise BlogError('Draft must begin with a level-one title.')
+        title = first[2:].strip()
+    else:
+        title = metadata.get('title')
+        if not isinstance(title, str) or not title.strip():
+            raise BlogError('Front matter must contain a title string.')
+        title = title.strip()
+        if 'status' in metadata and metadata['status'] not in ('draft', 'reviewed'):
+            raise BlogError('Front matter status must be draft or reviewed.')
+        if 'labels' in metadata:
+            labels = metadata['labels']
+            if not isinstance(labels, list) or len(labels) > 20 or any(not isinstance(label, str) or not 1 <= len(label) <= 50 for label in labels):
+                raise BlogError('Labels must be a list of at most 20 strings, each 1–50 characters.')
+            labels = list(dict.fromkeys(labels))
+        lines = body.splitlines(keepends=True)
+        for index, line in enumerate(lines):
+            if line.startswith('# ') and line[2:].strip() == title:
+                del lines[index]
+                break
+            if line.strip():
+                break
+        body = ''.join(lines)
     if len(title) > 200:
         raise BlogError('Title is too long.')
     html = markdown.markdown(body, extensions=['fenced_code', 'tables'])
@@ -75,7 +155,7 @@ def render(source):
                                   'pre','code','a','table','thead','tbody','tr','th','td'],
                         attributes={'a':['href','title']}, protocols=['http','https','mailto'], strip=True)
     digest = hashlib.sha256((title+'\n'+html).encode()).hexdigest()
-    return {'source':str(source.relative_to(ROOT)), 'title':title, 'content':html, 'sha256':digest}
+    return {'source':key, 'title':title, 'content':html, 'sha256':digest, 'labels':labels}
 
 
 def authenticate(home, port, browser):
@@ -167,7 +247,7 @@ def upload(client, home, draft):
         # Persist before POST: unknown outcomes must be reconciled, never automatically retried.
         try:
             post = request(client,'POST','/blogs/'+bid+'/posts',params={'isDraft':'true'},
-                           json={'kind':'blogger#post','title':draft['title'],'content':draft['content'],'labels':['P-DuctTape','개발일지']})
+                           json={'kind':'blogger#post','title':draft['title'],'content':draft['content'],'labels':draft['labels']})
         except ApiError as error:
             if error.status in (400,401,403,404,405,413,422,429):
                 # Google explicitly rejected this request; retry only on a later user command.
@@ -229,19 +309,19 @@ def main(argv=None):
         if name=='upload':command.add_argument('--reviewed',action='store_true',help='Confirm this source version was reviewed.')
     args=parser.parse_args(argv)
     try:
+        home=args.config_dir.expanduser().resolve()
         if args.command=='preview':
             import html
-            draft=render(args.source);args.output.parent.mkdir(parents=True,exist_ok=True)
+            draft=render(args.source,home);args.output.parent.mkdir(parents=True,exist_ok=True)
             args.output.write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+html.escape(draft['title'])+'</title><h1>'+html.escape(draft['title'])+'</h1>'+draft['content']+'</html>',encoding='utf-8')
             print('Preview saved: '+str(args.output));print('Draft SHA-256: '+draft['sha256']);return 0
-        home=args.config_dir.expanduser().resolve()
         if home.is_relative_to(ROOT):
             raise BlogError('Store credentials outside the Git repository.')
         if args.command=='auth':
             authenticate(home,args.port,not args.no_browser);return 0
         if args.command=='upload' and not args.reviewed:
             raise BlogError('Preview and review the draft, then supply --reviewed.')
-        draft=render(args.source) if args.command in ('upload','reconcile') else None
+        draft=render(args.source,home) if args.command in ('upload','reconcile') else None
         with session(home) as client:
             if args.command=='check':
                 bid=blog(client);check_access(client,bid)
